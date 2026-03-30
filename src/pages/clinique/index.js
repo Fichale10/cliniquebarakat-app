@@ -1,0 +1,8 @@
+export { default as Patients } from './Patients'
+export { default as Consultations } from './Consultations'
+export { default as Dossiers } from './Dossiers'
+export { default as Hospitalisation } from './Hospitalisation'
+export { default as Chirurgies } from './Chirurgies'
+export { default as Ordonnances } from './Ordonnances'
+export { default as Calculateur } from './Calculateur'
+export { default as Consentements } from './Consentements'

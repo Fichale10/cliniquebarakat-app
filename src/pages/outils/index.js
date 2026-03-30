@@ -1,0 +1,5 @@
+export { default as AssistantIA } from './AssistantIA'
+export { default as GestionNotifications } from './GestionNotifications'
+export { default as CarteClients } from './CarteClients'
+export { default as SuiviTraitements } from './SuiviTraitements'
+export { default as GestionLots } from './GestionLots'
