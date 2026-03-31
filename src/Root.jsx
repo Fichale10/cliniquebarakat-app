@@ -310,6 +310,7 @@ function Root(){
       const u={name:compte.nom,email:compte.email,initials:compte.nom.substring(0,2).toUpperCase(),role:compte.role,id:compte.id};
       setUser(u);
       setLogged(true);
+
       logAction(u,'connexion','Connexion réussie');
       return true;
     }

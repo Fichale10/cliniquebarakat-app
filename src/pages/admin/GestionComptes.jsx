@@ -123,7 +123,29 @@ function GestionComptes({comptes,setComptes,currentUser}){
           <div>
             <label className="text-xs font-bold text-slate-600 mb-2 block">Rôle *</label>
             <div className="grid grid-cols-2 gap-3">
-              {[{r:'admin',icon:'👑',label:'Administrateur',desc:'Accès complet : finances, paramètres, comptes, tout',color:'amber'},{r:'utilisateur',icon:'👤',label:'Utilisateur',desc:'Accès clinique : patients, RDV, médicaments, etc.',color:'blue'}].map(opt=>(
+              {[
+  {
+    r:'admin',
+    icon:'👑',
+    label:'Administrateur',
+    desc:'Accès complet : tout le système',
+    color:'amber'
+  },
+  {
+    r:'admin_secondaire',
+    icon:'🛡️',
+    label:'Admin secondaire',
+    desc:'Accès complet sauf gestion des comptes',
+    color:'purple'
+  },
+  {
+    r:'utilisateur',
+    icon:'👤',
+    label:'Utilisateur',
+    desc:'Accès clinique : patients, RDV, etc.',
+    color:'blue'
+  }
+].map(opt=>(
                 <div key={opt.r} onClick={()=>setForm({...form,role:opt.r})}
                   className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${form.role===opt.r?(opt.color==='amber'?'border-amber-400 bg-amber-50':'border-blue-400 bg-blue-50'):'border-slate-200 hover:border-slate-300 bg-[var(--app-surface)]'}`}>
                   <div className="flex items-center gap-2 mb-1">
@@ -163,7 +185,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
                   <p className="text-sm text-slate-500">{c.email}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${c.role==='admin'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-700'}`}>
-                      {c.role==='admin'?'👑 Admin':'👤 Utilisateur'}
+                      {ROLES[c.role]?.icon} {ROLES[c.role]?.label}
                     </span>
                     <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${c.actif?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>
                       {c.actif?'✓ Actif':'✕ Inactif'}
@@ -192,7 +214,11 @@ function GestionComptes({comptes,setComptes,currentUser}){
             {editId===c.id&&editRole!==null&&<div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-sm font-bold text-amber-800 mb-2">Changer le rôle de {c.nom} :</p>
               <div className="grid grid-cols-2 gap-2 mb-3">
-                {[{r:'admin',icon:'👑',label:'Administrateur'},{r:'utilisateur',icon:'👤',label:'Utilisateur'}].map(opt=>(
+                {[
+  {r:'admin',icon:'👑',label:'Administrateur'},
+  {r:'admin_secondaire',icon:'🛡️',label:'Admin secondaire'},
+  {r:'utilisateur',icon:'👤',label:'Utilisateur'}
+].map(opt=>(
                   <div key={opt.r} onClick={()=>setEditRole(opt.r)} className={`cursor-pointer p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${editRole===opt.r?'border-amber-400 bg-amber-100':'border-slate-200 bg-white'}`}>
                     <span>{opt.icon}</span><span className="font-semibold text-sm">{opt.label}</span>
                     {editRole===opt.r&&<span className="ml-auto text-green-500">✓</span>}

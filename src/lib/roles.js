@@ -1,6 +1,7 @@
 // ─── Système de rôles ──────────────────────────────────────────
 export const ROLES = {
   admin:       { label: 'Administrateur', color: '#d97706', bg: 'rgba(217,119,6,0.15)',   icon: '👑' },
+  admin2: {  label: 'Admin secondaire', color: '#0ea5e9',  bg: 'rgba(14,165,233,0.15)', icon: '🛡️' },
   veterinaire: { label: 'Vétérinaire',    color: '#2563eb', bg: 'rgba(37,99,235,0.15)',   icon: '🩺' },
   // Alias (historique) : certains comptes ont été créés avec le rôle "utilisateur"
   // et attendaient les mêmes droits que "veterinaire".
@@ -11,6 +12,13 @@ export const ROLES = {
 
 export const ROLE_ACCESS = {
   admin: 'all',
+  admin2: [
+  'dashboard','monprofil','parametres','journal','lots','caisse','ia','notifications','rapports','carteclients','traitements',
+  'patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements',
+  'clients','fournisseurs','factures','devis','creances','ventes',
+  'medicaments','commandes','inventaire','historique',
+  'depenses','finances'
+],
   veterinaire: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
   // Alias de droits pour compatibilité avec d'anciens comptes
   utilisateur: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
@@ -20,7 +28,16 @@ export const ROLE_ACCESS = {
 
 export const canAccess = (role, id) => {
   if (!role) return false
+
+  // Admin total
   if (role === 'admin') return true
+
+  // Admin secondaire (bloquer comptes)
+  if (role === 'admin2') {
+    if (id === 'comptes') return false
+    return true
+  }
+
   return (ROLE_ACCESS[role] || []).includes(id)
 }
 
