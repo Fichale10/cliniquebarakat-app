@@ -53,7 +53,6 @@ function GestionComptes({comptes,setComptes,currentUser}){
     setComptes(comptes.map(c=>c.id===id?{...c,role:editRole}:c));
     setEditRole(null);setEditId(null);
   };
-
   return <div className="app-page max-w-3xl space-y-5">
 
     {/* ── Demandes en attente ── */}
