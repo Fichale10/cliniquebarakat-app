@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState } from 'react'
+import { sb } from '../../lib/supabase'        
+import { setCache } from '../../lib/db'         
 import { Btn, Field } from '../../components/ui'
 
 function MonProfil({user,comptes,setComptes}){
@@ -9,16 +11,41 @@ function MonProfil({user,comptes,setComptes}){
 
   const monCompte = comptes.find(c=>c.email===user?.email);
 
-  const changerMDP=()=>{
-    if(!pwActuel||!pwNew||!pwConfirm){setMsg({type:'error',text:'Tous les champs sont requis.'});return;}
-    if(monCompte?.pw!==pwActuel){setMsg({type:'error',text:'Mot de passe actuel incorrect.'});return;}
-    if(pwNew.length<4){setMsg({type:'error',text:'Le nouveau mot de passe doit faire au moins 4 caractères.'});return;}
-    if(pwNew!==pwConfirm){setMsg({type:'error',text:'Les deux nouveaux mots de passe ne correspondent pas.'});return;}
-    setComptes(comptes.map(c=>c.email===user.email?{...c,pw:pwNew}:c));
-    setPwActuel('');setPwNew('');setPwConfirm('');
-    setMsg({type:'success',text:'Mot de passe modifié avec succès !'});
-    setTimeout(()=>setMsg(null),4000);
-  };
+  const changerMDP = async () => {
+  if(!pwActuel||!pwNew||!pwConfirm){
+    setMsg({type:'error',text:'Tous les champs sont requis.'});return;
+  }
+  if(monCompte?.pw !== pwActuel){
+    setMsg({type:'error',text:'Mot de passe actuel incorrect.'});return;
+  }
+  if(pwNew.length < 4){
+    setMsg({type:'error',text:'Minimum 4 caractères.'});return;
+  }
+  if(pwNew !== pwConfirm){
+    setMsg({type:'error',text:'Les deux mots de passe ne correspondent pas.'});return;
+  }
+
+  // 1. Mettre à jour React state
+  const updated = comptes.map(c => c.email===user.email ? {...c, pw:pwNew} : c);
+  setComptes(updated);
+
+  // 2. Mettre à jour localStorage ← manquait !
+  setCache('comptes', updated);
+
+  // 3. Mettre à jour Supabase ← manquait !
+  if(navigator.onLine && sb && monCompte?.id){
+    try {
+      await sb.from('comptes').update({pw: pwNew}).eq('id', monCompte.id);
+    } catch(e){
+      console.warn('Erreur sync Supabase mdp', e);
+    }
+  }
+
+  setPwActuel(''); setPwNew(''); setPwConfirm('');
+  setMsg({type:'success', text:'Mot de passe modifié avec succès !'});
+  setTimeout(()=>setMsg(null), 4000);
+};
+
 
   return <div className="app-page max-w-lg space-y-5">
     {/* Carte identité */}
