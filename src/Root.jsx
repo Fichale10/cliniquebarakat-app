@@ -12,11 +12,36 @@ function Login({loading:appLoading, onLogin, onRegister, onForgot}){
   const [checking,setChecking]=useState(false);
   const [now,setNow]=useState(new Date());
 
-  useEffect(()=>{
-    const t=setInterval(()=>setNow(new Date()),1000);
-    return ()=>clearInterval(t);
-  },[]);
-  useEffect(()=>{ document.body.classList.add('login-bg'); return ()=>document.body.classList.remove('login-bg'); },[]);
+  useEffect(() => {
+  const load = async () => {
+    try {
+      if (navigator.onLine && sb) {
+        const { data } = await sb.from('comptes').select('*');
+        if (data && data.length) {
+          // Fusionner avec le cache local au lieu d'écraser
+          // Le cache local a priorité pour les mots de passe
+          const cached = getCache('comptes') || [];
+          const merged = data.map(remote => {
+            const local = cached.find(c => c.id === remote.id);
+            // Si le local a un mdp différent → garder le local (plus récent)
+            if (local && local.pw !== remote.pw) return { ...remote, pw: local.pw };
+            return remote;
+          });
+          setComptes(merged);
+          setCache('comptes', merged);
+        }
+      } else {
+        const c = getCache('comptes');
+        if (c && c.length) setComptes(c);
+      }
+    } catch(e) {
+      const c = getCache('comptes');
+      if (c) setComptes(c);
+    }
+    setAppLoading(false);
+  };
+  load();
+}, []);
 
   const doLogin=async()=>{
     if(!email||!pw){setErr('Veuillez remplir tous les champs.');return;}
@@ -294,28 +319,49 @@ function Root(){
     load();
   },[]);
 
-  const doLogin=async(email,pw)=>{
-    let compte=null;
-    if(navigator.onLine&&sb){
-      try{
-        const {data}=await sb.from('comptes').select('*').eq('email',email.trim()).eq('pw',pw).eq('actif',true).single();
-        if(data) compte=data;
-      }catch(e){}
-    }
-    if(!compte){
-      const local=getCache('comptes')||comptes;
-      compte=(local||[]).find(c=>c.email===email.trim()&&c.pw===pw&&c.actif);
-    }
-    if(compte){
-      const u={name:compte.nom,email:compte.email,initials:compte.nom.substring(0,2).toUpperCase(),role:compte.role,id:compte.id};
-      setUser(u);
-      setLogged(true);
+  const doLogin = async (email, pw) => {
+  // 1. Chercher LOCAL d'abord (cache = toujours à jour)
+  const local = getCache('comptes') || comptes;
+  let compte = (local || []).find(
+    c => c.email === email.trim() && c.pw === pw && c.actif && !c.pending
+  );
 
-      logAction(u,'connexion','Connexion réussie');
-      return true;
-    }
-    return false;
-  };
+  // 2. Si pas trouvé en local → essayer Supabase
+  if (!compte && navigator.onLine && sb) {
+    try {
+      const { data } = await sb.from('comptes')
+        .select('*')
+        .eq('email', email.trim())
+        .eq('pw', pw)
+        .eq('actif', true)
+        .maybeSingle(); // ← maybeSingle au lieu de single (pas de 406)
+      if (data) {
+        compte = data;
+        // Mettre à jour le cache avec les données fraîches
+        const merged = (local || []).map(c =>
+          c.email === data.email ? data : c
+        );
+        setCache('comptes', merged);
+        setComptes(merged);
+      }
+    } catch(e) {}
+  }
+
+  if (compte) {
+    const u = {
+      name: compte.nom,
+      email: compte.email,
+      initials: compte.nom.substring(0, 2).toUpperCase(),
+      role: compte.role,
+      id: compte.id
+    };
+    setUser(u);
+    setLogged(true);
+    logAction(u, 'connexion', 'Connexion réussie');
+    return true;
+  }
+  return false;
+};
 
   const doRegister=async(nom,email,pw,role)=>{
     // Créer compte en attente d'approbation admin
