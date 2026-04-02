@@ -57,7 +57,7 @@ class ScreenErrorBoundary extends Component {
   }
 }
 
-function App({logged,setLogged,user,setUser}){
+function App({ logged, setLogged, user, setUser, comptesRoot, setComptesRoot, onLogout }) {
   const [view,setView]=useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -83,11 +83,12 @@ useEffect(() => {
   const [meds,setMeds]=useState(()=>getCache('medicaments')||INIT_MEDS);
   const [equipe,setEquipe]=useState(()=>getCache('equipe')||DEFAULT_TEAM);
   const [clinique,setClinique]=useState(()=>getCache('clinique_settings')||{nom:'La Barakat',sousTitre:'Pharmacie & Clinique Vétérinaire',tel:'',adresse:'',ville:'',email:''});
-  const [comptes,setComptes]=useState(()=>getCache('comptes')||COMPTES_DEFAULT);
   const [showNotifs,setShowNotifs]=useState(false);
   const [luNotifs,setLuNotifs]=useState([]);
   const [activityNotifs,setActivityNotifs]=useState([]);
   const [online,setOnline]=useState(navigator.onLine);
+  const comptes    = comptesRoot    || [];
+  const setComptes = setComptesRoot || (() => {});
   // appLoading now from Root props
   const [syncPending,setSyncPending]=useState(()=>getQ().length);
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
