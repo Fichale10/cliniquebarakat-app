@@ -1,22 +1,41 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
-import { setCache } from '../../lib/db'
+import { setCache, newId } from '../../lib/db'
 import { Btn, Field } from '../../components/ui'
 
 function GestionComptes({comptes,setComptes,currentUser}){
   const pending=comptes.filter(c=>c.pending&&!c.actif);
-  const approuver=async(id)=>{
-    const up=comptes.map(c=>c.id===id?{...c,actif:true,pending:false}:c);
-    setComptes(up);setCache('comptes',up);
-    if(navigator.onLine&&sb)try{await sb.from('comptes').update({actif:true,pending:false}).eq('id',id);}catch(e){}
+
+  // ── Helper : sauvegarder partout ──
+  const saveAll = async (updated, id=null, updates=null, deleteId=null) => {
+    // 1. React state
+    setComptes(updated);
+    // 2. localStorage
+    setCache('comptes', updated);
+    // 3. Supabase
+    if(navigator.onLine && sb){
+      try{
+        if(deleteId)           await sb.from('comptes').delete().eq('id', deleteId);
+        else if(id && updates) await sb.from('comptes').update(updates).eq('id', id);
+      }catch(e){ console.warn('Supabase sync error', e); }
+    }
   };
-  const rejeter=async(id)=>{
-    const up=comptes.filter(c=>c.id!==id);
-    setComptes(up);setCache('comptes',up);
-    if(navigator.onLine&&sb)try{await sb.from('comptes').delete().eq('id',id);}catch(e){}
+
+  const approuver = async (id) => {
+    const updates = {actif:true, pending:false};
+    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
+    await saveAll(updated, id, updates);
   };
-  const [step,setStep]=useState(0); // 0=list, 1=nom, 2=details
+
+  const rejeter = async (id) => {
+    const updated = comptes.filter(c=>c.id!==id);
+    setComptes(updated);
+    setCache('comptes', updated);
+    if(navigator.onLine&&sb) try{ await sb.from('comptes').delete().eq('id',id); }catch(e){}
+  };
+
+  const [step,setStep]=useState(0);
   const [form,setForm]=useState({nom:'',email:'',pw:'',role:'utilisateur',actif:true});
   const [editId,setEditId]=useState(null);
   const [editPw,setEditPw]=useState('');
@@ -25,34 +44,76 @@ function GestionComptes({comptes,setComptes,currentUser}){
   const nextStep=()=>{
     if(step===1){
       if(!form.nom.trim())return alert('Le nom est requis');
-      // Auto-suggest email from name
       const slug=form.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'.');
       setForm(f=>({...f, email:f.email||`${slug}@labarakat.tg`}));
       setStep(2);
     }
   };
-  const addCompte=()=>{
-    if(!form.nom||!form.email||!form.pw)return alert('Tous les champs sont requis');
-    if(comptes.find(c=>c.email===form.email))return alert('Cet email existe déjà');
-    setComptes([...comptes,{...form,id:Date.now()}]);
+
+  const addCompte = async () => {
+    if(!form.nom||!form.email||!form.pw) return alert('Tous les champs sont requis');
+    if(comptes.find(c=>c.email===form.email)) return alert('Cet email existe déjà');
+
+    const newCompte = {
+      ...form,
+      id: newId(),                                        // UUID propre
+      initials: form.nom.substring(0,2).toUpperCase(),
+      actif: true,
+      pending: false,
+      created_at: new Date().toISOString()
+    };
+
+    const updated = [...comptes, newCompte];
+
+    // 1. React state + cache
+    setComptes(updated);
+    setCache('comptes', updated);
+
+    // 2. Supabase
+    if(navigator.onLine && sb){
+      try{ await sb.from('comptes').insert(newCompte); }
+      catch(e){ console.warn('Supabase addCompte error', e); }
+    }
+
     setForm({nom:'',email:'',pw:'',role:'utilisateur',actif:true});
     setStep(0);
   };
+
   const cancelForm=()=>{setStep(0);setForm({nom:'',email:'',pw:'',role:'utilisateur',actif:true});};
-  const toggleActif=id=>setComptes(comptes.map(c=>c.id===id?{...c,actif:!c.actif}:c));
-  const deleteCompte=id=>{
-    if(comptes.find(c=>c.id===id)?.email===currentUser?.email)return alert('Impossible de supprimer votre propre compte');
-    if(confirm('Supprimer ce compte définitivement ?'))setComptes(comptes.filter(c=>c.id!==id));
+
+  const toggleActif = async (id) => {
+    const compte = comptes.find(c=>c.id===id);
+    if(!compte) return;
+    const updates = {actif: !compte.actif};
+    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
+    await saveAll(updated, id, updates);
   };
-  const savePw=id=>{
-    if(!editPw||editPw.length<4)return alert('Minimum 4 caractères');
-    setComptes(comptes.map(c=>c.id===id?{...c,pw:editPw}:c));
-    setEditId(null);setEditPw('');
+
+  const deleteCompte = async (id) => {
+    if(comptes.find(c=>c.id===id)?.email===currentUser?.email)
+      return alert('Impossible de supprimer votre propre compte');
+    if(!confirm('Supprimer ce compte définitivement ?')) return;
+    const updated = comptes.filter(c=>c.id!==id);
+    setComptes(updated);
+    setCache('comptes', updated);
+    if(navigator.onLine&&sb) try{ await sb.from('comptes').delete().eq('id',id); }catch(e){}
   };
-  const saveRole=id=>{
-    setComptes(comptes.map(c=>c.id===id?{...c,role:editRole}:c));
-    setEditRole(null);setEditId(null);
+
+  const savePw = async (id) => {
+    if(!editPw||editPw.length<4) return alert('Minimum 4 caractères');
+    const updates = {pw: editPw};
+    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
+    await saveAll(updated, id, updates);
+    setEditId(null); setEditPw('');
   };
+
+  const saveRole = async (id) => {
+    const updates = {role: editRole};
+    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
+    await saveAll(updated, id, updates);
+    setEditRole(null); setEditId(null);
+  };
+
   return <div className="app-page max-w-3xl space-y-5">
 
     {/* ── Demandes en attente ── */}
@@ -93,7 +154,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
         {step===0&&<Btn onClick={()=>setStep(1)}>+ Nouvel utilisateur</Btn>}
       </div>
 
-      {/* ── Étape 1 : Saisir le nom ── */}
+      {/* ── Étape 1 ── */}
       {step===1&&<div className="p-6 bg-green-50 border-b border-green-200">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-black text-sm">1</div>
@@ -106,7 +167,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
         </div>
       </div>}
 
-      {/* ── Étape 2 : Détails + Rôle ── */}
+      {/* ── Étape 2 ── */}
       {step===2&&<div className="p-6 bg-green-50 border-b border-green-200">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-black text-sm">2</div>
@@ -118,33 +179,14 @@ function GestionComptes({comptes,setComptes,currentUser}){
         <div className="grid grid-cols-1 gap-3">
           <Field label="Email *" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} type="email" placeholder="email@labarakat.tg"/>
           <Field label="Mot de passe *" value={form.pw} onChange={e=>setForm({...form,pw:e.target.value})} type="password" placeholder="Minimum 4 caractères"/>
-          {/* Choix du rôle avec cards visuelles */}
           <div>
             <label className="text-xs font-bold text-slate-600 mb-2 block">Rôle *</label>
             <div className="grid grid-cols-2 gap-3">
               {[
-  {
-    r:'admin',
-    icon:'👑',
-    label:'Administrateur',
-    desc:'Accès complet : tout le système',
-    color:'amber'
-  },
-  {
-    r:'admin_secondaire',
-    icon:'🛡️',
-    label:'Admin secondaire',
-    desc:'Accès complet sauf gestion des comptes',
-    color:'purple'
-  },
-  {
-    r:'utilisateur',
-    icon:'👤',
-    label:'Utilisateur',
-    desc:'Accès clinique : patients, RDV, etc.',
-    color:'blue'
-  }
-].map(opt=>(
+                {r:'admin',icon:'👑',label:'Administrateur',desc:'Accès complet : tout le système',color:'amber'},
+                {r:'admin_secondaire',icon:'🛡️',label:'Admin secondaire',desc:'Accès complet sauf gestion des comptes',color:'purple'},
+                {r:'utilisateur',icon:'👤',label:'Utilisateur',desc:'Accès clinique : patients, RDV, etc.',color:'blue'}
+              ].map(opt=>(
                 <div key={opt.r} onClick={()=>setForm({...form,role:opt.r})}
                   className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${form.role===opt.r?(opt.color==='amber'?'border-amber-400 bg-amber-50':'border-blue-400 bg-blue-50'):'border-slate-200 hover:border-slate-300 bg-[var(--app-surface)]'}`}>
                   <div className="flex items-center gap-2 mb-1">
@@ -165,7 +207,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
         </div>
       </div>}
 
-      {/* ── Liste des comptes ── */}
+      {/* ── Liste ── */}
       <div className="divide-y divide-slate-100">
         {comptes.map(c=>{
           const isMe=c.email===currentUser?.email;
@@ -180,6 +222,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-slate-900">{c.nom}</p>
                     {isMe&&<span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Vous</span>}
+                    {c.pending&&<span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">⏳ En attente</span>}
                   </div>
                   <p className="text-sm text-slate-500">{c.email}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -192,7 +235,6 @@ function GestionComptes({comptes,setComptes,currentUser}){
                   </div>
                 </div>
               </div>
-              {/* Actions */}
               <div className="flex flex-col gap-1.5 shrink-0">
                 <button onClick={()=>{setEditId(editId===c.id&&editRole===null?null:c.id);setEditRole(c.role);setEditPw('');}}
                   className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-semibold transition-all text-left">
@@ -212,12 +254,12 @@ function GestionComptes({comptes,setComptes,currentUser}){
             {/* Changer rôle inline */}
             {editId===c.id&&editRole!==null&&<div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-sm font-bold text-amber-800 mb-2">Changer le rôle de {c.nom} :</p>
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 {[
-  {r:'admin',icon:'👑',label:'Administrateur'},
-  {r:'admin_secondaire',icon:'🛡️',label:'Admin secondaire'},
-  {r:'utilisateur',icon:'👤',label:'Utilisateur'}
-].map(opt=>(
+                  {r:'admin',icon:'👑',label:'Administrateur'},
+                  {r:'admin_secondaire',icon:'🛡️',label:'Admin secondaire'},
+                  {r:'utilisateur',icon:'👤',label:'Utilisateur'}
+                ].map(opt=>(
                   <div key={opt.r} onClick={()=>setEditRole(opt.r)} className={`cursor-pointer p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${editRole===opt.r?'border-amber-400 bg-amber-100':'border-slate-200 bg-white'}`}>
                     <span>{opt.icon}</span><span className="font-semibold text-sm">{opt.label}</span>
                     {editRole===opt.r&&<span className="ml-auto text-green-500">✓</span>}
@@ -248,8 +290,10 @@ function GestionComptes({comptes,setComptes,currentUser}){
     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
       <h3 className="font-bold text-amber-800 mb-3 flex items-center gap-2">ℹ️ Différence entre les rôles</h3>
       <div className="grid grid-cols-2 gap-4">
-        {[{icon:'👑',role:'Administrateur',color:'amber',items:['Tous les modules cliniques','Finances & Facturation','Fournisseurs & Dépenses','Paramètres & Comptes','Rapports complets']},
-          {icon:'👤',role:'Utilisateur',color:'blue',items:['Patients & Consultations','Ordonnances & RDV','Chirurgies & Hospitalisation','Médicaments & Inventaire','Tâches équipe']}].map((r,i)=>(
+        {[
+          {icon:'👑',role:'Administrateur',color:'amber',items:['Tous les modules cliniques','Finances & Facturation','Fournisseurs & Dépenses','Paramètres & Comptes','Rapports complets']},
+          {icon:'👤',role:'Utilisateur',color:'blue',items:['Patients & Consultations','Ordonnances & RDV','Chirurgies & Hospitalisation','Médicaments & Inventaire','Tâches équipe']}
+        ].map((r,i)=>(
           <div key={i} className="bg-[var(--app-surface)] rounded-xl p-4 border border-amber-200">
             <p className={`font-bold mb-2 ${r.color==='amber'?'text-amber-700':'text-blue-700'}`}>{r.icon} {r.role}</p>
             <ul className="space-y-1">{r.items.map((item,j)=><li key={j} className="text-xs text-slate-600 flex items-center gap-1.5"><span className="text-green-500">✓</span>{item}</li>)}</ul>
@@ -259,8 +303,5 @@ function GestionComptes({comptes,setComptes,currentUser}){
     </div>
   </div>;
 }
-
-
-// ── VENTES ───────────────────────────────────────────────────
 
 export default GestionComptes
