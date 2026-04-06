@@ -351,21 +351,24 @@ function Root() {
     // 1. Essai Supabase
     if (navigator.onLine && sb) {
       try {
-       const {data} = await sb.from('comptes')
-  .select('*')
-  .eq('email', email.trim())
-  .eq('pw', pw)
-  .eq('actif', true)
-  .maybeSingle(); 
+        const { data } = await sb
+          .from('comptes')
+          .select('*')
+          .eq('email', email.trim())
+          .eq('pw', pw)
+          .eq('actif', true)
+          .single();
         if (data) compte = data;
       } catch (e) {}
     }
 
-    // 2. Fallback localStorage / état local
+    // 2. Fallback : relire localStorage EN DIRECT (jamais l'état React)
+    //    App.setSyncedComptes écrit dans localStorage à chaque modification.
+    //    L'état React de Root est souvent périmé → ne pas l'utiliser ici.
     if (!compte) {
-      const local = getCache('comptes') || comptes;
-      compte = (local || []).find(c =>
-        c.email === email.trim() && c.pw === pw && c.actif
+      const frais = getCache('comptes') || [];
+      compte = frais.find(c =>
+        c.email === email.trim() && c.pw === pw && c.actif === true
       );
     }
 
