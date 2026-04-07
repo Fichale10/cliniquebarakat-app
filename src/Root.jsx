@@ -345,30 +345,43 @@ function Root() {
   }, [comptes]);
 
   // ── Login ─────────────────────────────────────────────────
+  // Stratégie : chercher par email uniquement dans Supabase,
+  // puis vérifier le mot de passe côté client.
+  // Évite le 406 causé par .single() qui échoue si 0 ou N résultats.
   const doLogin = async (email, pw) => {
+    const emailClean = email.trim().toLowerCase();
     let compte = null;
 
-    // 1. Essai Supabase
+    // 1. Chercher par email dans Supabase (sans filtrer sur pw ni actif)
+    //    → évite le 406 "Not Acceptable" de .single()
     if (navigator.onLine && sb) {
       try {
-        const { data } = await sb
+        const { data, error } = await sb
           .from('comptes')
           .select('*')
-          .eq('email', email.trim())
-          .eq('pw', pw)
-          .eq('actif', true)
-          .single();
-        if (data) compte = data;
-      } catch (e) {}
+          .eq('email', emailClean);
+
+        if (!error && data && data.length > 0) {
+          // Vérifier pw et actif côté client
+          const found = data.find(c => c.pw === pw && c.actif === true);
+          if (found) {
+            compte = found;
+            // Sync localStorage avec les données fraîches Supabase
+            const local = getCache('comptes') || [];
+            const merged = [...local.filter(c => c.email !== emailClean), ...data];
+            setCache('comptes', merged);
+          }
+        }
+      } catch (e) {
+        console.warn('Supabase login error:', e);
+      }
     }
 
-    // 2. Fallback : relire localStorage EN DIRECT (jamais l'état React)
-    //    App.setSyncedComptes écrit dans localStorage à chaque modification.
-    //    L'état React de Root est souvent périmé → ne pas l'utiliser ici.
+    // 2. Fallback localStorage — toujours relire en direct
     if (!compte) {
       const frais = getCache('comptes') || [];
       compte = frais.find(c =>
-        c.email === email.trim() && c.pw === pw && c.actif === true
+        c.email === emailClean && c.pw === pw && c.actif === true
       );
     }
 
