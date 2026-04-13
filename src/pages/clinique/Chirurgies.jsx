@@ -1,20 +1,28 @@
-import { useState, useMemo, useEffect } from 'react';
-import { today, fmtF, findDups, getCache, setCache, newId, dbInsert, dbUpdate, dbDelete } from '../../lib/utils';
-import { Btn, Badge, Field, PrintBtn, DupWarning, AutoSuggest, FilterBar, FilterBtns, FilterSelect, FilterPeriode, useDateFilter } from '../../components/ui';
-import { usePersist } from '../../lib/usePersist';
-
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { fmtF } from "../../lib/utils";
+import {
+  Btn,
+  Badge,
+  PrintBtn,
+  FilterPeriode,
+  DupWarning,
+  FilterBar,
+  FilterSelect,
+  FilterBtns
+} from "../../components/ui"
 function Chirurgies({patients,equipe=[]}){
-  const [chirs,setChirs]=usePersist('chirurgies', [
+  const [chirs,setChirs]=useState([
     {id:1,date:'2024-09-05',patient:'Mimi',proprio:'Martin Sophie',type:'Ovariohystérectomie',anesthesie:'Isoflurane + Propofol induction',duree:'45 min',chirurgien:'',statut:'Terminé',suivi:'Cicatrisation complète J+10',montant:85000},
     {id:2,date:'2025-02-01',patient:'Rex',proprio:'Dupont Jean',type:'Ablation corps étranger',anesthesie:'Propofol IV',duree:'30 min',chirurgien:'',statut:'Terminé',suivi:'Contrôle J+7 OK',montant:65000},
   ]);
   const [showForm,setShowForm]=useState(false);
+  const today = () => new Date().toISOString().split('T')[0];
   const [form,setForm]=useState({date:today(),patient:'',proprio:'',type:'',anesthesie:'',duree:'',chirurgien:'',statut:'Planifié',suivi:'',montant:''});
   const nomsEquipe=equipe.length?equipe.map(m=>m.nom):['–'];
   const [patSugg,setPatSugg]=useState([]);
   const SC={Planifié:'yellow',Terminé:'green',Annulé:'red','En cours':'blue'};
 
-  return <div id="chirurgies-print" className="space-y-5">
+  return <div id="chirurgies-print" className="app-page space-y-5">
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">🔬 Chirurgies & Actes</h2>
@@ -57,5 +65,4 @@ function Chirurgies({patients,equipe=[]}){
 
 // ── CLIENTS ──────────────────────────────────────────────────
 
-
-export default Chirurgies;
+export default Chirurgies

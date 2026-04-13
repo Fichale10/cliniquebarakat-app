@@ -1,10 +1,20 @@
-import { useState, useMemo, useEffect } from 'react';
-import { today, fmtF, findDups, getCache, setCache, newId, dbInsert, dbUpdate, dbDelete } from '../../lib/utils';
-import { Btn, Badge, Field, PrintBtn, DupWarning, AutoSuggest, FilterBar, FilterBtns, FilterSelect, FilterPeriode, useDateFilter } from '../../components/ui';
-import { usePersist } from '../../lib/usePersist';
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode } from '../../components/ui'
 
 function Consultations({patients}){
-  const [consults,setConsults]=usePersist('consultations', [
+  const today = () => new Date().toISOString().split('T')[0]
+  const fmtF = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
+  const printZone = (zoneId) => {
+    const el = document.getElementById(zoneId)
+    if (!el) return
+    const w = window.open('', '_blank', 'width=900,height=700')
+    w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' + el.innerHTML + '</body></html>')
+    w.document.close()
+    w.focus()
+    w.print()
+  }
+
+  const [consults,setConsults]=useState([
     {id:1,date:'2025-02-15',patient:'Rex',proprio:'Dupont Jean',poids:'32 kg',temperature:'38.5°C',fc:'80 bpm',
      soap_s:'Propriétaire signale une boiterie du membre antérieur droit depuis 3 jours',
      soap_o:'Légère claudication G2/5. Pas de chaleur locale. Réflexes normaux.',
@@ -61,7 +71,7 @@ function Consultations({patients}){
     </div>
   </div>;
 
-  return <div className="space-y-5">
+  return <div className="app-page space-y-5">
     {consults.map(c=><PrintConsult key={c.id} c={c}/>)}
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between">
@@ -135,10 +145,10 @@ function Consultations({patients}){
             </div>
           </div>
           {exp===c.id&&<div className="px-4 pb-4 bg-slate-50 border-t grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[['S – Subjectif',c.soap_s,'blue'],['O – Objectif',c.soap_o,'green'],['A – Diagnostic',c.soap_a,'orange'],['P – Plan',c.soap_p,'purple']].map(([l,v,col],i)=>v&&(
-              <div key={i} className={`bg-white rounded-xl p-3 border-l-4 border-l-${col}-400`}>
-                <div className={`text-xs font-bold text-${col}-600 mb-2`}>{l}</div>
-                <p className="text-sm">{v}</p>
+            {[['S – Subjectif',c.soap_s,'soap-box--blue'],['O – Objectif',c.soap_o,'soap-box--green'],['A – Diagnostic',c.soap_a,'soap-box--orange'],['P – Plan',c.soap_p,'soap-box--purple']].map(([l,v,cls],i)=>v&&(
+              <div key={i} className={`soap-box ${cls}`}>
+                <div className="soap-box__title">{l}</div>
+                <p className="text-sm text-[var(--app-text)]">{v}</p>
               </div>
             ))}
           </div>}
@@ -150,5 +160,4 @@ function Consultations({patients}){
 
 // ── DOSSIERS MÉDICAUX ────────────────────────────────────────
 
-
-export default Consultations;
+export default Consultations

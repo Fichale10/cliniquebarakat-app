@@ -1,10 +1,17 @@
-import { useState, useMemo, useEffect } from 'react';
-import { today, fmtF, findDups, getCache, setCache, newId, dbInsert, dbUpdate, dbDelete } from '../../lib/utils';
-import { Btn, Badge, Field, PrintBtn, DupWarning, AutoSuggest, FilterBar, FilterBtns, FilterSelect, FilterPeriode, useDateFilter } from '../../components/ui';
-import { usePersist } from '../../lib/usePersist';
-
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { fmtF } from "../../lib/utils";
+import {
+  Btn,
+  Badge,
+  PrintBtn,
+  FilterPeriode,
+  DupWarning,
+  FilterBar,
+  FilterSelect,
+  FilterBtns
+} from "../../components/ui"
 function Ordonnances({patients,meds}){
-  const [ords,setOrds]=usePersist('ordonnances', [
+  const [ords,setOrds]=useState([
     {id:1,date:'2025-02-14',patient:'Mimi',proprio:'Martin Sophie',espece:'Chat',
      lignes:[{med:'Métronidazole 250mg',dose:'2 comprimés/jour',duree:'5 jours',qte:10},{med:'Probiotiques',dose:'1 sachet/jour',duree:'7 jours',qte:7}],
      note:'Ne pas donner avec du lait.'},
@@ -16,29 +23,81 @@ function Ordonnances({patients,meds}){
 
   const updLigne=(i,k,v)=>{const l=[...form.lignes];l[i]={...l[i],[k]:v};setForm({...form,lignes:l});};
 
-  const OrdPrint=({o})=><div id="ord-print" className="hidden">
-    <div style={{fontFamily:'sans-serif',padding:'30px',maxWidth:'620px',margin:'0 auto'}}>
-      <div style={{display:'flex',justifyContent:'space-between',borderBottom:'3px solid #16a34a',paddingBottom:'16px',marginBottom:'20px'}}>
-        <div><h1 style={{margin:0,fontSize:'20px',color:'#14532d',fontWeight:'900'}}>🐾 La Barakat</h1><p style={{margin:'4px 0 0',color:'#64748b',fontSize:'12px'}}>La Barakat – Pharmacie & Clinique Vétérinaire · Lomé, Togo</p></div>
-        <div style={{textAlign:'right'}}><div style={{fontSize:'18px',fontWeight:'900',color:'#16a34a'}}>ORDONNANCE</div><div style={{color:'#64748b',fontSize:'12px'}}>N° {o.id} · {o.date}</div></div>
+  const OrdPrint=({o,clinique})=>{
+    const now=new Date();
+    const dateStr=now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+    return <div id="ord-print" className="hidden">
+    <div style={{fontFamily:'Georgia,serif',padding:'32px 40px',maxWidth:'680px',margin:'0 auto',background:'white',color:'#111'}}>
+
+      {/* En-tête avec logo */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'24px',paddingBottom:'16px',borderBottom:'3px solid #166534'}}>
+        <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
+          <div style={{width:'56px',height:'56px',borderRadius:'50%',background:'linear-gradient(135deg,#166534,#1e3a8a)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'28px',flexShrink:0}}>🐄</div>
+          <div>
+            <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'18px',color:'#166534',letterSpacing:'1px'}}>LA BARAKAT</div>
+            <div style={{fontSize:'11px',color:'#64748b',marginTop:'2px'}}>Pharmacie & Clinique Vétérinaire</div>
+            <div style={{fontSize:'11px',color:'#64748b'}}>Lomé, Togo · www.labarakat.fr</div>
+          </div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:'16px',color:'#1e3a8a',letterSpacing:'2px',textTransform:'uppercase'}}>Ordonnance</div>
+          <div style={{fontSize:'12px',color:'#64748b',marginTop:'4px'}}>N° {o.id}</div>
+          <div style={{fontSize:'12px',color:'#64748b'}}>{dateStr}</div>
+          <div style={{marginTop:'8px',padding:'4px 8px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'6px',fontSize:'11px',fontWeight:600,color:'#166534',textAlign:'center'}}>ORIGINAL</div>
+        </div>
       </div>
-      <div style={{background:'#f8fafc',borderRadius:'8px',padding:'10px 14px',marginBottom:'16px',fontSize:'13px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px'}}>
-        <div><strong>Patient :</strong> {o.patient}</div><div><strong>Espèce :</strong> {o.espece}</div>
-        <div><strong>Propriétaire :</strong> {o.proprio}</div>
+
+      {/* Patient */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'20px',padding:'14px',background:'#f8fafc',borderRadius:'10px',border:'1px solid #e2e8f0'}}>
+        <div><span style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em'}}>Patient</span><div style={{fontWeight:700,fontSize:'14px',marginTop:'2px'}}>{o.patient}</div></div>
+        <div><span style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em'}}>Espèce / Race</span><div style={{fontWeight:700,fontSize:'14px',marginTop:'2px'}}>{o.espece}</div></div>
+        <div><span style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em'}}>Propriétaire</span><div style={{fontSize:'13px',marginTop:'2px'}}>{o.proprio}</div></div>
+        <div><span style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em'}}>Date</span><div style={{fontSize:'13px',marginTop:'2px'}}>{o.date}</div></div>
       </div>
-      <table style={{width:'100%',borderCollapse:'collapse',marginBottom:'16px'}}>
-        <thead><tr style={{background:'#f0fdf4'}}>{['Médicament','Posologie','Durée','Qté'].map(h=><th key={h} style={{padding:'8px',textAlign:'left',fontSize:'12px',fontWeight:'700',color:'#16a34a',borderBottom:'2px solid #bbf7d0'}}>{h}</th>)}</tr></thead>
-        <tbody>{o.lignes.map((l,i)=><tr key={i} style={{borderBottom:'1px solid #e2e8f0'}}><td style={{padding:'8px',fontWeight:'600',fontSize:'13px'}}>{l.med}</td><td style={{padding:'8px',fontSize:'13px'}}>{l.dose}</td><td style={{padding:'8px',fontSize:'13px'}}>{l.duree}</td><td style={{padding:'8px',fontSize:'13px'}}>{l.qte}</td></tr>)}</tbody>
+
+      {/* Médicaments */}
+      <table style={{width:'100%',borderCollapse:'collapse',marginBottom:'20px'}}>
+        <thead>
+          <tr style={{background:'#f0fdf4',borderTop:'2px solid #166534',borderBottom:'2px solid #166534'}}>
+            {['Médicament','Posologie','Durée','Qté','Remarques'].map(h=><th key={h} style={{padding:'8px 10px',textAlign:'left',fontSize:'11px',fontWeight:700,color:'#166534',textTransform:'uppercase',letterSpacing:'.04em'}}>{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {o.lignes.map((l,i)=><tr key={i} style={{borderBottom:'1px solid #f1f5f9',background:i%2===0?'white':'#fafbfc'}}>
+            <td style={{padding:'10px',fontSize:'13px',fontWeight:600}}>{l.medicament}</td>
+            <td style={{padding:'10px',fontSize:'12px',color:'#374151'}}>{l.posologie}</td>
+            <td style={{padding:'10px',fontSize:'12px',color:'#374151'}}>{l.duree}</td>
+            <td style={{padding:'10px',fontSize:'12px',fontWeight:600,color:'#166534',fontFamily:'monospace'}}>{l.qte}</td>
+            <td style={{padding:'10px',fontSize:'11px',color:'#64748b',fontStyle:'italic'}}>{l.remarques||'—'}</td>
+          </tr>)}
+        </tbody>
       </table>
-      {o.note&&<div style={{background:'#fefce8',border:'1px solid #fef08a',borderRadius:'6px',padding:'8px 12px',marginBottom:'16px',fontSize:'13px'}}>📌 {o.note}</div>}
-      <div style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid #e2e8f0',paddingTop:'16px'}}>
-        <div style={{fontSize:'12px',color:'#94a3b8'}}>Valable 30 jours</div>
-        <div style={{textAlign:'center'}}><div style={{borderBottom:'1px solid #334155',width:'200px',marginBottom:'4px',height:'30px'}}></div><div style={{fontSize:'12px',color:'#334155'}}>Vétérinaire – Signature & Cachet</div></div>
+
+      {/* Observations */}
+      {o.notes&&<div style={{padding:'12px 14px',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:'8px',marginBottom:'20px'}}>
+        <div style={{fontSize:'11px',fontWeight:700,color:'#92400e',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'.05em'}}>Observations</div>
+        <div style={{fontSize:'13px',color:'#374151'}}>{o.notes}</div>
+      </div>}
+
+      {/* Pied de page */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginTop:'32px',paddingTop:'16px',borderTop:'2px solid #e2e8f0'}}>
+        <div>
+          <div style={{fontSize:'11px',color:'#64748b',marginBottom:'4px'}}>Prescrit par</div>
+          <div style={{fontWeight:700,fontSize:'13px',color:'#166534'}}>{o.veterinaire||'Dr. Vétérinaire'}</div>
+          <div style={{marginTop:'40px',borderTop:'1px solid #cbd5e1',paddingTop:'4px',width:'180px',fontSize:'10px',color:'#94a3b8',textAlign:'center'}}>Signature & Cachet</div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{fontSize:'10px',color:'#94a3b8',lineHeight:1.6}}>
+            <div>Valable 3 mois à compter de la date de délivrance</div>
+            <div>Non remboursable · Usage vétérinaire uniquement</div>
+            <div style={{marginTop:'4px',fontStyle:'italic'}}>La Barakat · Lomé, Togo</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>;
-
-  return <div className="space-y-5">
+  };
+  return <div className="app-page space-y-5">
     {printOrd&&<OrdPrint o={printOrd}/>}
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between">
@@ -89,5 +148,4 @@ function Ordonnances({patients,meds}){
 
 // ── CHIRURGIES ───────────────────────────────────────────────
 
-
-export default Ordonnances;
+export default Ordonnances
