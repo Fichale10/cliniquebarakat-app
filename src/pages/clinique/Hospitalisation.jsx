@@ -1,16 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
-import {
-  Btn,
-  Badge,
-  PrintBtn,
-  FilterPeriode,
-  DupWarning,
-  FilterBar,
-  FilterSelect,
-  FilterBtns
-} from "../../components/ui"
+import { useState, useMemo, useEffect } from 'react';
+import { today, fmtF, findDups, getCache, setCache, newId, dbInsert, dbUpdate, dbDelete } from '../../lib/utils';
+import { Btn, Badge, Field, PrintBtn, DupWarning, AutoSuggest, FilterBar, FilterBtns, FilterSelect, FilterPeriode, useDateFilter } from '../../components/ui';
+import { usePersist } from '../../lib/usePersist';
+
 function Hospitalisation({patients}){
-  const [hospi,setHospi]=useState([
+  const [hospi,setHospi]=usePersist('hospitalisations', [
     {id:1,cage:'A1',patient:'Rex',espece:'Chien',proprio:'Dupont Jean',dateEntree:'2025-02-14',dateSortie:'',motif:'Observation post-chirurgie',statut:'Hospitalisé',soins:[
       {heure:'08:00',type:'Médicament',detail:'Kétoprofène 1ml IV',fait:true},
       {heure:'12:00',type:'Repas',detail:'Ration digestive 200g',fait:true},
@@ -22,7 +16,6 @@ function Hospitalisation({patients}){
       {heure:'14:00',type:'Médicament',detail:'Métronidazole 50mg IV',fait:false},
     ],vitaux:[]},
   ]);
-  const today = () => new Date().toISOString().split('T')[0];
   const [showForm,setShowForm]=useState(false);
   const [selHospi,setSelHospi]=useState(null);
   const [newVital,setNewVital]=useState({heure:new Date().toTimeString().slice(0,5),temp:'',fc:'',fr:'',note:''});
@@ -42,23 +35,15 @@ function Hospitalisation({patients}){
   };
   const sortir=(id)=>{setHospi(hospi.map(h=>h.id===id?{...h,statut:'Sorti',dateSortie:today()}:h));if(selHospi===id)setSelHospi(null);};
 
-  return <div className="app-page space-y-5">
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {[
-        { l: 'Cages totales', v: CAGES.length, mod: 'stat-tile--blue' },
-        { l: 'Occupées', v: occupees.length, mod: 'stat-tile--orange' },
-        { l: 'Disponibles', v: CAGES.length - occupees.length, mod: 'stat-tile--green' },
-        { l: 'Sorties ce mois', v: hospi.filter((h) => h.statut === 'Sorti').length, mod: 'stat-tile--slate' },
-      ].map((s, i) => (
-        <div key={i} className={`stat-tile ${s.mod}`}>
-          <div className="stat-tile__label">{s.l}</div>
-          <div className="stat-tile__value">{s.v}</div>
-        </div>
+  return <div className="space-y-5">
+    <div className="grid grid-cols-4 gap-4">
+      {[{l:'Cages totales',v:CAGES.length,c:'blue'},{l:'Occupées',v:occupees.length,c:'orange'},{l:'Disponibles',v:CAGES.length-occupees.length,c:'green'},{l:'Sorties ce mois',v:hospi.filter(h=>h.statut==='Sorti').length,c:'slate'}].map((s,i)=>(
+        <div key={i} className={`bg-${s.c}-50 border border-${s.c}-200 rounded-2xl p-4`}><div className={`text-xs font-bold text-${s.c}-600 mb-1`}>{s.l}</div><div className={`text-3xl font-black text-${s.c}-700`}>{s.v}</div></div>
       ))}
     </div>
 
     {/* Plan des cages */}
-    <div className="panel-surface p-5">
+    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-lg flex items-center gap-2">🏥 Plan des cages</h3>
         <Btn onClick={()=>setShowForm(!showForm)}>{showForm?'✕ Annuler':'+ Hospitaliser un patient'}</Btn>
@@ -140,4 +125,5 @@ function Hospitalisation({patients}){
 
 // ── AGENDA (codes couleurs) ──────────────────────────────────
 
-export default Hospitalisation
+
+export default Hospitalisation;
