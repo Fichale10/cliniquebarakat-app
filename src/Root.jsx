@@ -11,6 +11,7 @@ import { sb } from './lib/supabase'
 import { logAction } from './lib/roles'
 import { validateUserRegister } from './lib/validation'
 import { fetchAllProfiles } from './lib/accounts'
+import { getCache } from './lib/db'
 import App from './App'
 
 // ── Composant Login ───────────────────────────────────────────
@@ -392,7 +393,9 @@ function Root() {
       return data
     } catch (e) {
       console.warn('[Root] Erreur loadComptes:', e)
-      return []
+      const cached = getCache('comptes') || []
+      if (cached.length) setComptes(cached)
+      return cached
     }
   }
 

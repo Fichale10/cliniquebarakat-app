@@ -8,7 +8,7 @@ import {
   validateUserAccountStep1,
   validateAccountRole,
 } from '../../lib/validation'
-import { createUserAccount, updateProfile, deleteProfile } from '../../lib/accounts'
+import { createUserAccount, updateProfile, deleteProfile, mergeProfiles } from '../../lib/accounts'
 
 function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
   const pending=comptes.filter(c=>c.pending&&!c.actif);
@@ -18,20 +18,25 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
     setCache('comptes', updated)
   }
 
-  const refreshComptes = async () => {
+  const refreshComptes = async (extra = []) => {
     if (reloadComptes) {
       const data = await reloadComptes()
-      if (data?.length) setCache('comptes', data)
-      return data
+      const merged = mergeProfiles(data, comptes, extra)
+      setComptes(merged)
+      setCache('comptes', merged)
+      return merged
     }
-    return comptes
+    const merged = mergeProfiles(comptes, extra)
+    await syncComptesList(merged)
+    return merged
   }
 
   const saveProfileUpdate = async (id, updates) => {
+    let row = null
     if (navigator.onLine && sb) {
-      await updateProfile(id, updates)
+      row = await updateProfile(id, updates)
     }
-    const updated = comptes.map(c => (c.id === id ? { ...c, ...updates } : c))
+    const updated = comptes.map(c => (c.id === id ? { ...c, ...updates, ...row } : c))
     await syncComptesList(updated)
   }
 
@@ -116,7 +121,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
         return
       }
 
-      await refreshComptes()
+      await refreshComptes(result.profile ? [result.profile] : [])
       setForm({ nom: '', email: '', pw: '', role: 'utilisateur', actif: true })
       setStep(0)
       setFormErrors({})
