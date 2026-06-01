@@ -280,23 +280,39 @@ await Promise.all(tables.map(async ([t, setter]) => {
     if(!sb || !navigator.onLine) return;
 
     const KEY='lb_activity_last_seen_medicaments';
+    const POLL_MS = 60000;
+    let cancelled = false;
+    let inFlight = false;
+    let failStreak = 0;
+
     const maskOTR = (text) => {
       if(!otrMode) return text;
       return String(text || '').replace(/\d/g, '•')
     };
 
     const tick = async () => {
+      if (cancelled || inFlight) return;
+      if (document.visibilityState === 'hidden') return;
+      if (!navigator.onLine) return;
+
+      inFlight = true;
       try{
         const lastSeen = localStorage.getItem(KEY) || '';
-        const { data } = await sb.from('activity_logs')
+        let query = sb.from('activity_logs')
           .select('*')
+          .in('action', ['medicament_modified', 'medicament_added'])
           .order('created_at', { ascending: false })
           .limit(40);
 
-        const rows = (data || [])
-          .filter(e=>e && (e.action==='medicament_modified' || e.action==='medicament_added'))
-          .filter(e=>!lastSeen || String(e.created_at||'') > String(lastSeen));
+        if (lastSeen) {
+          query = query.gt('created_at', lastSeen);
+        }
 
+        const { data, error } = await query;
+        if (error) throw error;
+        failStreak = 0;
+
+        const rows = data || [];
         if(!rows.length) return;
 
         // Appliquer du plus ancien vers le plus récent
@@ -322,13 +338,38 @@ await Promise.all(tables.map(async ([t, setter]) => {
         });
 
         const maxCreatedAt = rows.reduce((acc, r)=> (String(r.created_at||'') > String(acc) ? String(r.created_at||'') : acc), lastSeen);
-        localStorage.setItem(KEY, maxCreatedAt);
-      }catch(e){}
+        if (maxCreatedAt) localStorage.setItem(KEY, maxCreatedAt);
+      }catch(e){
+        failStreak += 1;
+        if (failStreak <= 2) {
+          console.warn('[activity_logs] polling:', e?.message || e);
+        }
+      } finally {
+        inFlight = false;
+      }
     };
 
     tick();
-    const t = setInterval(tick, 30000);
-    return ()=> clearInterval(t);
+    const intervalMs = () => Math.min(POLL_MS * Math.pow(2, Math.min(failStreak, 3)), 300000);
+    let timer = null;
+    const schedule = () => {
+      timer = setTimeout(async () => {
+        await tick();
+        if (!cancelled) schedule();
+      }, intervalMs());
+    };
+    schedule();
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return ()=> {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   },[isAdmin, sb, otrMode]);
 
   const NAV = NAV_ALL.filter(n=>canAccess(user?.role, n.id));

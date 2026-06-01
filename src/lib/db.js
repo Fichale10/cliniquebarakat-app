@@ -64,6 +64,10 @@ export const dbFetch = async (sb, table) => {
 }
 
 export const dbInsert = async (sb, table, row) => {
+  if (DEPRECATED_TABLES.has(table)) {
+    console.warn('[dbInsert] Table legacy ignorée:', table)
+    return row
+  }
   const r = { ...row, id: row.id || newId(), created_at: new Date().toISOString() }
   console.log('[dbInsert]', table, JSON.stringify(r))
   if (navigator.onLine && sb) {
@@ -78,6 +82,10 @@ export const dbInsert = async (sb, table, row) => {
 }
 
 export const dbUpdate = async (sb, table, id, updates) => {
+  if (DEPRECATED_TABLES.has(table)) {
+    console.warn('[dbUpdate] Table legacy ignorée:', table)
+    return
+  }
   if (navigator.onLine && sb) {
     try { await sb.from(table).update(updates).eq('id', id); return } catch (e) { console.warn('dbUpdate', e) }
   }
@@ -85,6 +93,10 @@ export const dbUpdate = async (sb, table, id, updates) => {
 }
 
 export const dbDelete = async (sb, table, id) => {
+  if (DEPRECATED_TABLES.has(table)) {
+    console.warn('[dbDelete] Table legacy ignorée:', table)
+    return
+  }
   if (navigator.onLine && sb) {
     try { await sb.from(table).delete().eq('id', id); return } catch (e) { console.warn('dbDelete', e) }
   }
