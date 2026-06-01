@@ -121,7 +121,8 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
         return
       }
 
-      await refreshComptes(result.profile ? [result.profile] : [])
+      await new Promise(r => setTimeout(r, 800)) // attendre que Supabase propage
+      await refreshComptes()
       setForm({ nom: '', email: '', pw: '', role: 'utilisateur', actif: true })
       setStep(0)
       setFormErrors({})

@@ -131,10 +131,18 @@ export async function createUserAccount({ nom, email, pw, role, actif = true, pe
 
   if (adminSession?.access_token && adminSession?.refresh_token) {
     try {
-      await sb.auth.setSession({
+      const { error: sessionError } = await sb.auth.setSession({
         access_token: adminSession.access_token,
         refresh_token: adminSession.refresh_token,
       })
+      if (sessionError) {
+        console.warn('[accounts] Restauration session admin:', sessionError.message)
+      } else {
+        const { data: { session: restored } } = await sb.auth.getSession()
+        if (restored?.user?.id !== adminSession.user?.id) {
+          console.warn('[accounts] Session admin non restaurée après signUp')
+        }
+      }
     } catch (e) {
       console.warn('[accounts] Restauration session admin:', e)
     }

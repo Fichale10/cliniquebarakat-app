@@ -158,6 +158,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
 
 
   // ── Notifications auto-générées ──
+  const fmtF = v => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
   // ── Alertes péremption ─────────────────────────────────
   const msJ=86400000;
   const now2=Date.now();
@@ -345,6 +346,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
   const membresActifs = equipe.filter(m=>m.actif&&m.nom.trim().length>1);
   const sp={
     patients, setPatients:setSyncedPatients, clients, setClients:setSyncedClients,
+    consultations, setConsultations: setSyncedConsultations,
     meds, setMeds:setSyncedMeds, setView, equipe:membresActifs,
     setEquipe:setSyncedEquipe, clinique, isAdmin,
     comptes, setComptes:setSyncedComptes,
@@ -639,6 +641,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
           {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
           {view==='comptes'&&(isAdmin?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
           {view==='patients'&&<Patients {...sp}/>}
+          {view==='consultations' && <Consultations {...sp} />}
           {view==='dossiers'&&<Dossiers {...sp}/>}
           {view==='ordonnances'&&<Ordonnances {...sp}/>}
           {view==='chirurgies'&&<Chirurgies {...sp}/>}
@@ -667,7 +670,6 @@ await Promise.all(tables.map(async ([t, setter]) => {
           {view==='rapports'&&<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>}
           {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
           {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} user={user}/>}
-          {view==='consultations' && <Consultations {...sp} consultations={consultations} setConsultations={setSyncedConsultations} />}
         </div>
       </ScreenErrorBoundary>
     </main>
