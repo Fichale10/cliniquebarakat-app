@@ -1,45 +1,59 @@
 import { useState } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
-import { setCache, newId } from '../../lib/db'
+import { setCache } from '../../lib/db'
 import { Btn, Field, ValidationBanner } from '../../components/ui'
 import {
   validateUserAccount,
   validateUserAccountStep1,
-  validateUserPassword,
   validateAccountRole,
 } from '../../lib/validation'
+import { createUserAccount, updateProfile, deleteProfile } from '../../lib/accounts'
 
-function GestionComptes({comptes,setComptes,currentUser}){
+function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
   const pending=comptes.filter(c=>c.pending&&!c.actif);
 
-  // ── Helper : sauvegarder partout ──
-  const saveAll = async (updated, id=null, updates=null, deleteId=null) => {
-    // 1. React state
-    setComptes(updated);
-    // 2. localStorage
-    setCache('comptes', updated);
-    // 3. Supabase
-    if(navigator.onLine && sb){
-      try{
-        if(deleteId)           await sb.from('comptes').delete().eq('id', deleteId);
-        else if(id && updates) await sb.from('comptes').update(updates).eq('id', id);
-      }catch(e){ console.warn('Supabase sync error', e); }
+  const syncComptesList = async (updated) => {
+    setComptes(updated)
+    setCache('comptes', updated)
+  }
+
+  const refreshComptes = async () => {
+    if (reloadComptes) {
+      const data = await reloadComptes()
+      if (data?.length) setCache('comptes', data)
+      return data
     }
-  };
+    return comptes
+  }
+
+  const saveProfileUpdate = async (id, updates) => {
+    if (navigator.onLine && sb) {
+      await updateProfile(id, updates)
+    }
+    const updated = comptes.map(c => (c.id === id ? { ...c, ...updates } : c))
+    await syncComptesList(updated)
+  }
 
   const approuver = async (id) => {
-    const updates = {actif:true, pending:false};
-    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
-    await saveAll(updated, id, updates);
-  };
+    try {
+      await saveProfileUpdate(id, { actif: true, pending: false })
+    } catch (e) {
+      console.error('[GestionComptes] approuver:', e)
+      alert('Erreur lors de l\'approbation.')
+    }
+  }
 
   const rejeter = async (id) => {
-    const updated = comptes.filter(c=>c.id!==id);
-    setComptes(updated);
-    setCache('comptes', updated);
-    if(navigator.onLine&&sb) try{ await sb.from('comptes').delete().eq('id',id); }catch(e){}
-  };
+    if (!confirm('Rejeter cette demande d\'accès ?')) return
+    try {
+      if (navigator.onLine && sb) await deleteProfile(id)
+      await refreshComptes()
+    } catch (e) {
+      console.error('[GestionComptes] rejeter:', e)
+      alert('Erreur lors du rejet.')
+    }
+  }
 
   const [step,setStep]=useState(0);
   const [form,setForm]=useState({nom:'',email:'',pw:'',role:'utilisateur',actif:true});
@@ -48,6 +62,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
   const [editRole,setEditRole]=useState(null);
   const [formErrors,setFormErrors]=useState({});
   const [validationMessages,setValidationMessages]=useState([]);
+  const [creating,setCreating]=useState(false);
 
   const patchForm=(patch)=>{
     setForm(f=>({...f,...patch}));
@@ -72,43 +87,47 @@ function GestionComptes({comptes,setComptes,currentUser}){
   };
 
   const addCompte = async () => {
-    const checked=validateUserAccount(form);
-    if(!checked.ok){
-      setFormErrors(checked.fieldErrors);
-      setValidationMessages(checked.messages);
-      return;
+    const checked = validateUserAccount(form)
+    if (!checked.ok) {
+      setFormErrors(checked.fieldErrors)
+      setValidationMessages(checked.messages)
+      return
     }
-    const data=checked.data;
-    if(comptes.find(c=>c.email===data.email)) return alert('Cet email existe déjà');
+    const data = checked.data
+    if (comptes.find(c => c.email === data.email)) return alert('Cet email existe déjà')
 
-    const newCompte = {
-      nom: data.nom,
-      email: data.email,
-      pw: data.pw,
-      role: data.role,
-      actif: true,
-      id: newId(),
-      initials: data.nom.substring(0,2).toUpperCase(),
-      pending: false,
-      created_at: new Date().toISOString()
-    };
-
-    const updated = [...comptes, newCompte];
-
-    // 1. React state + cache
-    setComptes(updated);
-    setCache('comptes', updated);
-
-    // 2. Supabase
-    if(navigator.onLine && sb){
-      try{ await sb.from('comptes').insert(newCompte); }
-      catch(e){ console.warn('Supabase addCompte error', e); }
+    if (!navigator.onLine) {
+      return alert('Connexion requise pour créer un compte utilisateur.')
     }
 
-    setForm({nom:'',email:'',pw:'',role:'utilisateur',actif:true});
-    setStep(0);
-    setFormErrors({});setValidationMessages([]);
-  };
+    setCreating(true)
+    try {
+      const result = await createUserAccount({
+        nom: data.nom,
+        email: data.email,
+        pw: data.pw,
+        role: data.role,
+        actif: true,
+        pending: false,
+      })
+
+      if (!result.ok) {
+        alert(result.msg || 'Erreur lors de la création du compte.')
+        return
+      }
+
+      await refreshComptes()
+      setForm({ nom: '', email: '', pw: '', role: 'utilisateur', actif: true })
+      setStep(0)
+      setFormErrors({})
+      setValidationMessages([])
+    } catch (e) {
+      console.error('[GestionComptes] addCompte:', e)
+      alert('Erreur lors de la création. Vérifiez la console.')
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const cancelForm=()=>{
     setStep(0);
@@ -117,40 +136,59 @@ function GestionComptes({comptes,setComptes,currentUser}){
   };
 
   const toggleActif = async (id) => {
-    const compte = comptes.find(c=>c.id===id);
-    if(!compte) return;
-    const updates = {actif: !compte.actif};
-    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
-    await saveAll(updated, id, updates);
-  };
+    const compte = comptes.find(c => c.id === id)
+    if (!compte) return
+    try {
+      await saveProfileUpdate(id, { actif: !compte.actif })
+    } catch (e) {
+      console.error('[GestionComptes] toggleActif:', e)
+      alert('Erreur lors de la mise à jour.')
+    }
+  }
 
   const deleteCompte = async (id) => {
-    if(comptes.find(c=>c.id===id)?.email===currentUser?.email)
-      return alert('Impossible de supprimer votre propre compte');
-    if(!confirm('Supprimer ce compte définitivement ?')) return;
-    const updated = comptes.filter(c=>c.id!==id);
-    setComptes(updated);
-    setCache('comptes', updated);
-    if(navigator.onLine&&sb) try{ await sb.from('comptes').delete().eq('id',id); }catch(e){}
-  };
+    if (comptes.find(c => c.id === id)?.email === currentUser?.email) {
+      return alert('Impossible de supprimer votre propre compte')
+    }
+    if (!confirm('Supprimer ce compte définitivement ?')) return
+    try {
+      if (navigator.onLine && sb) await deleteProfile(id)
+      await refreshComptes()
+    } catch (e) {
+      console.error('[GestionComptes] deleteCompte:', e)
+      alert('Erreur lors de la suppression.')
+    }
+  }
 
   const savePw = async (id) => {
-    const checked=validateUserPassword(editPw);
-    if(!checked.ok) return alert(checked.messages.join('\n'));
-    const updates = {pw: checked.data};
-    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
-    await saveAll(updated, id, updates);
-    setEditId(null); setEditPw('');
-  };
+    const compte = comptes.find(c => c.id === id)
+    if (!compte?.email) return
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(compte.email, {
+        redirectTo: window.location.origin,
+      })
+      if (error) throw error
+      alert(`Un lien de réinitialisation a été envoyé à ${compte.email}`)
+      setEditId(null)
+      setEditPw('')
+    } catch (e) {
+      console.error('[GestionComptes] savePw:', e)
+      alert('Impossible d\'envoyer le lien de réinitialisation.')
+    }
+  }
 
   const saveRole = async (id) => {
-    const checked=validateAccountRole(editRole);
-    if(!checked.ok) return alert(checked.messages.join('\n'));
-    const updates = {role: checked.data};
-    const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
-    await saveAll(updated, id, updates);
-    setEditRole(null); setEditId(null);
-  };
+    const checked = validateAccountRole(editRole)
+    if (!checked.ok) return alert(checked.messages.join('\n'))
+    try {
+      await saveProfileUpdate(id, { role: checked.data })
+      setEditRole(null)
+      setEditId(null)
+    } catch (e) {
+      console.error('[GestionComptes] saveRole:', e)
+      alert('Erreur lors du changement de rôle.')
+    }
+  }
 
   return <div className="app-page max-w-3xl space-y-5">
 
@@ -241,7 +279,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={()=>setStep(1)} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">← Retour</button>
-          <Btn onClick={addCompte}>✓ Créer le compte</Btn>
+          <Btn onClick={addCompte} disabled={creating}>{creating ? '⏳ Création…' : '✓ Créer le compte'}</Btn>
           <button onClick={cancelForm} className="px-4 py-2 text-sm text-red-400 hover:text-red-600">Annuler</button>
         </div>
       </div>}
@@ -316,7 +354,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
               <div className="flex gap-2">
                 <input type="password" className="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-green-400 outline-none"
                   placeholder="Nouveau mot de passe (min. 6 car.)" value={editPw} onChange={e=>setEditPw(e.target.value)}/>
-                <Btn onClick={()=>savePw(c.id)} sm>✓</Btn>
+                <Btn onClick={()=>savePw(c.id)} sm title="Envoyer un lien de réinitialisation par email">✉️ Envoyer lien</Btn>
                 <button onClick={()=>setEditId(null)} className="text-slate-400 px-2">✕</button>
               </div>
             </div>}

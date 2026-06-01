@@ -57,7 +57,7 @@ class ScreenErrorBoundary extends Component {
   }
 }
 
-function App({ logged, setLogged, user, setUser, comptesRoot, setComptesRoot, onLogout }) {
+function App({ logged, setLogged, user, setUser, comptesRoot, setComptesRoot, onLogout, reloadComptes }) {
   const [view,setView]=useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -637,7 +637,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
           {view==='dashboard'&&<Dashboard {...sp}/>}
           {view==='monprofil'&&<MonProfil user={user} comptes={comptes} setComptes={setSyncedComptes}/>}
           {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
-          {view==='comptes'&&(isAdmin?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user}/>:<Interdit/>)}
+          {view==='comptes'&&(isAdmin?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
           {view==='patients'&&<Patients {...sp}/>}
           {view==='dossiers'&&<Dossiers {...sp}/>}
           {view==='ordonnances'&&<Ordonnances {...sp}/>}

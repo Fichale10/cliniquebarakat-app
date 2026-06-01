@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { sb } from './lib/supabase'
 import { logAction } from './lib/roles'
 import { validateUserRegister } from './lib/validation'
+import { fetchAllProfiles } from './lib/accounts'
 import App from './App'
 
 // ── Composant Login ───────────────────────────────────────────
@@ -373,6 +374,9 @@ function Root() {
         role:     profile.role,
       }
       setUser(u)
+      if (u.role === 'admin' || u.role === 'admin2') {
+        await loadComptes()
+      }
       return u
     } catch (e) {
       console.warn('[Root] Erreur loadProfile:', e)
@@ -383,10 +387,12 @@ function Root() {
   // ── Charger tous les comptes (admin seulement) ────────────
   const loadComptes = async () => {
     try {
-      const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false })
-      if (data) setComptes(data)
+      const data = await fetchAllProfiles()
+      setComptes(data)
+      return data
     } catch (e) {
       console.warn('[Root] Erreur loadComptes:', e)
+      return []
     }
   }
 
@@ -406,11 +412,6 @@ function Root() {
 
       if (!profile) return { ok: false, msg: 'Profil introuvable. Contactez l\'administrateur.' }
       if (profile.blocked) return { ok: false, msg: 'Votre compte est en attente de validation par l\'administrateur.' }
-
-      // Charger les comptes si admin
-      if (profile.role === 'admin' || profile.role === 'admin2') {
-        await loadComptes()
-      }
 
       logAction(sb, profile, 'connexion', 'Connexion réussie')
       return { ok: true }
