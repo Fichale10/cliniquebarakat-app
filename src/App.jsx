@@ -87,8 +87,16 @@ useEffect(() => {
   const [luNotifs,setLuNotifs]=useState([]);
   const [activityNotifs,setActivityNotifs]=useState([]);
   const [online,setOnline]=useState(navigator.onLine);
+  const [consultations, setConsultations] = useState(() => getCache('consultations') || [])
   const comptes    = comptesRoot    || [];
   const setComptes = setComptesRoot || (() => {});
+  const syncedSet = (setter, table) => (data) => { setter(data); setCache(table, data) }
+  const setSyncedPatients  = syncedSet(setPatients,  'patients')
+  const setSyncedClients   = syncedSet(setClients,   'clients')
+  const setSyncedMeds      = syncedSet(setMeds,      'medicaments')
+  const setSyncedEquipe    = syncedSet(setEquipe,    'equipe')
+  const setSyncedComptes   = syncedSet(setComptes,   'comptes')
+  const setSyncedConsultations = syncedSet(setConsultations, 'consultations')
   // appLoading now from Root props
   const [syncPending,setSyncPending]=useState(()=>getQ().length);
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
@@ -100,18 +108,32 @@ useEffect(() => {
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
+  const normalizeMed = (row) => {
+  if (!row) return row
+  const out = { ...row }
+  if ('prix_achat' in out) { out.prixAchat = out.prix_achat; delete out.prix_achat }
+  if ('prix_vente' in out) { out.prixVente = out.prix_vente; delete out.prix_vente }
+  if ('dose_mg_kg' in out) { out.doseMgKg  = out.dose_mg_kg;  delete out.dose_mg_kg }
+  return out
+}
 
   // ── Load all data from Supabase ────────────────────────
   const loadAll = async () => {
     try {
       const tables = [
-        ['patients',setPatients],['clients',setClients],['medicaments',setMeds],
-        ['equipe',setEquipe],['comptes',setComptes],
-      ];
-      await Promise.all(tables.map(async ([t,setter])=>{
-        const d = await dbFetch(sb, t);
-        if(d&&d.length>0) setter(d);
-      }));
+  ['patients',    setPatients],
+  ['consultations', setConsultations],
+  ['clients',     setClients],
+  ['medicaments', setMeds],
+  ['equipe',      setEquipe],
+  // 'comptes' retiré — géré par Root via profiles
+]
+await Promise.all(tables.map(async ([t, setter]) => {
+  const d = await dbFetch(sb, t)
+  if (d && d.length > 0) {
+    setter(t === 'medicaments' ? d.map(normalizeMed) : d)
+  }
+}));
       // Load clinique settings
       const cliniqueData = await dbFetch(sb, 'clinique_settings');
       if(cliniqueData&&cliniqueData.length>0){
@@ -131,17 +153,6 @@ useEffect(() => {
     window.addEventListener('offline', onOffline);
     return ()=>{ window.removeEventListener('online',onOnline); window.removeEventListener('offline',onOffline); };
   },[]);
-
-  // ── Enhanced setters that sync cache ──────────────────
-  const syncedSet = (setter, table) => (data) => {
-    setter(data);
-    setCache(table, data);
-  };
-  const setSyncedPatients = syncedSet(setPatients,'patients');
-  const setSyncedClients  = syncedSet(setClients,'clients');
-  const setSyncedMeds     = syncedSet(setMeds,'medicaments');
-  const setSyncedEquipe   = syncedSet(setEquipe,'equipe');
-  const setSyncedComptes  = syncedSet(setComptes,'comptes');
 
   // Auth handled by Root component
 
@@ -628,7 +639,6 @@ useEffect(() => {
           {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
           {view==='comptes'&&(isAdmin?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user}/>:<Interdit/>)}
           {view==='patients'&&<Patients {...sp}/>}
-          {view==='consultations'&&<Consultations {...sp}/>}
           {view==='dossiers'&&<Dossiers {...sp}/>}
           {view==='ordonnances'&&<Ordonnances {...sp}/>}
           {view==='chirurgies'&&<Chirurgies {...sp}/>}
@@ -645,18 +655,19 @@ useEffect(() => {
           {view==='medicaments'&&<Medicaments {...sp}/>}
           {view==='commandes'&&<Commandes meds={meds} setMeds={setSyncedMeds}/>}
           {view==='inventaire'&&<Inventaire {...sp}/>}
-          {view==='ventes'&&<Ventes meds={meds} setMeds={setSyncedMeds} clients={clients} ventesHist={ventesHist} setVentesHist={setVentesHist} otrMode={otrMode} tva={tva}/>}
+          {view==='ventes'&&<Ventes {...sp}/>}
           {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode}/>:<Interdit/>)}
           {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setDepsHist}/>:<Interdit/>)}
           {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}
           {view==='journal'&&<JournalActivite user={user}/>}
           {view==='lots'&&<GestionLots meds={meds} ventesHist={ventesHist} user={user}/>}
-          {view==='caisse'&&<Caisse meds={meds} setMeds={setSyncedMeds} clients={clients} ventesHist={ventesHist} setVentesHist={setVentesHist} otrMode={otrMode} tva={tva} user={user}/>}
+          {view==='caisse'&&<Caisse {...sp}/>}
           {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user}/>}
           {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
           {view==='rapports'&&<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>}
           {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
           {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} user={user}/>}
+          {view==='consultations' && <Consultations {...sp} consultations={consultations} setConsultations={setSyncedConsultations} />}
         </div>
       </ScreenErrorBoundary>
     </main>

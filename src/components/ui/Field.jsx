@@ -1,6 +1,6 @@
-function Field({ label, value, onChange, type = 'text', placeholder = '', options, rows, className = '' }) {
+function Field({ label, value, onChange, type = 'text', placeholder = '', options, rows, className = '', error }) {
   const inp = {
-    border: '1.5px solid var(--app-border)',
+    border: error ? '1.5px solid #f87171' : '1.5px solid var(--app-border)',
     borderRadius: '9px',
     padding: '8px 11px',
     fontSize: '13px',
@@ -44,6 +44,9 @@ function Field({ label, value, onChange, type = 'text', placeholder = '', option
         <textarea rows={rows} style={{ ...inp, resize: 'vertical' }} placeholder={placeholder} value={value} onChange={onChange} onFocus={focus} onBlur={blur} />
       ) : (
         <input type={type} style={inp} placeholder={placeholder} value={value} onChange={onChange} onFocus={focus} onBlur={blur} />
+      )}
+      {error && (
+        <p style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px', fontWeight: 600 }}>{error}</p>
       )}
     </div>
   )

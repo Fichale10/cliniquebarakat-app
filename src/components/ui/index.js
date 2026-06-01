@@ -1,6 +1,7 @@
 export { default as Btn } from './Btn'
 export { default as Badge } from './Badge'
 export { default as Field } from './Field'
+export { default as ValidationBanner } from './ValidationBanner'
 export { default as DupWarning } from './DupWarning'
 export { default as AutoSuggest } from './AutoSuggest'
 export { default as FilterBtns } from './FilterBtns'

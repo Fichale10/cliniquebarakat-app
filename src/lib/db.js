@@ -1,8 +1,7 @@
-// ─── Cache localStorage ───────────────────────────────────────
+// src/lib/db.js
 export const getCache = (t) => { try { return JSON.parse(localStorage.getItem('lb_' + t) || 'null') } catch { return null } }
 export const setCache = (t, d) => { try { localStorage.setItem('lb_' + t, JSON.stringify(d)) } catch {} }
 
-// ─── Offline queue ─────────────────────────────────────────────
 const Q_KEY = 'lb_offlineQueue'
 export const getQ = () => { try { return JSON.parse(localStorage.getItem(Q_KEY) || '[]') } catch { return [] } }
 export const saveQ = (q) => localStorage.setItem(Q_KEY, JSON.stringify(q))
@@ -30,20 +29,12 @@ export const newId = () => {
 export const dbFetch = async (sb, table) => {
   try {
     if (!navigator.onLine || !sb) return getCache(table) || []
-    // Certaines tables (ex: `clinique_settings`) peuvent ne pas avoir `created_at`.
-    // Pour éviter une requête 400, on saute le tri pour ces tables.
-    const needsCreatedAtOrder = table !== 'clinique_settings'
-
-    // On essaye d'abord avec le tri (si applicable), puis on retente sans `order` si la requête est invalide.
-    let { data, error } = needsCreatedAtOrder
+    const needsOrder = table !== 'clinique_settings'
+    let { data, error } = needsOrder
       ? await sb.from(table).select('*').order('created_at', { ascending: false })
       : await sb.from(table).select('*')
-    if (error) {
-      const status = error?.status
-      if (status === 400) {
-        // Souvent, `created_at` manque ou l'ordre n'est pas supporté pour la table.
-        ;({ data, error } = await sb.from(table).select('*'))
-      }
+    if (error?.status === 400) {
+      ;({ data, error } = await sb.from(table).select('*'))
     }
     if (!error && data) { setCache(table, data); return data }
   } catch (e) { console.warn('dbFetch error', table, e) }
@@ -52,9 +43,11 @@ export const dbFetch = async (sb, table) => {
 
 export const dbInsert = async (sb, table, row) => {
   const r = { ...row, id: row.id || newId(), created_at: new Date().toISOString() }
+  console.log('[dbInsert]', table, JSON.stringify(r))
   if (navigator.onLine && sb) {
     try {
       const { data, error } = await sb.from(table).insert(r).select().single()
+      console.log('[dbInsert] result:', data, 'error:', error)
       if (!error && data) return data
     } catch (e) { console.warn('dbInsert error', table, e) }
   }

@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
 import { setCache, newId } from '../../lib/db'
-import { Btn, Field } from '../../components/ui'
+import { Btn, Field, ValidationBanner } from '../../components/ui'
+import {
+  validateUserAccount,
+  validateUserAccountStep1,
+  validateUserPassword,
+  validateAccountRole,
+} from '../../lib/validation'
 
 function GestionComptes({comptes,setComptes,currentUser}){
   const pending=comptes.filter(c=>c.pending&&!c.actif);
@@ -40,25 +46,49 @@ function GestionComptes({comptes,setComptes,currentUser}){
   const [editId,setEditId]=useState(null);
   const [editPw,setEditPw]=useState('');
   const [editRole,setEditRole]=useState(null);
+  const [formErrors,setFormErrors]=useState({});
+  const [validationMessages,setValidationMessages]=useState([]);
+
+  const patchForm=(patch)=>{
+    setForm(f=>({...f,...patch}));
+    const keys=Object.keys(patch);
+    setFormErrors(prev=>{const next={...prev};keys.forEach(k=>delete next[k]);return next;});
+    if(validationMessages.length)setValidationMessages([]);
+  };
 
   const nextStep=()=>{
     if(step===1){
-      if(!form.nom.trim())return alert('Le nom est requis');
-      const slug=form.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'.');
-      setForm(f=>({...f, email:f.email||`${slug}@labarakat.tg`}));
+      const checked=validateUserAccountStep1(form);
+      if(!checked.ok){
+        setFormErrors(checked.fieldErrors);
+        setValidationMessages(checked.messages);
+        return;
+      }
+      const slug=checked.data.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'.');
+      setForm(f=>({...f,nom:checked.data.nom,email:f.email||`${slug}@labarakat.tg`}));
+      setFormErrors({});setValidationMessages([]);
       setStep(2);
     }
   };
 
   const addCompte = async () => {
-    if(!form.nom||!form.email||!form.pw) return alert('Tous les champs sont requis');
-    if(comptes.find(c=>c.email===form.email)) return alert('Cet email existe déjà');
+    const checked=validateUserAccount(form);
+    if(!checked.ok){
+      setFormErrors(checked.fieldErrors);
+      setValidationMessages(checked.messages);
+      return;
+    }
+    const data=checked.data;
+    if(comptes.find(c=>c.email===data.email)) return alert('Cet email existe déjà');
 
     const newCompte = {
-      ...form,
-      id: newId(),                                        // UUID propre
-      initials: form.nom.substring(0,2).toUpperCase(),
+      nom: data.nom,
+      email: data.email,
+      pw: data.pw,
+      role: data.role,
       actif: true,
+      id: newId(),
+      initials: data.nom.substring(0,2).toUpperCase(),
       pending: false,
       created_at: new Date().toISOString()
     };
@@ -77,9 +107,14 @@ function GestionComptes({comptes,setComptes,currentUser}){
 
     setForm({nom:'',email:'',pw:'',role:'utilisateur',actif:true});
     setStep(0);
+    setFormErrors({});setValidationMessages([]);
   };
 
-  const cancelForm=()=>{setStep(0);setForm({nom:'',email:'',pw:'',role:'utilisateur',actif:true});};
+  const cancelForm=()=>{
+    setStep(0);
+    setForm({nom:'',email:'',pw:'',role:'utilisateur',actif:true});
+    setFormErrors({});setValidationMessages([]);
+  };
 
   const toggleActif = async (id) => {
     const compte = comptes.find(c=>c.id===id);
@@ -100,15 +135,18 @@ function GestionComptes({comptes,setComptes,currentUser}){
   };
 
   const savePw = async (id) => {
-    if(!editPw||editPw.length<4) return alert('Minimum 4 caractères');
-    const updates = {pw: editPw};
+    const checked=validateUserPassword(editPw);
+    if(!checked.ok) return alert(checked.messages.join('\n'));
+    const updates = {pw: checked.data};
     const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
     await saveAll(updated, id, updates);
     setEditId(null); setEditPw('');
   };
 
   const saveRole = async (id) => {
-    const updates = {role: editRole};
+    const checked=validateAccountRole(editRole);
+    if(!checked.ok) return alert(checked.messages.join('\n'));
+    const updates = {role: checked.data};
     const updated = comptes.map(c=>c.id===id?{...c,...updates}:c);
     await saveAll(updated, id, updates);
     setEditRole(null); setEditId(null);
@@ -160,7 +198,8 @@ function GestionComptes({comptes,setComptes,currentUser}){
           <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-black text-sm">1</div>
           <div><p className="font-bold text-green-800">Qui est cet utilisateur ?</p><p className="text-xs text-green-600">Commencez par renseigner le nom complet</p></div>
         </div>
-        <Field label="Nom complet *" value={form.nom} onChange={e=>setForm({...form,nom:e.target.value})} placeholder="Ex: Dr. Kofi Mensah"/>
+        <ValidationBanner messages={validationMessages} onDismiss={()=>setValidationMessages([])} />
+        <Field label="Nom complet *" value={form.nom} onChange={e=>patchForm({nom:e.target.value})} error={formErrors.nom} placeholder="Ex: Dr. Kofi Mensah"/>
         <div className="flex gap-2 mt-4">
           <Btn onClick={nextStep}>Suivant →</Btn>
           <button onClick={cancelForm} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">Annuler</button>
@@ -177,17 +216,17 @@ function GestionComptes({comptes,setComptes,currentUser}){
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3">
-          <Field label="Email *" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} type="email" placeholder="email@labarakat.tg"/>
-          <Field label="Mot de passe *" value={form.pw} onChange={e=>setForm({...form,pw:e.target.value})} type="password" placeholder="Minimum 4 caractères"/>
+          <Field label="Email *" value={form.email} onChange={e=>patchForm({email:e.target.value})} error={formErrors.email} type="email" placeholder="email@labarakat.tg"/>
+          <Field label="Mot de passe *" value={form.pw} onChange={e=>patchForm({pw:e.target.value})} error={formErrors.pw} type="password" placeholder="Minimum 6 caractères"/>
           <div>
             <label className="text-xs font-bold text-slate-600 mb-2 block">Rôle *</label>
             <div className="grid grid-cols-2 gap-3">
               {[
                 {r:'admin',icon:'👑',label:'Administrateur',desc:'Accès complet : tout le système',color:'amber'},
-                {r:'admin_secondaire',icon:'🛡️',label:'Admin secondaire',desc:'Accès complet sauf gestion des comptes',color:'purple'},
+                {r:'admin2',icon:'🛡️',label:'Admin secondaire',desc:'Accès complet sauf gestion des comptes',color:'purple'},
                 {r:'utilisateur',icon:'👤',label:'Utilisateur',desc:'Accès clinique : patients, RDV, etc.',color:'blue'}
               ].map(opt=>(
-                <div key={opt.r} onClick={()=>setForm({...form,role:opt.r})}
+                <div key={opt.r} onClick={()=>patchForm({role:opt.r})}
                   className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${form.role===opt.r?(opt.color==='amber'?'border-amber-400 bg-amber-50':'border-blue-400 bg-blue-50'):'border-slate-200 hover:border-slate-300 bg-[var(--app-surface)]'}`}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xl">{opt.icon}</span>
@@ -257,7 +296,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {[
                   {r:'admin',icon:'👑',label:'Administrateur'},
-                  {r:'admin_secondaire',icon:'🛡️',label:'Admin secondaire'},
+                  {r:'admin2',icon:'🛡️',label:'Admin secondaire'},
                   {r:'utilisateur',icon:'👤',label:'Utilisateur'}
                 ].map(opt=>(
                   <div key={opt.r} onClick={()=>setEditRole(opt.r)} className={`cursor-pointer p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${editRole===opt.r?'border-amber-400 bg-amber-100':'border-slate-200 bg-white'}`}>
@@ -276,7 +315,7 @@ function GestionComptes({comptes,setComptes,currentUser}){
               <p className="text-sm font-bold text-slate-700 mb-2">Nouveau mot de passe pour {c.nom} :</p>
               <div className="flex gap-2">
                 <input type="password" className="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-green-400 outline-none"
-                  placeholder="Nouveau mot de passe (min. 4 car.)" value={editPw} onChange={e=>setEditPw(e.target.value)}/>
+                  placeholder="Nouveau mot de passe (min. 6 car.)" value={editPw} onChange={e=>setEditPw(e.target.value)}/>
                 <Btn onClick={()=>savePw(c.id)} sm>✓</Btn>
                 <button onClick={()=>setEditId(null)} className="text-slate-400 px-2">✕</button>
               </div>
