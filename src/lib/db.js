@@ -3,18 +3,40 @@ export const getCache = (t) => { try { return JSON.parse(localStorage.getItem('l
 export const setCache = (t, d) => { try { localStorage.setItem('lb_' + t, JSON.stringify(d)) } catch {} }
 
 const Q_KEY = 'lb_offlineQueue'
+/** Tables legacy — plus synchronisées (auth via profiles + Supabase Auth) */
+const DEPRECATED_TABLES = new Set(['comptes'])
+
 export const getQ = () => { try { return JSON.parse(localStorage.getItem(Q_KEY) || '[]') } catch { return [] } }
 export const saveQ = (q) => localStorage.setItem(Q_KEY, JSON.stringify(q))
 export const enqueue = (op) => { const q = getQ(); q.push({ ...op, ts: Date.now() }); saveQ(q) }
 
+/** Retire les opérations obsolètes (ex. ancienne table comptes) de la file offline */
+export const purgeDeprecatedQueueOps = () => {
+  const q = getQ()
+  const kept = q.filter((op) => !DEPRECATED_TABLES.has(op.table))
+  if (kept.length !== q.length) {
+    saveQ(kept)
+    console.info('[sync] Opérations legacy supprimées de la file offline (table comptes).')
+  }
+  return q.length - kept.length
+}
+
 export const syncQueue = async (sb, onProgress) => {
+  purgeDeprecatedQueueOps()
   const q = getQ(); if (!q.length) return 0
   const failed = []
   for (const op of q) {
+    if (DEPRECATED_TABLES.has(op.table)) continue
     try {
-      if (op.type === 'insert') await sb.from(op.table).insert(op.row)
-      else if (op.type === 'update') await sb.from(op.table).update(op.updates).eq('id', op.id)
-      else if (op.type === 'delete') await sb.from(op.table).delete().eq('id', op.id)
+      let error
+      if (op.type === 'insert') {
+        ;({ error } = await sb.from(op.table).insert(op.row))
+      } else if (op.type === 'update') {
+        ;({ error } = await sb.from(op.table).update(op.updates).eq('id', op.id))
+      } else if (op.type === 'delete') {
+        ;({ error } = await sb.from(op.table).delete().eq('id', op.id))
+      }
+      if (error) failed.push(op)
     } catch { failed.push(op) }
   }
   saveQ(failed)

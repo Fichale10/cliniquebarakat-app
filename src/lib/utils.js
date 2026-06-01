@@ -95,7 +95,8 @@ export const TABLE = {
   chirurgies: 'chirurgies', hospitalisations: 'hospitalisations',
   rdvs: 'rdvs', taches: 'taches', factures: 'factures',
   depenses: 'depenses', commandes: 'commandes',
-  fournisseurs: 'fournisseurs', equipe: 'equipe', comptes: 'comptes',
+  fournisseurs: 'fournisseurs', equipe: 'equipe',
+  // comptes → profiles (Supabase Auth)
 };
 
 // ── Supabase DB helpers (exportés pour usage dans les pages) ─

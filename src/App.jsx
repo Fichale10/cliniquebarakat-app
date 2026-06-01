@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, Component } from 'react'
-import { sb, getCache, setCache, syncQueue, getQ, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, INIT_PATIENTS, INIT_CLIENTS, INIT_MEDS, DEFAULT_TEAM, COMPTES_DEFAULT, NAV_ALL, TABLE } from './lib/globals'
+import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, INIT_PATIENTS, INIT_CLIENTS, INIT_MEDS, DEFAULT_TEAM, COMPTES_DEFAULT, NAV_ALL, TABLE } from './lib/globals'
 
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
@@ -146,6 +146,8 @@ await Promise.all(tables.map(async ([t, setter]) => {
   };
 
   useEffect(()=>{
+    purgeDeprecatedQueueOps();
+    setSyncPending(getQ().length);
     loadAll();
     const onOnline  = ()=>{ setOnline(true);  syncQueue(sb, n=>setSyncPending(n)).then(()=>{ loadAll(); setSyncPending(getQ().length); }); };
     const onOffline = ()=>{ setOnline(false); setSyncPending(getQ().length); };
@@ -637,7 +639,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
       <ScreenErrorBoundary key={view}>
         <div className="app-main-scroll section-anim flex-1 overflow-y-auto p-4 sm:p-6">
           {view==='dashboard'&&<Dashboard {...sp}/>}
-          {view==='monprofil'&&<MonProfil user={user} comptes={comptes} setComptes={setSyncedComptes}/>}
+          {view==='monprofil'&&<MonProfil user={user}/>}
           {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
           {view==='comptes'&&(isAdmin?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
           {view==='patients'&&<Patients {...sp}/>}

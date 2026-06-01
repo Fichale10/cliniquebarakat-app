@@ -5,7 +5,7 @@ export { sb } from './supabase'
 export { 
   getCache, setCache, 
   dbFetch, dbInsert, dbUpdate, dbDelete,
-  newId, syncQueue, getQ, saveQ, enqueue
+  newId, syncQueue, getQ, saveQ, enqueue, purgeDeprecatedQueueOps
 } from './db'
 export { logAction, canAccess, ROLES, ROLE_ACCESS } from './roles'
 export { 
