@@ -1,9 +1,9 @@
 import { sb } from './supabase'
 import { getCache, setCache } from './db'
 
+const CACHE_KEY = 'comptes'
 const delay = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/** Fusionne plusieurs listes de profils (priorité aux entrées les plus récentes) */
 export function mergeProfiles(...lists) {
   const map = new Map()
   for (const list of lists) {
@@ -54,15 +54,12 @@ async function saveProfileRow(userId, fields) {
     .select()
     .single()
 
-  if (upsertError) {
-    throw upsertError
-  }
+  if (upsertError) throw upsertError
   return upserted
 }
 
-/** Liste tous les profils — fusionne serveur + cache local */
 export async function fetchAllProfiles() {
-  const cached = getCache('comptes') || []
+  const cached = getCache(CACHE_KEY) || []
 
   const { data, error } = await sb
     .from('profiles')
@@ -72,28 +69,21 @@ export async function fetchAllProfiles() {
   if (error) {
     console.warn('[accounts] fetchAllProfiles:', error.message)
     const merged = mergeProfiles(cached)
-    setCache('comptes', merged)
+    setCache(CACHE_KEY, merged)
     return merged
   }
 
   const server = data || []
   const merged = mergeProfiles(server, cached)
-  setCache('comptes', merged)
+  setCache(CACHE_KEY, merged)
 
   if (server.length < cached.length) {
-    console.warn(
-      '[accounts] Le serveur renvoie moins de profils que le cache local.',
-      'Exécutez supabase/profiles_policies.sql dans Supabase si la liste est incomplète.',
-    )
+    console.warn('[accounts] Le serveur renvoie moins de profils que le cache local.')
   }
 
   return merged
 }
 
-/**
- * Crée un utilisateur Auth + profil (admin).
- * Restaure la session admin après signUp.
- */
 export async function createUserAccount({ nom, email, pw, role, actif = true, pending = false }) {
   const { data: { session: adminSession } } = await sb.auth.getSession()
 
@@ -115,7 +105,7 @@ export async function createUserAccount({ nom, email, pw, role, actif = true, pe
 
   const userId = data.user?.id
   if (!userId) {
-    return { ok: false, msg: 'Compte créé mais identifiant introuvable (vérifiez la confirmation email Supabase).' }
+    return { ok: false, msg: 'Compte créé mais identifiant introuvable.' }
   }
 
   const fields = { nom, role, actif, pending, email }
@@ -129,28 +119,22 @@ export async function createUserAccount({ nom, email, pw, role, actif = true, pe
     profile = profileFromForm({ userId, ...fields })
   }
 
+  // Restaurer la session admin après signUp
   if (adminSession?.access_token && adminSession?.refresh_token) {
     try {
       const { error: sessionError } = await sb.auth.setSession({
         access_token: adminSession.access_token,
         refresh_token: adminSession.refresh_token,
       })
-      if (sessionError) {
-        console.warn('[accounts] Restauration session admin:', sessionError.message)
-      } else {
-        const { data: { session: restored } } = await sb.auth.getSession()
-        if (restored?.user?.id !== adminSession.user?.id) {
-          console.warn('[accounts] Session admin non restaurée après signUp')
-        }
-      }
+      if (sessionError) console.warn('[accounts] Restauration session admin:', sessionError.message)
     } catch (e) {
       console.warn('[accounts] Restauration session admin:', e)
     }
   }
 
-  const cached = getCache('comptes') || []
+  const cached = getCache(CACHE_KEY) || []
   const merged = mergeProfiles(cached, [profile])
-  setCache('comptes', merged)
+  setCache(CACHE_KEY, merged)
 
   return { ok: true, userId, profile }
 }
@@ -164,6 +148,6 @@ export async function updateProfile(id, updates) {
 export async function deleteProfile(id) {
   const { error } = await sb.from('profiles').delete().eq('id', id)
   if (error) throw error
-  const cached = (getCache('comptes') || []).filter((p) => p.id !== id)
-  setCache('comptes', cached)
+  const cached = (getCache(CACHE_KEY) || []).filter((p) => p.id !== id)
+  setCache(CACHE_KEY, cached)
 }
