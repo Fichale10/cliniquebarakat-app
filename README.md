@@ -18,12 +18,31 @@ npm run build
 npm run preview
 ```
 
-## 🌐 Déploiement sur Cloudflare Pages
+## 🌐 Déploiement Cloudflare
 
-1. Faire `npm run build`
-2. Aller sur Cloudflare Pages → Create application → Upload your static files
-3. **Uploader le dossier `dist/`** (pas `index.html` tout seul)
-4. C'est en ligne !
+### Option A — Pages (recommandé pour ce projet)
+
+1. **Workers & Pages** → **Create** → **Pages** → Connecter le repo Git
+2. **Build command** : `npm run build`
+3. **Build output directory** : `dist`
+4. **Deploy command** : laisser **vide** (ne pas mettre `npx wrangler deploy`)
+5. Push sur `main` → déploiement automatique
+
+### Option B — Worker Git (config actuelle du dashboard)
+
+Le fichier `wrangler.toml` à la racine publie le dossier `dist/` après le build.
+
+1. **Build command** : `npm run build`
+2. **Deploy command** : `npx wrangler deploy`
+3. **Version command** : laisser **vide** (supprimer `npx wrangler versions upload`)
+4. Push sur `main`
+
+### Upload manuel
+
+1. `npm run build`
+2. Uploader tout le dossier **`dist/`** (pas seulement `index.html`)
+
+Après déploiement, vérifier dans l’onglet Network un nouveau `index-*.js` (pas un ancien hash en cache).
 
 ## 📁 Structure du projet
 
