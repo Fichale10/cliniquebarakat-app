@@ -16,7 +16,16 @@ function JournalActivite({user}){
     // Charger depuis Supabase
     if(navigator.onLine&&sb){
       sb.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(200)
-        .then(({data})=>{ if(data&&data.length) setLogs(data); })
+        .then(({ data }) => {
+          if (!data?.length) return
+          const normalized = data.map((l) => ({
+            ...l,
+            user_email: l.user_email ?? l.email ?? '',
+            user_name: l.user_name ?? l.nom ?? l.name ?? '',
+            user_role: l.user_role ?? l.role ?? '',
+          }))
+          setLogs(normalized)
+        })
         .catch(()=>{});
     }
   },[]);

@@ -1,15 +1,22 @@
--- Journal d'activité (aligné sur src/lib/roles.js → logAction)
--- Exécuter dans Supabase → SQL Editor si POST /activity_logs renvoie 400
+-- Migration activity_logs — aligner la table existante sur l'app (src/lib/roles.js)
+-- Erreur typique : Could not find the 'user_email' column in the schema cache
+--
+-- 1) Exécuter tout ce fichier dans Supabase → SQL Editor
+-- 2) Table Editor → activity_logs → colonnes visibles : user_email, user_name, user_role, action, details, created_at
+-- 3) Settings → API → Reload schema (ou attendre ~1 min)
 
-CREATE TABLE IF NOT EXISTS public.activity_logs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_email text NOT NULL DEFAULT '',
-  user_name text NOT NULL DEFAULT '',
-  user_role text NOT NULL DEFAULT '',
-  action text NOT NULL,
-  details text NOT NULL DEFAULT '',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+-- Colonnes utilisées par l'app (ajout si manquantes)
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS user_email text NOT NULL DEFAULT '';
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS user_name text NOT NULL DEFAULT '';
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS user_role text NOT NULL DEFAULT '';
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS action text;
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS details text NOT NULL DEFAULT '';
+ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
+-- Si d'anciennes colonnes existent sans préfixe user_, décommenter et adapter :
+-- UPDATE public.activity_logs SET user_email = COALESCE(user_email, email, '') WHERE email IS NOT NULL;
+-- UPDATE public.activity_logs SET user_name  = COALESCE(user_name, nom, name, '') WHERE nom IS NOT NULL OR name IS NOT NULL;
+-- UPDATE public.activity_logs SET user_role  = COALESCE(user_role, role, '') WHERE role IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS activity_logs_created_at_idx
   ON public.activity_logs (created_at DESC);
@@ -28,5 +35,5 @@ CREATE POLICY "activity_logs_insert_auth"
   TO authenticated
   WITH CHECK (true);
 
--- Si la table existait déjà avec id bigint, migrer ou recréer selon votre cas.
--- L'app n'envoie plus id côté client : la base génère uuid.
+-- Recharger le cache schéma PostgREST
+NOTIFY pgrst, 'reload schema';

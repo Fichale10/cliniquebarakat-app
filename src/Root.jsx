@@ -439,6 +439,9 @@ function Root() {
 
       if (error) {
         if (error.message.includes('already registered')) return { ok: false, msg: 'Cet email est déjà utilisé.' }
+        if (error.status === 429 || error.message.includes('rate limit') || error.message.includes('Too Many Requests')) {
+          return { ok: false, msg: 'Trop de tentatives d\'inscription. Attendez quelques minutes avant de réessayer.' }
+        }
         if (error.message.includes('redirect') || error.message.includes('Redirect')) {
           return {
             ok: false,
