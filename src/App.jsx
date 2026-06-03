@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, Component } from 'react'
-import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, INIT_PATIENTS, INIT_CLIENTS, INIT_MEDS, DEFAULT_TEAM, COMPTES_DEFAULT, NAV_ALL, TABLE } from './lib/globals'
+import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, INIT_PATIENTS, INIT_CLIENTS, INIT_MEDS, DEFAULT_TEAM, NAV_ALL } from './lib/globals'
 
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'

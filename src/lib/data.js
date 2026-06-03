@@ -57,9 +57,6 @@ export const DEFAULT_TEAM = [
   { id:'equ-004', nom:'', role:'ASV',         tel:'', actif:true },
 ]
 
-// COMPTES_DEFAULT supprimé — auth gérée par Supabase Auth + table profiles
-export const COMPTES_DEFAULT = []
-
 export const NAV_ALL = [
   { id:'dashboard',       label:'Tableau de bord',     icon:'🏠', cat:'Général' },
   { id:'monprofil',       label:'Mon profil',           icon:'👤', cat:'Général' },

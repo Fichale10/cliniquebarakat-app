@@ -60,12 +60,6 @@ export const DEFAULT_TEAM = [
   { id: 4, nom: '', role: 'ASV',         tel: '', actif: true },
 ];
 
-export const COMPTES_DEFAULT = [
-  { id: 1, email: 'admin@labarakat.tg', pw: 'admin123', nom: 'Administrateur',  role: 'admin',       actif: true },
-  { id: 2, email: 'dr1@labarakat.tg',   pw: 'user123',  nom: 'Dr. Vétérinaire', role: 'utilisateur', actif: true },
-  { id: 3, email: 'asv@labarakat.tg',   pw: 'user123',  nom: 'ASV Accueil',     role: 'utilisateur', actif: true },
-];
-
 export const INIT_PATIENTS = [
   { id: 1, nom: 'Rex',   espece: 'Chien', race: 'Berger Allemand', age: '3 ans', sexe: 'M', proprio: 'Dupont Jean',  tel: '+228 90 12 34 56', poids: '32 kg',  couleur: 'Fauve/Noir', allergies: 'Pénicilline', antecedents: 'Otite ext. 2023, Gastrite 2022' },
   { id: 2, nom: 'Mimi',  espece: 'Chat',  race: 'Siamois',         age: '2 ans', sexe: 'F', proprio: 'Martin Sophie', tel: '+228 91 23 45 67', poids: '4 kg',   couleur: 'Crème/Brun',  allergies: '',            antecedents: 'Stérilisée 09/2024' },
