@@ -1,0 +1,8 @@
+# Cloudflare Workers — assets statiques (sortie Vite)
+# Pipeline Git : npm run build → npx wrangler deploy
+name = "cliniquebarakat-app"
+compatibility_date = "2024-06-03"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
