@@ -44,6 +44,16 @@ Le fichier `wrangler.toml` à la racine publie le dossier `dist/` après le buil
 
 Après déploiement, vérifier dans l’onglet Network un nouveau `index-*.js` (pas un ancien hash en cache).
 
+## Navigation par URL
+
+Chaque écran a une adresse dédiée (ex. `/patients`, `/medicaments`). Un **F5** reste sur la même page.
+
+- Connexion : `/`
+- Inscription : `/register`
+- Mot de passe oublié : `/forgot`
+
+Le fichier `public/_redirects` assure le bon fonctionnement sur Cloudflare Pages (routes SPA).
+
 ## 📁 Structure du projet
 
 ```

@@ -6,8 +6,10 @@
 // - Register crée un compte Supabase Auth + profil en attente
 // - Logout via sb.auth.signOut
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { sb } from './lib/supabase'
+import { isValidView, DEFAULT_VIEW } from './lib/routes'
 import { logAction } from './lib/roles'
 import { validateUserRegister } from './lib/validation'
 import { fetchAllProfiles } from './lib/accounts'
@@ -151,6 +153,7 @@ function Register({ onBack, onRegister }) {
   const [err, setErr]   = useState('')
   const [ok, setOk]     = useState(false)
   const [loading, setLoading] = useState(false)
+  const submitting = useRef(false)
 
   useEffect(() => {
     document.body.classList.add('login-bg')
@@ -158,13 +161,16 @@ function Register({ onBack, onRegister }) {
   }, [])
 
   const doRegister = async () => {
+    if (submitting.current || loading) return
     const checked = validateUserRegister({ nom, email, pw, pw2, role })
     if (!checked.ok) {
       setErr(checked.messages.join(' · '))
       return
     }
+    submitting.current = true
     setLoading(true); setErr('')
     const result = await onRegister(checked.data.nom, checked.data.email, checked.data.pw, checked.data.role)
+    submitting.current = false
     setLoading(false)
     if (result.ok) setOk(true)
     else setErr(result.msg || "Erreur lors de l'inscription.")
@@ -314,7 +320,8 @@ function ForgotPassword({ onBack, onForgot }) {
 
 // ── Root — orchestrateur principal ────────────────────────────
 function Root() {
-  const [screen, setScreen]         = useState('login')
+  const navigate = useNavigate()
+  const location = useLocation()
   const [user, setUser]             = useState(null)
   const [appLoading, setAppLoading] = useState(true)
   // comptes géré ici, passé à App via props
@@ -425,8 +432,14 @@ function Root() {
     }
   }
 
+  const signupInFlight = useRef(false)
+
   // ── Register ──────────────────────────────────────────────
   const doRegister = async (nom, email, pw, role) => {
+    if (signupInFlight.current) {
+      return { ok: false, msg: 'Inscription déjà en cours…' }
+    }
+    signupInFlight.current = true
     try {
       const { data, error } = await sb.auth.signUp({
         email,
@@ -457,6 +470,8 @@ function Root() {
 
     } catch (e) {
       return { ok: false, msg: "Erreur lors de l'inscription." }
+    } finally {
+      signupInFlight.current = false
     }
   }
 
@@ -478,7 +493,17 @@ function Root() {
     await sb.auth.signOut()
     setUser(null)
     setComptes([])
+    navigate('/', { replace: true })
   }
+
+  // Après connexion : quitter /register, /forgot, etc.
+  useEffect(() => {
+    if (!user) return
+    const segment = location.pathname.replace(/^\//, '')
+    if (!segment || !isValidView(segment)) {
+      navigate(`/${DEFAULT_VIEW}`, { replace: true })
+    }
+  }, [user, location.pathname, navigate])
 
   // ── Rendu ─────────────────────────────────────────────────
   if (appLoading) {
@@ -493,27 +518,49 @@ function Root() {
   }
 
   if (!user) {
-    if (screen === 'register') return <Register onBack={() => setScreen('login')} onRegister={doRegister} />
-    if (screen === 'forgot')   return <ForgotPassword onBack={() => setScreen('login')} onForgot={doForgot} />
     return (
-      <Login
-        loading={appLoading}
-        onLogin={doLogin}
-        onRegister={() => setScreen('register')}
-        onForgot={() => setScreen('forgot')}
-      />
+      <Routes>
+        <Route
+          path="/register"
+          element={<Register onBack={() => navigate('/')} onRegister={doRegister} />}
+        />
+        <Route
+          path="/forgot"
+          element={<ForgotPassword onBack={() => navigate('/')} onForgot={doForgot} />}
+        />
+        <Route
+          path="*"
+          element={(
+            <Login
+              loading={appLoading}
+              onLogin={doLogin}
+              onRegister={() => navigate('/register')}
+              onForgot={() => navigate('/forgot')}
+            />
+          )}
+        />
+      </Routes>
     )
   }
 
   return (
-    <App
-      user={user}
-      setUser={setUser}
-      comptesRoot={comptes}
-      setComptesRoot={setComptes}
-      onLogout={handleLogout}
-      reloadComptes={loadComptes}
-    />
+    <Routes>
+      <Route path="/" element={<Navigate to={`/${DEFAULT_VIEW}`} replace />} />
+      <Route
+        path="/:viewId"
+        element={(
+          <App
+            user={user}
+            setUser={setUser}
+            comptesRoot={comptes}
+            setComptesRoot={setComptes}
+            onLogout={handleLogout}
+            reloadComptes={loadComptes}
+          />
+        )}
+      />
+      <Route path="*" element={<Navigate to={`/${DEFAULT_VIEW}`} replace />} />
+    </Routes>
   )
 }
 

@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, Component } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, INIT_PATIENTS, INIT_CLIENTS, INIT_MEDS, DEFAULT_TEAM, NAV_ALL } from './lib/globals'
+import { isValidView, DEFAULT_VIEW } from './lib/routes'
 
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
@@ -57,8 +59,20 @@ class ScreenErrorBoundary extends Component {
   }
 }
 
-function App({ logged, setLogged, user, setUser, comptesRoot, setComptesRoot, onLogout, reloadComptes }) {
-  const [view,setView]=useState('dashboard');
+function App({ user, setUser, comptesRoot, setComptesRoot, onLogout, reloadComptes }) {
+  const navigate = useNavigate()
+  const { viewId } = useParams()
+  const view = isValidView(viewId) ? viewId : DEFAULT_VIEW
+
+  useEffect(() => {
+    if (viewId && !isValidView(viewId)) {
+      navigate(`/${DEFAULT_VIEW}`, { replace: true })
+    }
+  }, [viewId, navigate])
+
+  const setView = (id) => {
+    navigate(`/${isValidView(id) ? id : DEFAULT_VIEW}`)
+  }
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
@@ -495,7 +509,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
               color:otrMode?'#fdba74':'rgba(255,255,255,0.35)'}}>
             {otrMode?'🙈 Mode OTR actif':'👁️ Mode OTR'}
           </button>}
-          <button onClick={()=>{if(confirm('Se déconnecter ?')){setLogged(false);setUser(null);}}}
+          <button onClick={()=>{if(confirm('Se déconnecter ?')) onLogout?.()}}
             style={{width:'100%',padding:'9px 12px',borderRadius:'10px',fontSize:'12px',fontWeight:700,
               background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.18)',
               color:'rgba(252,165,165,0.85)',transition:'all .18s',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
@@ -651,7 +665,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
             <button
               onClick={()=>{
                 setUserMenuOpen(false);
-                if(confirm('Se déconnecter ?')){setLogged(false);setUser(null);}
+                if(confirm('Se déconnecter ?')) onLogout?.()
               }}
               style={{width:'100%',padding:'10px 12px',borderRadius:12,border:'1px solid rgba(239,68,68,0.35)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontWeight:900,color:'rgba(239,68,68,0.95)',textAlign:'left',marginTop:8}}
             >
