@@ -64,6 +64,17 @@ export const logAction = async (sb, user, action, details = '') => {
   } catch (e) {}
 
   if (navigator.onLine && sb) {
-    try { await sb.from('activity_logs').insert(entry) } catch (e) {}
+    const row = {
+      user_email: entry.user_email,
+      user_name: entry.user_name,
+      user_role: entry.user_role,
+      action: entry.action,
+      details: entry.details,
+      created_at: entry.created_at,
+    }
+    const { error } = await sb.from('activity_logs').insert(row)
+    if (error) {
+      console.warn('[activity_logs] insert:', error.message, error.details || error.hint || '')
+    }
   }
 }

@@ -708,7 +708,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
           {view==='journal'&&<JournalActivite user={user}/>}
           {view==='lots'&&<GestionLots meds={meds} ventesHist={ventesHist} user={user}/>}
           {view==='caisse'&&<Caisse {...sp}/>}
-          {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user}/>}
+          {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user} sb={sb}/>}
           {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
           {view==='rapports'&&<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>}
           {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}

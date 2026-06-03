@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { logAction } from '../../lib/roles'
 
-function AssistantIA({patients, meds, user}){
+function AssistantIA({ patients, meds, user, sb }) {
   const [messages,setMessages]=useState([
     {role:'assistant',content:'Bonjour ! Je suis l\'assistant IA de La Barakat 🐾\n\nJe peux vous aider avec :\n• **Calcul de posologie** selon le poids de l\'animal\n• **Aide au diagnostic** différentiel\n• **Interactions médicamenteuses**\n• **Protocoles de vaccination**\n• **Questions générales** en médecine vétérinaire\n\nComment puis-je vous aider ?'}
   ]);
@@ -42,7 +42,7 @@ function AssistantIA({patients, meds, user}){
       const data=await resp.json();
       const reply=data.content?.[0]?.text||'Désolé, je n\'ai pas pu traiter votre demande.';
       setMessages(m=>[...m,{role:'assistant',content:reply}]);
-      logAction(user,'assistant_ia',input.substring(0,80));
+      if (sb && user) logAction(sb, user, 'assistant_ia', input.substring(0, 80))
     }catch(e){
       setMessages(m=>[...m,{role:'assistant',content:'❌ Erreur de connexion à l\'IA. Vérifiez votre connexion internet.'}]);
     }

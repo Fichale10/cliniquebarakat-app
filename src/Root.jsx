@@ -439,6 +439,12 @@ function Root() {
 
       if (error) {
         if (error.message.includes('already registered')) return { ok: false, msg: 'Cet email est déjà utilisé.' }
+        if (error.message.includes('redirect') || error.message.includes('Redirect')) {
+          return {
+            ok: false,
+            msg: `URL non autorisée (${window.location.origin}). Ajoutez-la dans Supabase → Authentication → URL Configuration → Redirect URLs.`,
+          }
+        }
         return { ok: false, msg: error.message }
       }
 
