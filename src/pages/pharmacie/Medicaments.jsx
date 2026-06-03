@@ -1,14 +1,18 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Btn, Badge, Field, DupWarning, ValidationBanner,
   FilterBar, FilterSelect, FilterBtns,
 } from '../../components/ui'
-import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import {
   validateMedicamentForm,
   medicamentFormToRow,
   medicamentFormToUpdates,
 } from '../../lib/validation'
+
+const FOURNISSEUR_PLACEHOLDER = '— Choisir un fournisseur —'
+
+const FOURNISSEURS_FALLBACK = ['MediVet SARL', 'Afrique Pharma', 'AgroVet Togo']
 
 function Medicaments({ meds, setMeds, user, sb, logAction }) {
   const getDefaultForm = () => ({
@@ -28,6 +32,35 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
   const [saving, setSaving]     = useState(false)
   const [formErrors, setFormErrors] = useState({})
   const [validationMessages, setValidationMessages] = useState([])
+  const [fournisseurOptions, setFournisseurOptions] = useState(FOURNISSEURS_FALLBACK)
+
+  useEffect(() => {
+    let cancelled = false
+    const loadFournisseurs = async () => {
+      const fromMeds = meds.map((m) => m.fournisseur).filter(Boolean)
+      let fromDb = []
+      try {
+        const rows = await dbFetch(sb, 'fournisseurs')
+        fromDb = (rows || [])
+          .filter((f) => f.actif !== false)
+          .map((f) => f.nom)
+          .filter(Boolean)
+      } catch (e) {
+        console.warn('[Medicaments] chargement fournisseurs:', e)
+      }
+      const merged = [...new Set([...fromDb, ...fromMeds, ...FOURNISSEURS_FALLBACK])].sort((a, b) =>
+        a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+      )
+      if (!cancelled) setFournisseurOptions(merged)
+    }
+    loadFournisseurs()
+    return () => { cancelled = true }
+  }, [meds, sb])
+
+  const fournisseurSelectOptions = useMemo(
+    () => [FOURNISSEUR_PLACEHOLDER, ...fournisseurOptions],
+    [fournisseurOptions],
+  )
 
   const patchForm = (patch) => {
     setForm(prev => ({ ...prev, ...patch }))
@@ -238,7 +271,16 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
               <Field label="Seuil alerte" value={form.seuil} onChange={e => patchForm({ seuil: e.target.value })} error={formErrors.seuil} type="number" placeholder="0" />
               <Field label="Prix achat (F)" value={form.prixAchat} onChange={e => patchForm({ prixAchat: e.target.value })} error={formErrors.prixAchat} type="number" placeholder="0" />
               <Field label="Prix vente (F)" value={form.prixVente} onChange={e => patchForm({ prixVente: e.target.value })} error={formErrors.prixVente} type="number" placeholder="0" />
-              <Field label="Fournisseur" value={form.fournisseur} onChange={e => patchForm({ fournisseur: e.target.value })} error={formErrors.fournisseur} placeholder="Fournisseur" />
+              <Field
+                label="Fournisseur"
+                value={form.fournisseur || FOURNISSEUR_PLACEHOLDER}
+                onChange={(e) => {
+                  const v = e.target.value
+                  patchForm({ fournisseur: v === FOURNISSEUR_PLACEHOLDER ? '' : v })
+                }}
+                error={formErrors.fournisseur}
+                options={fournisseurSelectOptions}
+              />
               <Field label="N° de lot" value={form.lot} onChange={e => patchForm({ lot: e.target.value })} error={formErrors.lot} placeholder="ex: LOT-2024-01" />
               <Field label="Date péremption" value={form.peremption} onChange={e => patchForm({ peremption: e.target.value })} error={formErrors.peremption} type="date" />
             </div>
