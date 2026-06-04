@@ -116,7 +116,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       setShowForm(false)
     } catch (e) {
       console.error('[Ventes] Erreur:', e)
-      alert('Erreur lors de la sauvegarde.')
+      alert(e?.message || 'Erreur lors de la sauvegarde. Vérifiez la table ventes dans Supabase (fichier supabase/ventes.sql).')
     } finally {
       setSaving(false)
     }

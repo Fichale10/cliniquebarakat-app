@@ -106,20 +106,54 @@ export const dbFetch = async (sb, table, options = {}) => {
   return cached
 }
 
+const prepareInsertRow = (table, row) => {
+  const r = { ...row, id: row.id || newId(), created_at: row.created_at || new Date().toISOString() }
+  if (table === 'ventes') {
+    // Import dynamique évité — mapper inline pour ne pas casser le bundle
+    const payload = {
+      id: r.id,
+      date: r.date,
+      client: r.client ?? '',
+      lignes: r.lignes ?? [],
+      total: r.total ?? 0,
+      statut: r.statut ?? 'Payé',
+      mode: r.mode ?? 'Espèces',
+      note: r.note ?? '',
+      tva_amt: r.tva_amt ?? r.tvaAmt ?? 0,
+      caissier: r.caissier ?? '',
+      created_at: r.created_at,
+    }
+    return payload
+  }
+  return r
+}
+
+const formatDbError = (error) =>
+  [error.message, error.details, error.hint].filter(Boolean).join(' — ')
+
 export const dbInsert = async (sb, table, row) => {
   if (DEPRECATED_TABLES.has(table)) {
     console.warn('[dbInsert] Table legacy ignorée:', table)
     return row
   }
-  const r = { ...row, id: row.id || newId(), created_at: new Date().toISOString() }
+  const r = prepareInsertRow(table, row)
   if (navigator.onLine && sb) {
     try {
       const { data, error } = await sb.from(table).insert(r).select().single()
-      if (!error && data) {
+      if (error) {
+        console.warn('[dbInsert]', table, formatDbError(error))
+        // 400 = schéma incompatible — ne pas mettre en file offline (boucle infinie)
+        if (error.status === 400 || error.code === 'PGRST204') {
+          throw new Error(formatDbError(error) || 'Données refusées par Supabase')
+        }
+      } else if (data) {
         markSynced(table)
         return data
       }
-    } catch (e) { console.warn('dbInsert error', table, e) }
+    } catch (e) {
+      if (e?.message && (e.message.includes('PGRST') || e.message.includes('column'))) throw e
+      console.warn('dbInsert error', table, e)
+    }
   }
   enqueue({ type: 'insert', table, row: r })
   return r

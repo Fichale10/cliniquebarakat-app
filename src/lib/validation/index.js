@@ -209,8 +209,24 @@ export function validateVenteForm(form, meds = []) {
   return { ok: true, data: { ...result.data, total } }
 }
 
-export function venteFormToRow(validated, id) {
+/** Ligne envoyée à Supabase (snake_case, colonnes connues) */
+export function venteToDbRow(row) {
   return {
+    id: row.id,
+    date: row.date,
+    client: row.client ?? '',
+    lignes: row.lignes ?? [],
+    total: row.total ?? 0,
+    statut: row.statut ?? 'Payé',
+    mode: row.mode ?? 'Espèces',
+    note: row.note ?? '',
+    tva_amt: row.tva_amt ?? row.tvaAmt ?? 0,
+    caissier: row.caissier ?? '',
+  }
+}
+
+export function venteFormToRow(validated, id) {
+  return venteToDbRow({
     id,
     date: validated.date,
     client: validated.client,
@@ -218,7 +234,7 @@ export function venteFormToRow(validated, id) {
     total: validated.total,
     statut: validated.statut,
     mode: validated.mode,
-  }
+  })
 }
 
 export function validateCaisseForm(payload, meds = []) {

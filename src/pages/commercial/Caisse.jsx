@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ValidationBanner } from '../../components/ui'
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
+import { venteToDbRow } from '../../lib/validation'
 import { validateCaisseForm } from '../../lib/validation'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -96,7 +97,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     const lignesValides = validated.lignes
 
     const statut = validated.mode === 'À crédit' ? 'À crédit' : 'Payé'
-    const row = {
+    const row = venteToDbRow({
       id: newId(),
       date: today(),
       client: validated.client,
@@ -107,17 +108,13 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       note: validated.note,
       tvaAmt,
       caissier: user?.name || '—',
-    }
+    })
 
     setSaving(true)
     try {
       let vente = row
       if (sb) {
-        try {
-          vente = await dbInsert(sb, 'ventes', row)
-        } catch (e) {
-          console.warn('[Caisse] Supabase indisponible, enregistrement local', e)
-        }
+        vente = await dbInsert(sb, 'ventes', row)
       }
 
       const updated = [vente, ...(ventesHist || [])].slice(0, 500)
@@ -144,7 +141,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       setValidationMessages([])
     } catch (e) {
       console.error('[Caisse]', e)
-      alert('Erreur lors de l\'encaissement.')
+      alert(e?.message || 'Erreur lors de l\'encaissement. Vérifiez la table ventes dans Supabase (fichier supabase/ventes.sql).')
     } finally {
       setSaving(false)
     }
