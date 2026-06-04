@@ -113,6 +113,7 @@ useEffect(() => {
   const setSyncedConsultations = syncedSet(setConsultations, 'consultations')
   // appLoading now from Root props
   const [syncPending,setSyncPending]=useState(()=>getQ().length);
+  const [syncing,setSyncing]=useState(false);
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_ventes_hist')||'[]');}catch{return [];} });
@@ -132,43 +133,70 @@ useEffect(() => {
 }
 
   // ── Load all data from Supabase ────────────────────────
-  const loadAll = async () => {
+  const loadAll = async ({ force = false, background = false } = {}) => {
+    if (!background) setSyncing(true)
     try {
       const tables = [
-  ['patients',    setPatients],
-  ['consultations', setConsultations],
-  ['clients',     setClients],
-  ['medicaments', setMeds],
-  ['equipe',      setEquipe],
-  // 'comptes' retiré — géré par Root via profiles
-]
-await Promise.all(tables.map(async ([t, setter]) => {
-  const d = await dbFetch(sb, t)
-  if (d && d.length > 0) {
-    setter(t === 'medicaments' ? d.map(normalizeMed) : d)
-  }
-}));
-      // Load clinique settings
-      const cliniqueData = await dbFetch(sb, 'clinique_settings');
-      if(cliniqueData&&cliniqueData.length>0){
-        const obj={};
-        cliniqueData.forEach(r=>{ obj[r.key]=r.value; });
-        if(obj.nom) setClinique({nom:obj.nom||'La Barakat',sousTitre:obj.sousTitre||'Pharmacie & Clinique Vétérinaire',tel:obj.tel||'',adresse:obj.adresse||'',ville:obj.ville||'',email:obj.email||''});
+        ['patients', setPatients],
+        ['consultations', setConsultations],
+        ['clients', setClients],
+        ['medicaments', setMeds],
+        ['equipe', setEquipe],
+      ]
+      await Promise.all(tables.map(async ([t, setter]) => {
+        const d = await dbFetch(sb, t, { force })
+        if (d && d.length > 0) {
+          setter(t === 'medicaments' ? d.map(normalizeMed) : d)
+        }
+      }))
+      const cliniqueData = await dbFetch(sb, 'clinique_settings', { force })
+      if (cliniqueData?.length > 0) {
+        const obj = {}
+        cliniqueData.forEach((r) => { obj[r.key] = r.value })
+        if (obj.nom) {
+          setClinique({
+            nom: obj.nom || 'La Barakat',
+            sousTitre: obj.sousTitre || 'Pharmacie & Clinique Vétérinaire',
+            tel: obj.tel || '',
+            adresse: obj.adresse || '',
+            ville: obj.ville || '',
+            email: obj.email || '',
+          })
+        }
       }
-      setSbError(false);
-    } catch(e){ setSbError(true); }
-  };
+      setSbError(false)
+    } catch (e) {
+      setSbError(true)
+    } finally {
+      if (!background) setSyncing(false)
+    }
+  }
 
-  useEffect(()=>{
-    purgeDeprecatedQueueOps();
-    setSyncPending(getQ().length);
-    loadAll();
-    const onOnline  = ()=>{ setOnline(true);  syncQueue(sb, n=>setSyncPending(n)).then(()=>{ loadAll(); setSyncPending(getQ().length); }); };
-    const onOffline = ()=>{ setOnline(false); setSyncPending(getQ().length); };
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return ()=>{ window.removeEventListener('online',onOnline); window.removeEventListener('offline',onOffline); };
-  },[]);
+  useEffect(() => {
+    purgeDeprecatedQueueOps()
+    setSyncPending(getQ().length)
+    // Affichage immédiat depuis le cache, puis rafraîchissement en arrière-plan
+    loadAll({ force: false })
+    const bgTimer = setTimeout(() => loadAll({ force: true, background: true }), 1500)
+    const onOnline = () => {
+      setOnline(true)
+      syncQueue(sb, (n) => setSyncPending(n)).then((synced) => {
+        loadAll({ force: synced > 0 })
+        setSyncPending(getQ().length)
+      })
+    }
+    const onOffline = () => {
+      setOnline(false)
+      setSyncPending(getQ().length)
+    }
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      clearTimeout(bgTimer)
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [])
 
   // Auth handled by Root component
 
@@ -286,7 +314,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
       window.removeEventListener('lb_activity_log', onActivity);
       window.removeEventListener('storage', onStorage);
     };
-  },[isAdmin, user?.email, otrMode]);
+  }, [isAdmin, user?.email, otrMode, view])
 
   // ── Fallback inter-machines : polling Supabase activité ──
   useEffect(()=>{
@@ -294,7 +322,9 @@ await Promise.all(tables.map(async ([t, setter]) => {
     if(!sb || !navigator.onLine) return;
 
     const KEY='lb_activity_last_seen_medicaments';
-    const POLL_MS = 60000;
+    const POLL_MS = 120000;
+    const PHARMACY_VIEWS = new Set(['dashboard', 'medicaments', 'commandes', 'inventaire', 'lots', 'historique'])
+    if (!PHARMACY_VIEWS.has(view)) return
     let cancelled = false;
     let inFlight = false;
     let failStreak = 0;
@@ -556,13 +586,14 @@ await Promise.all(tables.map(async ([t, setter]) => {
         <button onClick={toggleOTR} className="underline hover:no-underline">Désactiver</button>
       </div>}
       {/* Status bar (offline / sync pending) */}
-      {(!online||syncPending>0||sbError)&&<div className={`flex items-center justify-between px-5 py-1.5 text-xs font-semibold no-print ${!online?'bg-amber-500 text-white':sbError?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}`}>
+      {(!online||syncing||syncPending>0||sbError)&&<div className={`flex items-center justify-between px-5 py-1.5 text-xs font-semibold no-print ${!online?'bg-amber-500 text-white':sbError?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}`}>
         <div className="flex items-center gap-2">
           {!online&&<><span>📡</span><span>Hors ligne — vos modifications seront synchronisées à la reconnexion</span></>}
-          {online&&syncPending>0&&<><span className="inline-block animate-spin">🔄</span><span>{syncPending} opération(s) en attente de sync…</span></>}
-          {online&&!syncPending&&sbError&&<><span>⚠️</span><span>Connexion Supabase impossible — données locales utilisées</span></>}
+          {online&&syncing&&<><span className="inline-block animate-spin">🔄</span><span>Synchronisation des données…</span></>}
+          {online&&!syncing&&syncPending>0&&<><span className="inline-block animate-spin">🔄</span><span>{syncPending} opération(s) en attente de sync…</span></>}
+          {online&&!syncing&&!syncPending&&sbError&&<><span>⚠️</span><span>Connexion Supabase impossible — données locales utilisées</span></>}
         </div>
-        {online&&syncPending>0&&<button onClick={()=>syncQueue(sb, n=>setSyncPending(n))} className="underline">Synchroniser</button>}
+        {online&&syncPending>0&&!syncing&&<button onClick={()=>syncQueue(sb, n=>setSyncPending(n)).then(()=>loadAll({ force: true }))} className="underline">Synchroniser</button>}
       </div>}
       {/* ── Header premium ── */}
       <header className="app-header no-print shrink-0 z-10 relative" style={{height:'58px',padding:'0 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -680,7 +711,7 @@ await Promise.all(tables.map(async ([t, setter]) => {
               display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',
               border:'2px solid white'}}>{notifsNonLues.length}</span>}
           </button>
-          {online&&<button onClick={loadAll} className="no-print header-btn" title="Rafraîchir" style={{fontSize:'18px',fontWeight:300}}>↻</button>}
+          {online&&<button onClick={()=>loadAll({ force: true })} disabled={syncing} className="no-print header-btn" title="Rafraîchir" style={{fontSize:'18px',fontWeight:300,opacity:syncing?0.5:1}}>↻</button>}
           <button onClick={()=>{document.body.classList.toggle('dark-mode');localStorage.setItem('lb_dark',document.body.classList.contains('dark-mode')?'1':'0');}}
             className="no-print header-btn" title="Mode sombre"
             style={{fontSize:'16px'}}>

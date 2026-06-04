@@ -2,6 +2,22 @@
 export const getCache = (t) => { try { return JSON.parse(localStorage.getItem('lb_' + t) || 'null') } catch { return null } }
 export const setCache = (t, d) => { try { localStorage.setItem('lb_' + t, JSON.stringify(d)) } catch {} }
 
+const SYNC_TS_PREFIX = 'lb_sync_ts_'
+/** Durée pendant laquelle dbFetch réutilise le cache sans requête réseau */
+export const DEFAULT_FETCH_STALE_MS = 90_000
+
+export const getSyncAge = (table) => {
+  const ts = localStorage.getItem(SYNC_TS_PREFIX + table)
+  return ts ? Date.now() - Number(ts) : Infinity
+}
+
+export const markSynced = (table) => {
+  try { localStorage.setItem(SYNC_TS_PREFIX + table, String(Date.now())) } catch {}
+}
+
+export const isCacheFresh = (table, staleMs = DEFAULT_FETCH_STALE_MS) =>
+  getSyncAge(table) < staleMs
+
 const Q_KEY = 'lb_offlineQueue'
 /** Tables legacy — plus synchronisées (auth via profiles + Supabase Auth) */
 const DEPRECATED_TABLES = new Set(['comptes'])
@@ -21,24 +37,35 @@ export const purgeDeprecatedQueueOps = () => {
   return q.length - kept.length
 }
 
+const runQueueOp = async (sb, op) => {
+  let error
+  if (op.type === 'insert') {
+    ;({ error } = await sb.from(op.table).insert(op.row))
+  } else if (op.type === 'update') {
+    ;({ error } = await sb.from(op.table).update(op.updates).eq('id', op.id))
+  } else if (op.type === 'delete') {
+    ;({ error } = await sb.from(op.table).delete().eq('id', op.id))
+  }
+  if (error) throw error
+}
+
+/** Exécute la file offline en parallèle (par lots) pour accélérer la sync */
 export const syncQueue = async (sb, onProgress) => {
   purgeDeprecatedQueueOps()
-  const q = getQ(); if (!q.length) return 0
+  const q = getQ().filter((op) => !DEPRECATED_TABLES.has(op.table))
+  if (!q.length) return 0
+
+  const BATCH = 5
   const failed = []
-  for (const op of q) {
-    if (DEPRECATED_TABLES.has(op.table)) continue
-    try {
-      let error
-      if (op.type === 'insert') {
-        ;({ error } = await sb.from(op.table).insert(op.row))
-      } else if (op.type === 'update') {
-        ;({ error } = await sb.from(op.table).update(op.updates).eq('id', op.id))
-      } else if (op.type === 'delete') {
-        ;({ error } = await sb.from(op.table).delete().eq('id', op.id))
-      }
-      if (error) failed.push(op)
-    } catch { failed.push(op) }
+  for (let i = 0; i < q.length; i += BATCH) {
+    const batch = q.slice(i, i + BATCH)
+    const results = await Promise.allSettled(batch.map((op) => runQueueOp(sb, op)))
+    results.forEach((res, idx) => {
+      if (res.status === 'rejected') failed.push(batch[idx])
+    })
+    if (onProgress) onProgress(failed.length)
   }
+
   saveQ(failed)
   if (onProgress) onProgress(failed.length)
   return q.length - failed.length
@@ -48,9 +75,21 @@ export const newId = () => {
   try { return crypto.randomUUID() } catch { return 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2) }
 }
 
-export const dbFetch = async (sb, table) => {
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.force] — ignore le cache et refetch
+ * @param {number} [options.staleMs] — âge max du cache avant refetch
+ */
+export const dbFetch = async (sb, table, options = {}) => {
+  const { force = false, staleMs = DEFAULT_FETCH_STALE_MS } = options
+  const cached = getCache(table) || []
+
+  if (!force && cached.length && isCacheFresh(table, staleMs)) {
+    return cached
+  }
+
   try {
-    if (!navigator.onLine || !sb) return getCache(table) || []
+    if (!navigator.onLine || !sb) return cached
     const needsOrder = table !== 'clinique_settings'
     let { data, error } = needsOrder
       ? await sb.from(table).select('*').order('created_at', { ascending: false })
@@ -58,9 +97,13 @@ export const dbFetch = async (sb, table) => {
     if (error?.status === 400) {
       ;({ data, error } = await sb.from(table).select('*'))
     }
-    if (!error && data) { setCache(table, data); return data }
+    if (!error && data) {
+      setCache(table, data)
+      markSynced(table)
+      return data
+    }
   } catch (e) { console.warn('dbFetch error', table, e) }
-  return getCache(table) || []
+  return cached
 }
 
 export const dbInsert = async (sb, table, row) => {
@@ -69,12 +112,13 @@ export const dbInsert = async (sb, table, row) => {
     return row
   }
   const r = { ...row, id: row.id || newId(), created_at: new Date().toISOString() }
-  console.log('[dbInsert]', table, JSON.stringify(r))
   if (navigator.onLine && sb) {
     try {
       const { data, error } = await sb.from(table).insert(r).select().single()
-      console.log('[dbInsert] result:', data, 'error:', error)
-      if (!error && data) return data
+      if (!error && data) {
+        markSynced(table)
+        return data
+      }
     } catch (e) { console.warn('dbInsert error', table, e) }
   }
   enqueue({ type: 'insert', table, row: r })
@@ -87,7 +131,11 @@ export const dbUpdate = async (sb, table, id, updates) => {
     return
   }
   if (navigator.onLine && sb) {
-    try { await sb.from(table).update(updates).eq('id', id); return } catch (e) { console.warn('dbUpdate', e) }
+    try {
+      await sb.from(table).update(updates).eq('id', id)
+      markSynced(table)
+      return
+    } catch (e) { console.warn('dbUpdate', e) }
   }
   enqueue({ type: 'update', table, id, updates })
 }
@@ -98,7 +146,11 @@ export const dbDelete = async (sb, table, id) => {
     return
   }
   if (navigator.onLine && sb) {
-    try { await sb.from(table).delete().eq('id', id); return } catch (e) { console.warn('dbDelete', e) }
+    try {
+      await sb.from(table).delete().eq('id', id)
+      markSynced(table)
+      return
+    } catch (e) { console.warn('dbDelete', e) }
   }
   enqueue({ type: 'delete', table, id })
 }

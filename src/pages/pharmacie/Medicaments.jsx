@@ -3,7 +3,7 @@ import {
   Btn, Badge, Field, DupWarning, ValidationBanner,
   FilterBar, FilterSelect, FilterBtns,
 } from '../../components/ui'
-import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
+import { dbInsert, dbUpdate, dbDelete, dbFetch, getCache, setCache, isCacheFresh, markSynced, newId } from '../../lib/db'
 import {
   validateMedicamentForm,
   medicamentFormToRow,
@@ -36,11 +36,25 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
 
   useEffect(() => {
     let cancelled = false
+    const CACHE_KEY = 'fournisseurs_options'
+    const STALE_MS = 5 * 60 * 1000
+
+    const mergeLists = (fromDb, fromMeds) =>
+      [...new Set([...fromDb, ...fromMeds, ...FOURNISSEURS_FALLBACK])].sort((a, b) =>
+        a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+      )
+
     const loadFournisseurs = async () => {
       const fromMeds = meds.map((m) => m.fournisseur).filter(Boolean)
+      const cached = getCache(CACHE_KEY)
+      if (cached?.length && isCacheFresh(CACHE_KEY, STALE_MS)) {
+        setFournisseurOptions(mergeLists(cached, fromMeds))
+        return
+      }
+
       let fromDb = []
       try {
-        const rows = await dbFetch(sb, 'fournisseurs')
+        const rows = await dbFetch(sb, 'fournisseurs', { staleMs: STALE_MS })
         fromDb = (rows || [])
           .filter((f) => f.actif !== false)
           .map((f) => f.nom)
@@ -48,9 +62,9 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
       } catch (e) {
         console.warn('[Medicaments] chargement fournisseurs:', e)
       }
-      const merged = [...new Set([...fromDb, ...fromMeds, ...FOURNISSEURS_FALLBACK])].sort((a, b) =>
-        a.localeCompare(b, 'fr', { sensitivity: 'base' }),
-      )
+      const merged = mergeLists(fromDb, fromMeds)
+      setCache(CACHE_KEY, fromDb)
+      markSynced(CACHE_KEY)
       if (!cancelled) setFournisseurOptions(merged)
     }
     loadFournisseurs()
