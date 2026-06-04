@@ -72,11 +72,15 @@ function Clients({ clients, setClients, user, sb, logAction }) {
 
   // ── Suppression avec Supabase ─────────────────────────────
   const doDelete = async (id) => {
-    const c = clients.find(x => x.id === id)
-    await dbDelete(sb, 'clients', id)
-    setClients(clients.filter(x => x.id !== id))
-    setConfirmDel(null)
-    if (logAction && sb) logAction(sb, user, 'client_deleted', c?.nom || id)
+    const c = clients.find((x) => x.id === id)
+    try {
+      await dbDelete(sb, 'clients', id)
+      setClients(clients.filter((x) => x.id !== id))
+      setConfirmDel(null)
+      if (logAction && sb) logAction(sb, user, 'client_deleted', c?.nom || id)
+    } catch (e) {
+      alert(e?.message || 'Suppression impossible.')
+    }
   }
 
   const filtered = clients.filter(c =>

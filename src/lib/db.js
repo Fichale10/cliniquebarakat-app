@@ -159,6 +159,15 @@ export const dbInsert = async (sb, table, row) => {
   return r
 }
 
+const patchCacheAfterDelete = (table, id) => {
+  const cached = getCache(table)
+  if (!Array.isArray(cached)) return
+  setCache(
+    table,
+    cached.filter((row) => String(row.id) !== String(id)),
+  )
+}
+
 export const dbUpdate = async (sb, table, id, updates) => {
   if (DEPRECATED_TABLES.has(table)) {
     console.warn('[dbUpdate] Table legacy ignorée:', table)
@@ -166,25 +175,38 @@ export const dbUpdate = async (sb, table, id, updates) => {
   }
   if (navigator.onLine && sb) {
     try {
-      await sb.from(table).update(updates).eq('id', id)
+      const { error } = await sb.from(table).update(updates).eq('id', id)
+      if (error) {
+        console.warn('[dbUpdate]', table, formatDbError(error))
+        throw new Error(formatDbError(error) || 'Mise à jour refusée par Supabase')
+      }
       markSynced(table)
       return
-    } catch (e) { console.warn('dbUpdate', e) }
+    } catch (e) {
+      if (e?.message) throw e
+      console.warn('dbUpdate', table, e)
+    }
   }
   enqueue({ type: 'update', table, id, updates })
 }
 
+/** @returns {Promise<'ok'|'queued'>} */
 export const dbDelete = async (sb, table, id) => {
   if (DEPRECATED_TABLES.has(table)) {
     console.warn('[dbDelete] Table legacy ignorée:', table)
-    return
+    return 'ok'
   }
   if (navigator.onLine && sb) {
-    try {
-      await sb.from(table).delete().eq('id', id)
-      markSynced(table)
-      return
-    } catch (e) { console.warn('dbDelete', e) }
+    const { error } = await sb.from(table).delete().eq('id', id)
+    if (error) {
+      console.warn('[dbDelete]', table, formatDbError(error))
+      throw new Error(formatDbError(error) || 'Suppression refusée par Supabase')
+    }
+    patchCacheAfterDelete(table, id)
+    markSynced(table)
+    return 'ok'
   }
+  patchCacheAfterDelete(table, id)
   enqueue({ type: 'delete', table, id })
+  return 'queued'
 }

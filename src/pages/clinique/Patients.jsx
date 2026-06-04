@@ -83,9 +83,13 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
   // ── Suppression avec Supabase ─────────────────────────────
   const handleDelete = async (p) => {
     if (!confirm(`Supprimer ${p.nom} ?`)) return
-    await dbDelete(sb, 'patients', p.id)
-    setPatients(patients.filter(x => x.id !== p.id))
-    if (logAction && sb) logAction(sb, user, 'patient_deleted', p.nom)
+    try {
+      await dbDelete(sb, 'patients', p.id)
+      setPatients(patients.filter((x) => x.id !== p.id))
+      if (logAction && sb) logAction(sb, user, 'patient_deleted', p.nom)
+    } catch (e) {
+      alert(e?.message || 'Suppression impossible.')
+    }
   }
 
   const especes = [...new Set(patients.map(p => p.espece))].filter(Boolean)

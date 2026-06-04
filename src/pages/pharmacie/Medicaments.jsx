@@ -218,11 +218,19 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
     setShowForm(true)
   }
 
-  const handleDelete = async m => {
+  const handleDelete = async (m) => {
     if (!confirm(`Supprimer ${m.nom} ?`)) return
-    await dbDelete(sb, 'medicaments', m.id)
-    setMeds(meds.filter(x => x.id !== m.id))
-    if (logAction && sb) logAction(sb, user, 'medicament_deleted', `${m.nom} (${m.ref})`)
+    try {
+      await dbDelete(sb, 'medicaments', m.id)
+      setMeds(meds.filter((x) => x.id !== m.id))
+      if (logAction && sb) logAction(sb, user, 'medicament_deleted', `${m.nom} (${m.ref})`)
+    } catch (e) {
+      console.error('[Medicaments] suppression:', e)
+      alert(
+        e?.message
+          || 'Suppression impossible. Exécutez supabase/medicaments_policies.sql dans Supabase (droits DELETE).',
+      )
+    }
   }
 
   const handleCloseForm = () => {
