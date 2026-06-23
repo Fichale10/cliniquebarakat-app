@@ -1138,3 +1138,172 @@ input:focus, select:focus, textarea:focus {
 /* Liens dash teal */
 .dash-link { color: #0d9488 !important; }
 body.dark-mode .dash-link { color: #2dd4bf !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   REDESIGN GLOBAL — tous les panneaux, formulaires, headers
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Panneaux de formulaire (vert/bleu → teal) ── */
+.app-card .bg-green-50,
+.app-card .bg-blue-50,
+.app-card .bg-teal-50 {
+  background: linear-gradient(135deg, #f0fdfa, #f5fffe) !important;
+}
+.app-card .border-green-200,
+.app-card .border-blue-200 {
+  border-color: rgba(13,148,136,0.2) !important;
+}
+.app-card .text-green-800,
+.app-card .text-blue-800 {
+  color: #0f766e !important;
+}
+.app-card h3.font-bold {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+/* ── En-têtes de sections dans les cartes ── */
+.app-card > div:first-child,
+.app-card .p-5.border-b,
+.app-card .px-5.py-4.border-b {
+  position: relative;
+}
+.app-card .p-5.border-b,
+.app-card .px-5.border-b {
+  border-bottom-color: #f1f5f9 !important;
+}
+
+/* ── Titres de page (h2 dans app-card) ── */
+.app-card h2 {
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  color: var(--app-text) !important;
+  letter-spacing: -.01em;
+}
+
+/* ── Sous-titres muted ── */
+.app-card .text-slate-500,
+.app-card .text-slate-400 {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Dialogues de confirmation (delete) ── */
+.app-card .bg-red-50.border.border-red-200,
+.bg-red-50.border.border-red-200 {
+  background: linear-gradient(135deg, #fef2f2, #fff5f5) !important;
+  border-color: #fca5a5 !important;
+  border-radius: 12px !important;
+}
+
+/* ── Inputs de recherche standalone ── */
+input[class*="border-2"][class*="border-slate"] {
+  border-radius: 12px !important;
+  border-width: 1.5px !important;
+  font-size: 13px !important;
+}
+input[class*="border-2"][class*="border-slate"]:focus {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.1) !important;
+}
+input[class*="focus:border-green"] {
+  border-radius: 12px !important;
+}
+input[class*="focus:border-green"]:focus {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.1) !important;
+}
+
+/* ── App header ── */
+.app-header {
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #e8edf2 !important;
+  box-shadow: 0 1px 0 rgba(13,148,136,0.04), 0 4px 20px rgba(0,0,0,0.04) !important;
+}
+.app-header-title {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: var(--app-text) !important;
+}
+.app-header-sub {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+/* ── Boutons icône dans le header ── */
+.header-btn {
+  background: #f8fafc !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  color: #64748b !important;
+  transition: all .15s !important;
+}
+.header-btn:hover {
+  background: #f0fdfa !important;
+  border-color: #0d9488 !important;
+  color: #0d9488 !important;
+}
+
+/* ── Cards de liste (patients, clients, medicaments) ── */
+.app-card .group.relative,
+.app-card [class*="hover:border-green"] {
+  transition: border-color .15s, box-shadow .15s, transform .15s !important;
+  border-radius: 14px !important;
+}
+.app-card [class*="hover:border-green-500"]:hover {
+  border-color: rgba(13,148,136,0.45) !important;
+  box-shadow: 0 4px 16px rgba(13,148,136,0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ── Avatars initiales (clients) ── */
+[style*="linear-gradient(135deg,#166534"] {
+  background: linear-gradient(135deg,#0d9488,#14b8a6) !important;
+}
+
+/* ── Badges de statut communs ── */
+.badge-payé, [class*="bg-green"][class*="text-green"] {
+  background: #f0fdfa !important;
+  color: #0f766e !important;
+}
+
+/* ── Filter bar global ── */
+.filter-bar {
+  background: #fafcfc !important;
+  border-bottom: 1.5px solid #f0f4f4 !important;
+}
+
+/* ── Tables : header teal ── */
+thead th {
+  background: linear-gradient(180deg, #f8fffe, #f0fdfa) !important;
+  color: #0f766e !important;
+  border-bottom: 2px solid rgba(13,148,136,0.15) !important;
+}
+tbody tr:hover {
+  background: #faffff !important;
+}
+
+/* ── Stat tile dark mode fix ── */
+body.dark-mode .stat-tile--blue .stat-tile__value  { color: #60a5fa !important; }
+body.dark-mode .stat-tile--red .stat-tile__value   { color: #f87171 !important; }
+body.dark-mode .stat-tile--orange .stat-tile__value{ color: #fb923c !important; }
+body.dark-mode .stat-tile--purple .stat-tile__value{ color: #c084fc !important; }
+body.dark-mode .stat-tile--yellow .stat-tile__value{ color: #fbbf24 !important; }
+
+/* ── Scroll zone main ── */
+main > .flex-1 {
+  scroll-behavior: smooth;
+}
+
+/* ── Transitions de page ── */
+.app-page {
+  animation: sectionIn .3s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Empty states ── */
+[class*="text-center"][class*="py-8"],
+[class*="text-center"][class*="py-12"] {
+  border-radius: 14px;
+}

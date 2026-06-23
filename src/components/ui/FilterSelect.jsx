@@ -1,13 +1,28 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
-
-function FilterSelect({label,value,onChange,options}){
-  return <select className={`border-2 rounded-xl px-3 py-1.5 text-xs font-bold outline-none transition-all ${value?'border-blue-400 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500'}`}
-    value={value} onChange={e=>onChange(e.target.value)}>
-    <option value="">{label}</option>
-    {options.map(o=><option key={o.v||o} value={o.v||o}>{o.l||o}</option>)}
-  </select>;
+function FilterSelect({ label, value, onChange, options }) {
+  return (
+    <select
+      style={{
+        border: `1.5px solid ${value ? '#0d9488' : '#e2e8f0'}`,
+        borderRadius: '12px',
+        padding: '6px 12px',
+        fontSize: '12px',
+        fontWeight: 600,
+        outline: 'none',
+        transition: 'all .15s',
+        background: value ? '#f0fdfa' : 'white',
+        color: value ? '#0f766e' : '#64748b',
+        cursor: 'pointer',
+        fontFamily: "'Outfit',sans-serif",
+      }}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+    >
+      <option value="">{label}</option>
+      {options.map(o => (
+        <option key={o.v || o} value={o.v || o}>{o.l || o}</option>
+      ))}
+    </select>
+  )
 }
-
-// Filtre période
 
 export default FilterSelect

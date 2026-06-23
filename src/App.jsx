@@ -602,7 +602,7 @@ useEffect(() => {
           >
             ☰
           </button>
-          <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'linear-gradient(135deg,#f97316,#ea580c)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'17px',flexShrink:0,boxShadow:'0 2px 10px rgba(234,88,12,0.3)'}}>
+          <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'linear-gradient(135deg,#0d9488,#14b8a6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'17px',flexShrink:0,boxShadow:'0 2px 10px rgba(13,148,136,0.28)'}}>
             {NAV_ALL.find(n=>n.id===view)?.icon||'📋'}
           </div>
           <div>
