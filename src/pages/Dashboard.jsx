@@ -8,11 +8,8 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
   const rdvsLocaux =
     rdvs ||
     (() => {
-      try {
-        return JSON.parse(localStorage.getItem('lb_rdvs') || '[]')
-      } catch {
-        return []
-      }
+      try { return JSON.parse(localStorage.getItem('lb_rdvs') || '[]') }
+      catch { return [] }
     })()
   const rdvsAujourdhui = rdvsLocaux.filter((r) => r.date === today())
   const ventesMois = (ventesHist || []).filter((v) => v.date?.startsWith(new Date().toISOString().slice(0, 7)))
@@ -33,12 +30,12 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
         const v = (ventesHist || []).filter((vv) => vv.date === ds).reduce((s, vv) => s + (vv.total || 0), 0)
         return {
           jour: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][d.getDay() === 0 ? 6 : d.getDay() - 1],
-          val: v || Math.round(30000 + Math.random() * 80000),
+          val: v,
         }
       }),
     [ventesHist]
   )
-  const maxVente = Math.max(...ventes7.map((v) => v.val))
+  const maxVente = Math.max(...ventes7.map((v) => v.val), 1)
 
   const now = Date.now()
   const peremProches = meds
@@ -50,100 +47,97 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
     .sort((a, b) => new Date(a.peremption) - new Date(b.peremption))
 
   const KPIS = [
-    { label: "Patients enregistrés", val: patients.length, icon: '🐾', color: '#2563eb', dark: '#1e40af', vw: 'patients' },
-    { label: "RDV aujourd'hui", val: rdvsAujourdhui.length, icon: '📅', color: '#f97316', dark: '#c2410c', vw: 'agenda' },
-    { label: 'Stocks critiques', val: alertesStock.length, icon: '🚨', color: '#1e3a5f', dark: '#0f2040', vw: 'medicaments' },
-    { label: 'Revenus ce mois', val: fmtF(totalMois), icon: '💰', color: '#ca8a04', dark: '#92400e', vw: 'rapports' },
+    {
+      label: 'Patients enregistrés', val: patients.length, icon: '🐾',
+      grad: 'linear-gradient(135deg,#1e40af,#2563eb)',
+      shadow: 'rgba(37,99,235,0.45)', vw: 'patients', sub: 'animaux suivis',
+    },
+    {
+      label: "RDV aujourd'hui", val: rdvsAujourdhui.length, icon: '📅',
+      grad: 'linear-gradient(135deg,#c2410c,#f97316)',
+      shadow: 'rgba(249,115,22,0.45)', vw: 'agenda', sub: 'rendez-vous',
+    },
+    {
+      label: 'Stocks critiques', val: alertesStock.length, icon: '🚨',
+      grad: 'linear-gradient(135deg,#0f2040,#1e3a5f)',
+      shadow: 'rgba(30,58,95,0.45)', vw: 'medicaments', sub: 'médicaments en alerte',
+    },
+    {
+      label: 'Revenus ce mois', val: fmtF(totalMois), icon: '💰',
+      grad: 'linear-gradient(135deg,#92400e,#d97706)',
+      shadow: 'rgba(217,119,6,0.45)', vw: 'rapports', sub: 'FCFA encaissés',
+    },
   ]
 
   const quickActions = [
-    { i: '🐾', t: 'Nouveau patient', v: 'patients', c: '#eff6ff', b: '#bfdbfe', tc: '#1d4ed8' },
-    { i: '🩺', t: 'Consultation', v: 'consultations', c: '#f0fdf4', b: '#bbf7d0', tc: '#166534' },
-    { i: '📝', t: 'Ordonnance', v: 'ordonnances', c: '#faf5ff', b: '#e9d5ff', tc: '#7c3aed' },
-    { i: '🛒', t: 'Nouvelle vente', v: 'caisse', c: '#fff7ed', b: '#fed7aa', tc: '#c2410c' },
-    { i: '💊', t: 'Médicaments', v: 'medicaments', c: '#fefce8', b: '#fde68a', tc: '#ca8a04' },
-    { i: '📅', t: 'Nouveau RDV', v: 'agenda', c: '#f0fdf4', b: '#bbf7d0', tc: '#166534' },
+    { i: '🐾', t: 'Nouveau patient',  d: 'Enregistrer un animal', v: 'patients',      c: '#eff6ff', b: '#bfdbfe', tc: '#1d4ed8' },
+    { i: '🩺', t: 'Consultation',     d: 'Ouvrir un dossier',     v: 'consultations', c: '#f0fdf4', b: '#bbf7d0', tc: '#166534' },
+    { i: '📝', t: 'Ordonnance',       d: 'Rédiger une ordonnance', v: 'ordonnances',  c: '#faf5ff', b: '#e9d5ff', tc: '#7c3aed' },
+    { i: '🛒', t: 'Nouvelle vente',   d: 'Caisse & facturation',  v: 'caisse',        c: '#fff7ed', b: '#fed7aa', tc: '#c2410c' },
+    { i: '💊', t: 'Médicaments',      d: 'Gérer le stock',        v: 'medicaments',   c: '#fefce8', b: '#fde68a', tc: '#ca8a04' },
+    { i: '📅', t: 'Nouveau RDV',      d: 'Planifier un rendez-vous', v: 'agenda',     c: '#ecfdf5', b: '#a7f3d0', tc: '#065f46' },
   ]
+
+  const speciesColors = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626']
 
   return (
     <div className="dashboard-page">
+      {/* Header */}
       <div className="dash-welcome">
         <div>
           <h1 className="dash-page-title">Tableau de bord</h1>
           <p className="dash-page-lead">
-            Bienvenue, {user?.name || '—'} · {clinique?.nom || 'La Barakat'}
+            Bienvenue, <strong>{user?.name || '—'}</strong> · {clinique?.nom || 'La Barakat'}
           </p>
         </div>
         <div className="dash-welcome-pill">
           📅{' '}
           {new Date().toLocaleDateString('fr-FR', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
           })}
         </div>
       </div>
 
+      {/* KPI Cards */}
       <div className="dash-kpi-grid">
         {KPIS.map((k, i) => (
           <button
             key={i}
             type="button"
             className="dash-kpi text-left"
-            style={{ background: `linear-gradient(135deg,${k.color},${k.dark})` }}
+            style={{ background: k.grad, boxShadow: `0 8px 32px ${k.shadow}` }}
             onClick={() => setView(k.vw)}
           >
-            <div className="dash-kpi-deco" aria-hidden />
+            <div className="dash-kpi-deco"  aria-hidden />
             <div className="dash-kpi-deco2" aria-hidden />
             <div className="dash-kpi-inner">
               <div>
                 <div className="dash-kpi-val">{k.val}</div>
                 <div className="dash-kpi-label">{k.label}</div>
               </div>
-              <div className="dash-kpi-icon">{k.icon}</div>
+              <div className="dash-kpi-icon" style={{ fontSize: 22 }}>{k.icon}</div>
             </div>
-            <div className="dash-kpi-foot">Voir le détail →</div>
+            <div className="dash-kpi-foot" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 10, opacity: 0.7 }}>{k.sub}</span>
+              <span>Voir →</span>
+            </div>
           </button>
         ))}
       </div>
 
+      {/* Alerts */}
       {(alertesStock.length > 0 || peremProches.length > 0) && (
         <div className="dash-alert-panel">
           <div className="dash-alert-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: 14,
-                  fontWeight: 900,
-                }}
-              >
-                !
-              </span>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 900 }}>!</span>
               <span style={{ fontWeight: 800, fontSize: 15, color: '#991b1b' }}>Alertes</span>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: 999,
-                  background: '#ef4444',
-                  color: 'white',
-                }}
-              >
-                Urgent
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#ef4444', color: 'white' }}>
+                {alertesStock.length + peremProches.length} urgent{alertesStock.length + peremProches.length > 1 ? 's' : ''}
               </span>
             </div>
             <button type="button" className="dash-link" style={{ color: '#ef4444' }} onClick={() => setView('medicaments')}>
-              Voir tout →
+              Gérer le stock →
             </button>
           </div>
           <div className="dash-alert-grid-hdr">
@@ -154,29 +148,11 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
           {alertesStock.slice(0, 5).map((m) => (
             <div key={m.id} className="dash-alert-row">
               <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--app-text)' }}>{m.nom}</span>
-              <span
-                style={{
-                  textAlign: 'center',
-                  fontFamily: "'Space Mono',monospace",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#dc2626',
-                }}
-              >
+              <span style={{ textAlign: 'center', fontFamily: "'Space Mono',monospace", fontSize: 13, fontWeight: 700, color: '#dc2626' }}>
                 {m.stock} / {m.seuil}
               </span>
               <div style={{ textAlign: 'center' }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: 999,
-                    background: '#fef2f2',
-                    color: '#dc2626',
-                    border: '1px solid #fecaca',
-                  }}
-                >
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
                   🚨 Critique
                 </span>
               </div>
@@ -189,17 +165,7 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
                 <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--app-text)' }}>{m.nom}</span>
                 <span style={{ textAlign: 'center', fontSize: 13, color: '#d97706' }}>{m.peremption}</span>
                 <div style={{ textAlign: 'center' }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: '3px 10px',
-                      borderRadius: 999,
-                      background: '#fffbeb',
-                      color: '#d97706',
-                      border: '1px solid #fde68a',
-                    }}
-                  >
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
                     ⏰ {j}j restants
                   </span>
                 </div>
@@ -210,144 +176,135 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
       )}
 
       <div className="dash-grid-2">
+        {/* Sales chart */}
         <div className="dash-card">
           <div className="dash-card-head">
             <div className="dash-card-title">
-              <span
-                className="dash-icon-wrap"
-                style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}
-              >
-                📈
-              </span>
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>📈</span>
               Ventes — 7 derniers jours
             </div>
-            <button type="button" className="dash-link" onClick={() => setView('rapports')}>
-              Rapport complet →
-            </button>
+            <button type="button" className="dash-link" onClick={() => setView('rapports')}>Rapport →</button>
           </div>
-          <div className="dash-chart">
+          <div className="dash-chart" style={{ height: 120, alignItems: 'flex-end', gap: 5 }}>
             {ventes7.map((v, i) => {
-              const pct = maxVente > 0 ? Math.round((v.val / maxVente) * 100) : 20
+              const pct = Math.max(Math.round((v.val / maxVente) * 100), v.val > 0 ? 8 : 4)
               const isLast = i === ventes7.length - 1
+              const hasVal = v.val > 0
               return (
-                <div key={i} className="dash-chart-col">
-                  <span style={{ fontSize: 9, color: 'var(--app-muted)', fontWeight: 600 }}>{Math.round(v.val / 1000)}k</span>
+                <div key={i} className="dash-chart-col" title={`${v.jour}: ${new Intl.NumberFormat('fr-FR').format(v.val)} F`}>
+                  {hasVal && (
+                    <span style={{ fontSize: 9, color: isLast ? '#166534' : '#94a3b8', fontWeight: 700, marginBottom: 2 }}>
+                      {v.val >= 1000 ? `${Math.round(v.val / 1000)}k` : v.val}
+                    </span>
+                  )}
                   <div
                     className="dash-bar"
                     style={{
-                      background: isLast ? 'linear-gradient(to top,#166534,#22c55e)' : 'linear-gradient(to top,#bfdbfe,#60a5fa)',
-                      height: `${Math.max(pct, 5)}%`,
+                      background: isLast
+                        ? 'linear-gradient(to top,#166534,#4ade80)'
+                        : hasVal
+                          ? 'linear-gradient(to top,#bfdbfe,#3b82f6)'
+                          : '#f1f5f9',
+                      height: `${pct}%`,
+                      borderRadius: '6px 6px 4px 4px',
+                      width: '100%',
+                      transition: 'height 0.6s cubic-bezier(.22,1,.36,1)',
                     }}
                   />
-                  <span
-                    style={{
-                      fontSize: 9,
-                      color: isLast ? 'var(--green)' : 'var(--app-muted)',
-                      fontWeight: isLast ? 800 : 500,
-                    }}
-                  >
+                  <span style={{ fontSize: 9, color: isLast ? '#166534' : '#94a3b8', fontWeight: isLast ? 800 : 500, marginTop: 3 }}>
                     {v.jour}
                   </span>
                 </div>
               )
             })}
           </div>
+          {ventes7.every((v) => v.val === 0) && (
+            <p style={{ fontSize: 12, textAlign: 'center', color: 'var(--app-muted)', marginTop: 8 }}>
+              Aucune vente enregistrée cette semaine
+            </p>
+          )}
         </div>
 
+        {/* RDV du jour */}
         <div className="dash-card">
           <div className="dash-card-head">
             <div className="dash-card-title">
-              <span
-                className="dash-icon-wrap"
-                style={{ background: 'linear-gradient(135deg,#f97316,#dc2626)' }}
-              >
-                📅
-              </span>
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#f97316,#dc2626)' }}>📅</span>
               RDV du jour
+              {rdvsAujourdhui.length > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
+                  {rdvsAujourdhui.length}
+                </span>
+              )}
             </div>
-            <button type="button" className="dash-link" style={{ color: '#f97316' }} onClick={() => setView('agenda')}>
-              Agenda →
-            </button>
+            <button type="button" className="dash-link" style={{ color: '#f97316' }} onClick={() => setView('agenda')}>Agenda →</button>
           </div>
           {rdvsAujourdhui.length === 0 ? (
             <div className="dash-empty">
-              <div style={{ fontSize: 28, marginBottom: 6 }}>🎉</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--app-text)' }}>Journée libre !</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--app-text)' }}>Journée libre !</div>
+              <div style={{ fontSize: 11, color: 'var(--app-muted)', marginTop: 2 }}>Aucun rendez-vous aujourd'hui</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {rdvsAujourdhui.slice(0, 4).map((r, i) => (
-                <div key={i} className="dash-rdv-slot">
-                  <span
-                    style={{
-                      fontFamily: "'Space Mono',monospace",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: '#f97316',
-                      minWidth: 40,
-                    }}
-                  >
+                <div key={i} className="dash-rdv-slot" style={{ gap: 10 }}>
+                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 12, fontWeight: 800, color: '#f97316', minWidth: 44, flexShrink: 0 }}>
                     {r.heure}
                   </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--app-text)' }}>{r.patient}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--app-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.patient}</div>
                     <div style={{ fontSize: 11, color: 'var(--app-muted)' }}>{r.type}</div>
                   </div>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '2px 7px',
-                      borderRadius: 999,
-                      background: r.statut === 'Confirmé' ? '#dcfce7' : 'var(--bg)',
-                      color: r.statut === 'Confirmé' ? 'var(--green)' : 'var(--app-muted)',
-                    }}
-                  >
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, flexShrink: 0,
+                    background: r.statut === 'Confirmé' ? '#dcfce7' : '#f1f5f9',
+                    color:      r.statut === 'Confirmé' ? '#166534' : '#64748b',
+                    border:     r.statut === 'Confirmé' ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
+                  }}>
                     {r.statut}
                   </span>
                 </div>
               ))}
+              {rdvsAujourdhui.length > 4 && (
+                <button onClick={() => setView('agenda')} style={{ fontSize: 11, color: '#f97316', fontWeight: 700, textAlign: 'center', background: 'none', border: 'none', cursor: 'pointer', marginTop: 2 }}>
+                  +{rdvsAujourdhui.length - 4} autres →
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
       <div className="dash-grid-2">
+        {/* Species chart */}
         <div className="dash-card">
-          <div className="dash-card-title" style={{ marginBottom: 14 }}>
-            <span
-              className="dash-icon-wrap"
-              style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)' }}
-            >
-              🐾
-            </span>
+          <div className="dash-card-title" style={{ marginBottom: 16 }}>
+            <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)' }}>🐾</span>
             Patients par espèce
           </div>
           {especeTop.length === 0 ? (
-            <p style={{ color: 'var(--app-muted)', fontSize: 13, textAlign: 'center', margin: 0 }}>Aucun patient</p>
+            <p style={{ color: 'var(--app-muted)', fontSize: 13, textAlign: 'center' }}>Aucun patient enregistré</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {especeTop.slice(0, 5).map(([esp, nb], i) => {
                 const pct = Math.round((nb / patients.length) * 100)
-                const colors = ['#2563eb', '#166534', '#d97706', '#7c3aed', '#dc2626']
                 return (
                   <div key={esp}>
-                    <div className="dash-species-row">
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--app-text)' }}>{esp}</span>
-                      <span style={{ fontSize: 12, color: 'var(--app-muted)', fontFamily: "'Space Mono',monospace" }}>
-                        {nb} ({pct}%)
+                    <div className="dash-species-row" style={{ marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--app-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: speciesColors[i] || '#64748b', display: 'inline-block', flexShrink: 0 }} />
+                        {esp}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--app-muted)', fontFamily: "'Space Mono',monospace", fontWeight: 700 }}>
+                        {nb} <span style={{ fontWeight: 500, opacity: 0.7 }}>({pct}%)</span>
                       </span>
                     </div>
-                    <div className="dash-species-bar">
-                      <div
-                        style={{
-                          background: colors[i] || '#64748b',
-                          height: '100%',
-                          borderRadius: 999,
-                          width: `${pct}%`,
-                          transition: 'width 0.7s',
-                        }}
-                      />
+                    <div className="dash-species-bar" style={{ height: 8 }}>
+                      <div style={{
+                        background: speciesColors[i] || '#64748b',
+                        height: '100%', borderRadius: 999,
+                        width: `${pct}%`, transition: 'width 0.8s cubic-bezier(.22,1,.36,1)',
+                      }} />
                     </div>
                   </div>
                 )
@@ -356,27 +313,24 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
           )}
         </div>
 
+        {/* Quick actions */}
         <div className="dash-card">
           <div className="dash-card-title" style={{ marginBottom: 14 }}>
-            <span
-              className="dash-icon-wrap"
-              style={{ background: 'linear-gradient(135deg,#166534,#1d4ed8)' }}
-            >
-              ⚡
-            </span>
+            <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#166534,#1d4ed8)' }}>⚡</span>
             Actions rapides
           </div>
-          <div className="dash-actions-grid">
+          <div className="dash-actions-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             {quickActions.map((a, i) => (
               <button
                 key={i}
                 type="button"
                 className="dash-action-tile"
-                style={{ background: a.c, borderColor: a.b }}
+                style={{ background: a.c, borderColor: a.b, flexDirection: 'column', alignItems: 'flex-start', padding: '10px 12px', gap: 4 }}
                 onClick={() => setView(a.v)}
               >
-                <span style={{ fontSize: 18 }}>{a.i}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: a.tc, lineHeight: 1.2, textAlign: 'left' }}>{a.t}</span>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{a.i}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: a.tc, lineHeight: 1.2 }}>{a.t}</span>
+                <span style={{ fontSize: 10, color: a.tc, opacity: 0.65, lineHeight: 1.2 }}>{a.d}</span>
               </button>
             ))}
           </div>

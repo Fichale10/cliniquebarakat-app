@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner } from '../../components/ui'
+import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner, Pagination, usePagination } from '../../components/ui'
 import { dbInsert, dbDelete, newId } from '../../lib/db'
 import { validateClientForm, clientFormToRow } from '../../lib/validation'
 
@@ -88,6 +88,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
     c.tel?.includes(search) ||
     (c.adresse || '').toLowerCase().includes(search.toLowerCase())
   )
+  const pagination = usePagination(filtered)
 
   return (
     <div id="clients-print" className="app-page space-y-5">
@@ -161,7 +162,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {filtered.map(c => (
+            {pagination.pageItems.map(c => (
               <div key={c.id} className="group relative bg-[var(--app-surface)] border-2 border-[var(--app-border)] hover:border-green-500/50 hover:shadow-md rounded-2xl p-4 transition-all">
                 <div className="flex items-start gap-3">
                   <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0"
@@ -212,6 +213,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
             )}
           </div>
         </div>
+        <Pagination {...pagination} />
       </div>
     </div>
   )

@@ -747,8 +747,8 @@ useEffect(() => {
           {view==='commandes'&&<Commandes meds={meds} setMeds={setSyncedMeds}/>}
           {view==='inventaire'&&<Inventaire {...sp}/>}
           {view==='ventes'&&<Ventes {...sp}/>}
-          {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode}/>:<Interdit/>)}
-          {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setDepsHist}/>:<Interdit/>)}
+          {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}
+          {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setDepsHist} sb={sb}/>:<Interdit/>)}
           {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}
           {view==='journal'&&<JournalActivite user={user}/>}
           {view==='lots'&&<GestionLots meds={meds} ventesHist={ventesHist} user={user}/>}

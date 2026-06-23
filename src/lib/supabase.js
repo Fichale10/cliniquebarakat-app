@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const SB_URL = 'https://pfqveujmopssenkapjrw.supabase.co'
-export const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmcXZldWptb3Bzc2Vua2FwanJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5ODI4NzksImV4cCI6MjA4OTU1ODg3OX0.D-xAJPGb_NF9XfCJQlc0391mjh0grcleglMPc9VhGRE'
+const SB_URL = import.meta.env.VITE_SUPABASE_URL
+const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!SB_URL || !SB_KEY) {
+  throw new Error('Variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY manquantes dans .env')
+}
 
 export const sb = createClient(SB_URL, SB_KEY)

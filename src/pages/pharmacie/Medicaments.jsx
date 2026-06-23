@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import {
   Btn, Badge, Field, DupWarning, ValidationBanner,
-  FilterBar, FilterSelect, FilterBtns,
+  FilterBar, FilterSelect, FilterBtns, Pagination, usePagination,
 } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, dbFetch, getCache, setCache, isCacheFresh, markSynced, newId } from '../../lib/db'
 import {
@@ -260,6 +260,7 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
 
   const activeFilters = [fCat, fStock, fPerem].filter(Boolean).length
   const resetFilters  = () => { setSearch(''); setFCat(''); setFStock(''); setFPerem('') }
+  const pagination    = usePagination(filtered, 25)
 
   return (
     <div className="app-page space-y-5">
@@ -330,7 +331,7 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(m => {
+              {pagination.pageItems.map(m => {
                 const crit = m.stock <= m.seuil
                 const ps   = peremStatus(m)
                 const j    = jPerem(m)
@@ -375,6 +376,7 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
             </tbody>
           </table>
         </div>
+        <Pagination {...pagination} />
       </div>
     </div>
   )

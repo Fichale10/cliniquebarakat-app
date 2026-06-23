@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, ValidationBanner, FilterBar, FilterSelect, FilterBtns } from '../../components/ui'
+import { Btn, Badge, Field, DupWarning, ValidationBanner, FilterBar, FilterSelect, FilterBtns, Pagination, usePagination } from '../../components/ui'
 import { dbInsert, dbDelete, newId } from '../../lib/db'
 import { validatePatientForm, patientFormToRow } from '../../lib/validation'
 
@@ -106,6 +106,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
 
   const activeFilters = [fEspece, fAllergies].filter(Boolean).length
   const resetFilters  = () => { setSearch(''); setFEspece(''); setFAllergies('') }
+  const pagination    = usePagination(filtered)
   const clientSugg    = form.proprio.length > 1
     ? clients.filter(c => c.nom.toLowerCase().includes(form.proprio.toLowerCase()))
     : []
@@ -181,7 +182,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
 
         <div className="p-4">
           <div className="space-y-3">
-            {filtered.map(p => {
+            {pagination.pageItems.map(p => {
               const vaccins = p.vaccins || []
               const prochainVaccin = vaccins.find(v => v.prochain && new Date(v.prochain) >= new Date())
               return (
@@ -222,6 +223,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
             {!filtered.length && <p className="text-center text-slate-400 py-8">Aucun patient</p>}
           </div>
         </div>
+        <Pagination {...pagination} />
       </div>
     </div>
   )

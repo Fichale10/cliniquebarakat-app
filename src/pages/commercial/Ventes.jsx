@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, AutoSuggest, ValidationBanner, FilterBar, FilterSelect, FilterPeriode } from '../../components/ui'
+import { Btn, Badge, Field, AutoSuggest, ValidationBanner, FilterBar, FilterSelect, FilterPeriode, Pagination, usePagination } from '../../components/ui'
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 
@@ -79,6 +79,26 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     return [{ conditionnement:'Unité', prix: pv }]
   }
 
+  const applyStockDelta = async (lignes, delta) => {
+    const updates = meds
+      .map(m => {
+        const l = lignes.find(x => x.med === m.nom)
+        if (!l) return null
+        return { medId: m.id, newStock: Math.max(0, (m.stock || 0) + delta * (parseInt(l.qte) || 0)) }
+      })
+      .filter(Boolean)
+    if (!updates.length) return
+    await Promise.all(updates.map(({ medId, newStock }) =>
+      dbUpdate(sb, 'medicaments', medId, { stock: newStock })
+    ))
+    const updatedMeds = meds.map(m => {
+      const u = updates.find(x => x.medId === m.id)
+      return u ? { ...m, stock: u.newStock } : m
+    })
+    setMeds(updatedMeds)
+    try { localStorage.setItem('lb_medicaments', JSON.stringify(updatedMeds)) } catch(e) {}
+  }
+
   // ── Ajouter une vente avec Supabase ───────────────────────
   const addVente = async () => {
     const checked = validateVenteForm(form, meds)
@@ -88,6 +108,21 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       return
     }
     const validated = checked.data
+
+    if (validated.statut === 'Payé') {
+      const stockErrors = validated.lignes
+        .map(l => {
+          const med = meds.find(m => m.nom === l.med)
+          if (med && l.qte > (med.stock || 0))
+            return `${l.med} : stock insuffisant (${med.stock || 0} disponible, ${l.qte} demandé)`
+          return null
+        })
+        .filter(Boolean)
+      if (stockErrors.length) {
+        setValidationMessages(stockErrors)
+        return
+      }
+    }
 
     setSaving(true)
     try {
@@ -99,14 +134,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       try { localStorage.setItem('lb_ventes_hist', JSON.stringify(newHist)) } catch (e) {}
 
       if (validated.statut === 'Payé') {
-        const updatedMeds = meds.map(m => {
-          const l = validated.lignes.find(x => x.med === m.nom)
-          if (!l) return m
-          const newStock = Math.max(0, (m.stock || 0) - l.qte)
-          dbUpdate(sb, 'medicaments', m.id, { stock: newStock })
-          return { ...m, stock: newStock }
-        })
-        setMeds(updatedMeds)
+        await applyStockDelta(validated.lignes, -1)
       }
 
       if (logAction && sb) logAction(sb, user, 'vente_added', `${validated.client} — ${fmtF(validated.total)}`)
@@ -123,23 +151,17 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   }
 
   // ── Changer statut d'une vente ────────────────────────────
-  const handleStatut = async (id, newStatut) => {
-    await dbUpdate(sb, 'ventes', id, { statut: newStatut })
-    const newHist = ventes.map(v => v.id === id ? { ...v, statut: newStatut } : v)
+  const handleStatut = async (venteId, newStatut) => {
+    await dbUpdate(sb, 'ventes', venteId, { statut: newStatut })
+    const newHist = ventes.map(v => v.id === venteId ? { ...v, statut: newStatut } : v)
     setVentesHist(newHist)
 
-    // Si on passe à Payé, décrémenter le stock
-    if (newStatut === 'Payé') {
-      const vente = ventes.find(v => v.id === id)
-      if (vente?.lignes) {
-        const updatedMeds = meds.map(m => {
-          const l = vente.lignes.find(x => x.med === m.nom)
-          if (!l) return m
-          const newStock = Math.max(0, (m.stock || 0) - (parseInt(l.qte) || 0))
-          dbUpdate(sb, 'medicaments', m.id, { stock: newStock })
-          return { ...m, stock: newStock }
-        })
-        setMeds(updatedMeds)
+    const vente = ventes.find(v => v.id === venteId)
+    if (vente?.lignes) {
+      if (newStatut === 'Payé') {
+        await applyStockDelta(vente.lignes, -1)
+      } else if (newStatut === 'Annulé' && vente.statut === 'Payé') {
+        await applyStockDelta(vente.lignes, +1)
       }
     }
   }
@@ -184,6 +206,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     if (searchV) { const q = searchV.toLowerCase(); if (!v.client.toLowerCase().includes(q) && !JSON.stringify(v.lignes||[]).toLowerCase().includes(q)) return false }
     return true
   })
+  const pagination = usePagination(filtered)
 
   return (
     <div className="app-page space-y-5">
@@ -309,7 +332,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         </FilterBar>
 
         <div className="divide-y divide-slate-100">
-          {filtered.map(v => (
+          {pagination.pageItems.map(v => (
             <div key={v.id} className="p-5 hover:bg-slate-50">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -343,6 +366,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
           ))}
           {!filtered.length && <p className="text-center text-slate-400 py-8">Aucune vente</p>}
         </div>
+        <Pagination {...pagination} />
       </div>
     </div>
   )

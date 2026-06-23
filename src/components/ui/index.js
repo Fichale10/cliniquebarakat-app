@@ -11,5 +11,8 @@ export { default as FilterPeriode } from './FilterPeriode'
 export { default as PrintBtn } from './PrintBtn'
 export { default as Interdit } from './Interdit'
 
+export { default as Pagination } from './Pagination'
+
 // Hooks partagés (réexportés ici pour `import { … } from 'components/ui'`)
 export { useDateFilter, today } from '../../hooks/useDateFilter'
+export { usePagination } from '../../hooks/usePagination'
