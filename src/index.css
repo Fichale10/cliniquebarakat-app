@@ -1047,3 +1047,94 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
 .panel-surface:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   THEME CHALEUREUX MÉDICAL — teal #0d9488 + sidebar blanche
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Nouvelle palette ── */
+:root {
+  --brand-green: #0d9488 !important;
+  --brand-green-mid: #14b8a6 !important;
+  --brand-green-light: #ccfbf1 !important;
+  --green: #0d9488 !important;
+  --app-bg: #f5f7f9 !important;
+  --app-sidebar-item-hover: #f0fdfa !important;
+  --accent: #f59e0b !important;
+  --accent-mid: #fbbf24 !important;
+  --accent-soft: rgba(245,158,11,0.1) !important;
+}
+
+/* ── Sidebar blanche ── */
+.sidebar-bg {
+  background: #ffffff !important;
+  border-right: 1.5px solid #e8edf2 !important;
+  box-shadow: 2px 0 16px rgba(13,148,136,0.04) !important;
+}
+
+.sidebar-cat {
+  color: #94a3b8 !important;
+  font-size: 9.5px !important;
+  letter-spacing: .14em !important;
+}
+.sidebar-cat-caret {
+  color: #cbd5e1 !important;
+}
+.sidebar-group {
+  border-color: #f1f5f9 !important;
+  background: transparent !important;
+}
+.sidebar-group[open] {
+  background: rgba(13,148,136,0.018) !important;
+}
+.sidebar-cat-btn:hover {
+  background: #f8fffe !important;
+}
+
+/* Item actif */
+.sidebar-active {
+  background: linear-gradient(135deg, #f0fdfa, #e6fffa) !important;
+  border: 1px solid rgba(13,148,136,0.22) !important;
+  border-left: 3px solid #0d9488 !important;
+  box-shadow: 0 2px 8px rgba(13,148,136,0.1) !important;
+}
+.sidebar-active .nav-label {
+  color: #0f766e !important;
+  font-weight: 800 !important;
+}
+.sidebar-active .nav-icon {
+  filter: drop-shadow(0 0 5px rgba(13,148,136,0.4)) !important;
+}
+
+/* Hover item */
+.sidebar-item:hover:not(.sidebar-active) {
+  background: #f8fffe !important;
+  border-color: rgba(13,148,136,0.12) !important;
+}
+
+/* Logo ring teal */
+.sidebar-logo-ring {
+  background: conic-gradient(#0d9488 0deg,#14b8a6 90deg,#5eead4 200deg,#0d9488 360deg) !important;
+}
+
+/* Stat tiles : teal */
+.stat-tile--green { border-left-color: #0d9488 !important; }
+.stat-tile--green .stat-tile__value { color: #0d9488 !important; }
+body.dark-mode .stat-tile--green .stat-tile__value { color: #2dd4bf !important; }
+.stat-tile--green:hover { box-shadow: 0 6px 24px rgba(13,148,136,0.16) !important; }
+
+/* Fond app légèrement plus chaud */
+body { background: var(--app-bg) !important; }
+
+/* Pagination : teal */
+.bg-green-600 { background-color: #0d9488 !important; }
+
+/* Focus ring teal partout */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.15) !important;
+  border-color: #0d9488 !important;
+}
+
+/* Liens dash teal */
+.dash-link { color: #0d9488 !important; }
+body.dark-mode .dash-link { color: #2dd4bf !important; }

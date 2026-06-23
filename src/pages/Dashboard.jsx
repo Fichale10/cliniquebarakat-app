@@ -49,33 +49,33 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
   const KPIS = [
     {
       label: 'Patients enregistrés', val: patients.length, icon: '🐾',
-      grad: 'linear-gradient(135deg,#1e40af,#2563eb)',
-      shadow: 'rgba(37,99,235,0.45)', vw: 'patients', sub: 'animaux suivis',
+      grad: 'linear-gradient(135deg,#0d9488,#14b8a6)',
+      shadow: 'rgba(13,148,136,0.4)', vw: 'patients', sub: 'animaux suivis',
     },
     {
       label: "RDV aujourd'hui", val: rdvsAujourdhui.length, icon: '📅',
-      grad: 'linear-gradient(135deg,#c2410c,#f97316)',
-      shadow: 'rgba(249,115,22,0.45)', vw: 'agenda', sub: 'rendez-vous',
+      grad: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+      shadow: 'rgba(124,58,237,0.4)', vw: 'agenda', sub: 'rendez-vous',
     },
     {
       label: 'Stocks critiques', val: alertesStock.length, icon: '🚨',
-      grad: 'linear-gradient(135deg,#0f2040,#1e3a5f)',
-      shadow: 'rgba(30,58,95,0.45)', vw: 'medicaments', sub: 'médicaments en alerte',
+      grad: 'linear-gradient(135deg,#dc2626,#f87171)',
+      shadow: 'rgba(220,38,38,0.4)', vw: 'medicaments', sub: 'médicaments en alerte',
     },
     {
       label: 'Revenus ce mois', val: fmtF(totalMois), icon: '💰',
-      grad: 'linear-gradient(135deg,#92400e,#d97706)',
-      shadow: 'rgba(217,119,6,0.45)', vw: 'rapports', sub: 'FCFA encaissés',
+      grad: 'linear-gradient(135deg,#b45309,#f59e0b)',
+      shadow: 'rgba(180,83,9,0.4)', vw: 'rapports', sub: 'FCFA encaissés',
     },
   ]
 
   const quickActions = [
-    { i: '🐾', t: 'Nouveau patient',  d: 'Enregistrer un animal', v: 'patients',      c: '#eff6ff', b: '#bfdbfe', tc: '#1d4ed8' },
-    { i: '🩺', t: 'Consultation',     d: 'Ouvrir un dossier',     v: 'consultations', c: '#f0fdf4', b: '#bbf7d0', tc: '#166534' },
-    { i: '📝', t: 'Ordonnance',       d: 'Rédiger une ordonnance', v: 'ordonnances',  c: '#faf5ff', b: '#e9d5ff', tc: '#7c3aed' },
-    { i: '🛒', t: 'Nouvelle vente',   d: 'Caisse & facturation',  v: 'caisse',        c: '#fff7ed', b: '#fed7aa', tc: '#c2410c' },
-    { i: '💊', t: 'Médicaments',      d: 'Gérer le stock',        v: 'medicaments',   c: '#fefce8', b: '#fde68a', tc: '#ca8a04' },
-    { i: '📅', t: 'Nouveau RDV',      d: 'Planifier un rendez-vous', v: 'agenda',     c: '#ecfdf5', b: '#a7f3d0', tc: '#065f46' },
+    { i: '🐾', t: 'Nouveau patient',  d: 'Enregistrer un animal',    v: 'patients',      c: '#f0fdfa', b: '#99f6e4', tc: '#0d9488' },
+    { i: '🩺', t: 'Consultation',     d: 'Ouvrir un dossier',        v: 'consultations', c: '#f0fdfa', b: '#5eead4', tc: '#0f766e' },
+    { i: '📝', t: 'Ordonnance',       d: 'Rédiger une ordonnance',   v: 'ordonnances',   c: '#faf5ff', b: '#d8b4fe', tc: '#7c3aed' },
+    { i: '🛒', t: 'Nouvelle vente',   d: 'Caisse & facturation',     v: 'caisse',        c: '#fff7ed', b: '#fed7aa', tc: '#c2410c' },
+    { i: '💊', t: 'Médicaments',      d: 'Gérer le stock',           v: 'medicaments',   c: '#fefce8', b: '#fde68a', tc: '#ca8a04' },
+    { i: '📅', t: 'Nouveau RDV',      d: 'Planifier un rendez-vous', v: 'agenda',        c: '#eff6ff', b: '#bfdbfe', tc: '#1d4ed8' },
   ]
 
   const speciesColors = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626']
@@ -193,7 +193,7 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
               return (
                 <div key={i} className="dash-chart-col" title={`${v.jour}: ${new Intl.NumberFormat('fr-FR').format(v.val)} F`}>
                   {hasVal && (
-                    <span style={{ fontSize: 9, color: isLast ? '#166534' : '#94a3b8', fontWeight: 700, marginBottom: 2 }}>
+                    <span style={{ fontSize: 9, color: isLast ? '#0d9488' : '#94a3b8', fontWeight: 700, marginBottom: 2 }}>
                       {v.val >= 1000 ? `${Math.round(v.val / 1000)}k` : v.val}
                     </span>
                   )}
@@ -201,9 +201,9 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
                     className="dash-bar"
                     style={{
                       background: isLast
-                        ? 'linear-gradient(to top,#166534,#4ade80)'
+                        ? 'linear-gradient(to top,#0d9488,#5eead4)'
                         : hasVal
-                          ? 'linear-gradient(to top,#bfdbfe,#3b82f6)'
+                          ? 'linear-gradient(to top,#ccfbf1,#14b8a6)'
                           : '#f1f5f9',
                       height: `${pct}%`,
                       borderRadius: '6px 6px 4px 4px',
@@ -211,7 +211,7 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
                       transition: 'height 0.6s cubic-bezier(.22,1,.36,1)',
                     }}
                   />
-                  <span style={{ fontSize: 9, color: isLast ? '#166534' : '#94a3b8', fontWeight: isLast ? 800 : 500, marginTop: 3 }}>
+                  <span style={{ fontSize: 9, color: isLast ? '#0d9488' : '#94a3b8', fontWeight: isLast ? 800 : 500, marginTop: 3 }}>
                     {v.jour}
                   </span>
                 </div>

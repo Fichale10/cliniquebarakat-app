@@ -1,10 +1,10 @@
 function Btn({ onClick, children, color = 'brand', sm, disabled, className = '' }) {
   const styles = {
-    brand:  { background: 'linear-gradient(135deg,#166534,#1d4ed8)', boxShadow: '0 2px 12px rgba(22,101,52,0.28)' },
+    brand:  { background: 'linear-gradient(135deg,#0d9488,#14b8a6)', boxShadow: '0 2px 12px rgba(13,148,136,0.32)' },
     accent: { background: 'linear-gradient(135deg,#f97316,#ea580c)', boxShadow: '0 2px 12px rgba(234,88,12,0.35)' },
     blue:   { background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)', boxShadow: '0 2px 10px rgba(37,99,235,0.3)' },
     slate:  { background: 'linear-gradient(135deg,#64748b,#475569)', boxShadow: '0 2px 8px rgba(71,85,105,0.2)' },
-    green:  { background: 'linear-gradient(135deg,#22c55e,#15803d)', boxShadow: '0 2px 10px rgba(21,128,61,0.28)' },
+    green:  { background: 'linear-gradient(135deg,#0d9488,#0f766e)', boxShadow: '0 2px 10px rgba(13,148,136,0.3)' },
     red:    { background: 'linear-gradient(135deg,#f87171,#dc2626)', boxShadow: '0 2px 10px rgba(220,38,38,0.28)' },
     amber:  { background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 2px 10px rgba(217,119,6,0.28)' },
   }

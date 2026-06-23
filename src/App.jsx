@@ -467,37 +467,32 @@ useEffect(() => {
 
     {/* ══ SIDEBAR ══ */}
     {sidebarOpen&&<div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={()=>setSidebarOpen(false)}/>}
-    <aside className={`sidebar-bg text-white flex flex-col shrink-0 relative overflow-hidden transition-all duration-300
+    <aside className={`sidebar-bg flex flex-col shrink-0 relative overflow-hidden transition-all duration-300
   ${sidebarOpen?'fixed top-0 left-0 z-50 h-screen':'hidden'} md:block
   ${sidebarCollapsed?'md:w-16':'md:w-64'}`}>
-      {/* Lueur déco */}
-      <div className="absolute inset-0 pointer-events-none" style={{background:'radial-gradient(ellipse at 80% 10%,rgba(34,197,94,0.08),transparent 55%),radial-gradient(ellipse at 20% 90%,rgba(59,130,246,0.08),transparent 55%)'}}/>
+      {/* Lueur déco teal subtile */}
+      <div className="absolute inset-0 pointer-events-none" style={{background:'radial-gradient(ellipse at 70% 5%,rgba(13,148,136,0.05),transparent 50%)'}}/>
 
       <div className="relative z-10 flex flex-col h-full">
         {/* ── Logo zone ── */}
-        <div className="px-4 pt-5 pb-4" style={{borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
+        <div className="px-4 pt-5 pb-4" style={{borderBottom:'1px solid #e8edf2'}}>
           <div className="flex items-center gap-3">
-            {/* Avatar anneau doré */}
             <div className="sidebar-logo-ring shrink-0" style={{padding:'2.5px'}}>
-              <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{background:'linear-gradient(135deg,#0d4f28,#1e3a8a)'}}>
-                <span style={{fontSize:'22px'}}>🐄</span>
+              <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{background:'linear-gradient(135deg,#0d9488,#14b8a6)'}}>
+                <span style={{fontSize:'22px'}}>🐾</span>
               </div>
             </div>
-           {!sidebarCollapsed&&<div className="min-w-0 flex-1">
-  <div className="flex items-center gap-1 mb-0.5">
-    <span style={{color:'#fbbf24',fontSize:'9px'}}>★</span>
-    <span className="font-black text-white truncate" style={{fontSize:'13px',letterSpacing:'.02em'}}>{clinique.nom}</span>
-    <span style={{color:'#fbbf24',fontSize:'9px'}}>★</span>
-  </div>
-  <p style={{fontSize:'10px',color:'rgba(255,255,255,0.35)',letterSpacing:'.03em'}}>{clinique.sousTitre}</p>
-</div>}
+            {!sidebarCollapsed&&<div className="min-w-0 flex-1">
+              <div className="mb-0.5">
+                <span className="font-black truncate block" style={{fontSize:'13px',letterSpacing:'.02em',color:'#1e293b'}}>{clinique.nom}</span>
+              </div>
+              <p style={{fontSize:'10px',color:'#94a3b8',letterSpacing:'.03em'}}>{clinique.sousTitre}</p>
+            </div>}
           </div>
-
-        
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 px-3 py-3 overflow-y-auto" style={{scrollbarWidth:'thin',scrollbarColor:'rgba(255,255,255,0.15) transparent'}}>
+        <nav className="flex-1 px-3 py-3 overflow-y-auto" style={{scrollbarWidth:'thin',scrollbarColor:'#e2e8f0 transparent'}}>
           {Object.entries(grouped).map(([cat,items])=>(
             <details
               key={cat}
@@ -505,9 +500,9 @@ useEffect(() => {
               open={cat==='Général'||cat==='Clinique'||cat==='Commercial'}
             >
               {!sidebarCollapsed&&<summary className="sidebar-cat-btn">
-  <span className="sidebar-cat">{cat}</span>
-  <span className="sidebar-cat-caret">›</span>
-</summary>}
+                <span className="sidebar-cat">{cat}</span>
+                <span className="sidebar-cat-caret">›</span>
+              </summary>}
               <div className="sidebar-items">
                 {items.map(item=>{
                   const active=view===item.id;
@@ -516,12 +511,12 @@ useEffect(() => {
                       key={item.id}
                       onClick={()=>{setView(item.id);setShowNotifs(false);setSidebarOpen(false);}}
                       className={`sidebar-item w-full flex items-center gap-3 transition-all text-left ${active?'sidebar-active':''}`}
-                      style={{padding:'9px 12px',color:active?'#fff':'rgba(255,255,255,0.5)'}}
+                      style={{padding:'9px 12px',color:active?'#0f766e':'#64748b'}}
                     >
                       <span className="nav-icon shrink-0" style={{fontSize:'15px',width:'18px',textAlign:'center'}}>{item.icon}</span>
                       {!sidebarCollapsed&&<span className="nav-label truncate" style={{fontSize:'13px',fontWeight:active?700:500}}>{item.label}</span>}
-                      {active&&<span style={{marginLeft:'auto',width:'6px',height:'6px',borderRadius:'50%',background:'#fb923c',flexShrink:0,boxShadow:'0 0 8px rgba(251,146,60,0.55)'}}/>}
-                      {!active&&item.admin&&<span style={{marginLeft:'auto',fontSize:'10px',opacity:.2}}>🔒</span>}
+                      {active&&<span style={{marginLeft:'auto',width:'6px',height:'6px',borderRadius:'50%',background:'#0d9488',flexShrink:0,boxShadow:'0 0 8px rgba(13,148,136,0.5)'}}/>}
+                      {!active&&item.admin&&<span style={{marginLeft:'auto',fontSize:'10px',opacity:.25}}>🔒</span>}
                     </button>
                   );
                 })}
@@ -531,18 +526,18 @@ useEffect(() => {
         </nav>
 
         {/* ── Pied sidebar ── */}
-        <div className="px-3 pb-4" style={{borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:'12px',display:'flex',flexDirection:'column',gap:'6px'}}>
+        <div className="px-3 pb-4" style={{borderTop:'1px solid #e8edf2',paddingTop:'12px',display:'flex',flexDirection:'column',gap:'6px'}}>
           {isAdmin&&<button onClick={toggleOTR}
             style={{width:'100%',padding:'8px 12px',borderRadius:'10px',fontSize:'11px',fontWeight:700,transition:'all .18s',
-              background:otrMode?'rgba(251,146,60,0.15)':'rgba(255,255,255,0.04)',
-              border:`1px solid ${otrMode?'rgba(251,146,60,0.3)':'rgba(255,255,255,0.07)'}`,
-              color:otrMode?'#fdba74':'rgba(255,255,255,0.35)'}}>
+              background:otrMode?'rgba(245,158,11,0.08)':'transparent',
+              border:`1px solid ${otrMode?'rgba(245,158,11,0.3)':'#e2e8f0'}`,
+              color:otrMode?'#d97706':'#94a3b8'}}>
             {otrMode?'🙈 Mode OTR actif':'👁️ Mode OTR'}
           </button>}
           <button onClick={()=>{if(confirm('Se déconnecter ?')) onLogout?.()}}
             style={{width:'100%',padding:'9px 12px',borderRadius:'10px',fontSize:'12px',fontWeight:700,
-              background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.18)',
-              color:'rgba(252,165,165,0.85)',transition:'all .18s',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+              background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.15)',
+              color:'#ef4444',transition:'all .18s',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
             🔒 Déconnexion
           </button>
         </div>
