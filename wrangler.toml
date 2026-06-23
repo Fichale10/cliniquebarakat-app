@@ -1,5 +1,5 @@
 # Cloudflare Pages — sortie Vite (dossier dist)
-# Déploiement local : npm run build && npx wrangler pages deploy
+# Déploiement local : npm run build && npx wrangler pages deploy dist
 name = "la-barakat"
 pages_build_output_dir = "dist"
 compatibility_date = "2024-06-03"
