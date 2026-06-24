@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState } from 'react'
 
 function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
   const fmtF=v=>new Intl.NumberFormat('fr-FR').format(Math.round(v))+' F';

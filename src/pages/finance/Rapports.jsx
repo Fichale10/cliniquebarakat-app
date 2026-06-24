@@ -1,4 +1,7 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { fmtF } from "../../lib/utils"
+
+const today = () => new Date().toISOString().split('T')[0]
 
 function Rapports({ventesHist,depsHist,otrMode}){
   const [periode,setPeriode]=useState('jour');
