@@ -124,6 +124,8 @@ useEffect(() => {
   const setSyncedRdvs = syncedSet(setRdvs, 'rdvs')
   const [ordonnances,setOrdonnances]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_ordonnances')||'[]');}catch{return [];} });
   const setSyncedOrdonnances = syncedSet(setOrdonnances, 'ordonnances')
+  const [chirurgies,setChirurgies]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_chirurgies')||'[]');}catch{return [];} });
+  const setSyncedChirurgies = syncedSet(setChirurgies, 'chirurgies')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -148,6 +150,7 @@ useEffect(() => {
         ['equipe', setSyncedEquipe],
         ['rdvs', setSyncedRdvs],
         ['ordonnances', setSyncedOrdonnances],
+        ['chirurgies', setSyncedChirurgies],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -451,6 +454,7 @@ useEffect(() => {
     devis, setDevis,
     rdvs, setRdvs: setSyncedRdvs,
     ordonnances, setOrdonnances: setSyncedOrdonnances,
+    chirurgies, setChirurgies: setSyncedChirurgies,
     dbInsert, dbUpdate, dbDelete,
     user, sb, logAction,
     setSyncPending: ()=>setSyncPending(getQ().length),
