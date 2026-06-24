@@ -19,7 +19,7 @@ import { Medicaments, Commandes, Inventaire } from './pages/pharmacie'
 import { Clients, Fournisseurs, Factures, Ventes, Devis, Creances, Caisse, Historique } from './pages/commercial'
 
 // Pages - Finance
-import { Depenses, Finances, RapportsPDF, Rapports } from './pages/finance'
+import { Depenses, Finances, RapportsPDF } from './pages/finance'
 
 // Pages - Admin
 import { Parametres, MonProfil, GestionComptes, JournalActivite } from './pages/admin'
@@ -788,7 +788,7 @@ useEffect(() => {
           {view==='inventaire'&&<Inventaire {...sp}/>}
           {view==='ventes'&&<Ventes {...sp}/>}
           {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}
-          {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setDepsHist} sb={sb}/>:<Interdit/>)}
+          {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setSyncedDepsHist} sb={sb}/>:<Interdit/>)}
           {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}
           {view==='journal'&&<JournalActivite user={user}/>}
           {view==='lots'&&<GestionLots meds={meds} ventesHist={ventesHist} user={user}/>}
