@@ -119,7 +119,7 @@ useEffect(() => {
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
   const [achatsHist,setAchatsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_achats_hist')||'[]');}catch{return [];} });
   const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
-  const [devis,setDevis]=useState([]);
+  const [devis,setDevis]=useState(()=>getCache('devis')||[]);
   const [factures,setFactures]=useState(()=>getCache('factures')||[]);
   const [rdvs,setRdvs]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_rdvs')||'[]');}catch{return [];} });
   const setSyncedRdvs = syncedSet(setRdvs, 'rdvs')
@@ -134,6 +134,7 @@ useEffect(() => {
   const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
   const setSyncedDepsHist   = syncedSet(setDepsHist,   'depenses')
   const setSyncedFactures   = syncedSet(setFactures,   'factures')
+  const setSyncedDevis      = syncedSet(setDevis,      'devis')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -164,6 +165,7 @@ useEffect(() => {
         ['ventes', setSyncedVentesHist],
         ['depenses', setSyncedDepsHist],
         ['factures', setSyncedFactures],
+        ['devis', setSyncedDevis],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -464,7 +466,7 @@ useEffect(() => {
     achatsHist, setAchatsHist,
     depsHist, setDepsHist: setSyncedDepsHist,
     tva, saveTva,
-    devis, setDevis,
+    devis, setDevis: setSyncedDevis,
     factures, setFactures: setSyncedFactures,
     rdvs, setRdvs: setSyncedRdvs,
     ordonnances, setOrdonnances: setSyncedOrdonnances,
@@ -764,7 +766,7 @@ useEffect(() => {
           {view==='clients'&&<Clients {...sp}/>}
           {view==='fournisseurs'&&(isAdmin?<Fournisseurs/>:<Interdit/>)}
           {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}
-          {view==='devis'&&<Devis clients={clients} meds={meds} otrMode={otrMode} tva={tva} devis={devis} setDevis={setDevis}/>}
+          {view==='devis'&&<Devis {...sp}/>}
           {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}
           {view==='medicaments'&&<Medicaments {...sp}/>}
           {view==='commandes'&&<Commandes meds={meds} setMeds={setSyncedMeds}/>}
