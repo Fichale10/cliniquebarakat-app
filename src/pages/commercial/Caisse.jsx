@@ -81,11 +81,6 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const monnaie = montantDonne ? Math.max(0, (parseFloat(montantDonne) || 0) - totalTTC) : 0
   const mask = v => (otrMode ? '••••• F' : fmtF(v))
 
-  const persistHist = (updated) => {
-    setVentesHist(updated)
-    try { localStorage.setItem('lb_ventes_hist', JSON.stringify(updated)) } catch (e) {}
-  }
-
   const enregistrer = async () => {
     const checked = validateCaisseForm({ client, mode, note, lignes }, meds)
     if (!checked.ok) {
@@ -118,7 +113,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       }
 
       const updated = [vente, ...(ventesHist || [])].slice(0, 500)
-      persistHist(updated)
+      setVentesHist(updated)
 
       if (statut === 'Payé') {
         const updatedMeds = meds.map(m => {
