@@ -120,6 +120,7 @@ useEffect(() => {
   const [achatsHist,setAchatsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_achats_hist')||'[]');}catch{return [];} });
   const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
   const [devis,setDevis]=useState([]);
+  const [factures,setFactures]=useState(()=>getCache('factures')||[]);
   const [rdvs,setRdvs]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_rdvs')||'[]');}catch{return [];} });
   const setSyncedRdvs = syncedSet(setRdvs, 'rdvs')
   const [ordonnances,setOrdonnances]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_ordonnances')||'[]');}catch{return [];} });
@@ -132,6 +133,7 @@ useEffect(() => {
   const setSyncedTaches     = syncedSet(setTaches,     'taches')
   const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
   const setSyncedDepsHist   = syncedSet(setDepsHist,   'depenses')
+  const setSyncedFactures   = syncedSet(setFactures,   'factures')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -161,6 +163,7 @@ useEffect(() => {
         ['taches', setSyncedTaches],
         ['ventes', setSyncedVentesHist],
         ['depenses', setSyncedDepsHist],
+        ['factures', setSyncedFactures],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -462,6 +465,7 @@ useEffect(() => {
     depsHist, setDepsHist: setSyncedDepsHist,
     tva, saveTva,
     devis, setDevis,
+    factures, setFactures: setSyncedFactures,
     rdvs, setRdvs: setSyncedRdvs,
     ordonnances, setOrdonnances: setSyncedOrdonnances,
     chirurgies, setChirurgies: setSyncedChirurgies,
