@@ -118,7 +118,7 @@ useEffect(() => {
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
   const [achatsHist,setAchatsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_achats_hist')||'[]');}catch{return [];} });
-  const [depsHist,setDepsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_deps_hist')||'[]');}catch{return [];} });
+  const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
   const [devis,setDevis]=useState([]);
   const [rdvs,setRdvs]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_rdvs')||'[]');}catch{return [];} });
   const setSyncedRdvs = syncedSet(setRdvs, 'rdvs')
@@ -131,6 +131,7 @@ useEffect(() => {
   const [taches,setTaches]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_taches')||'[]');}catch{return [];} });
   const setSyncedTaches     = syncedSet(setTaches,     'taches')
   const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
+  const setSyncedDepsHist   = syncedSet(setDepsHist,   'depenses')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -159,6 +160,7 @@ useEffect(() => {
         ['hospitalisations', setSyncedHospitalisations],
         ['taches', setSyncedTaches],
         ['ventes', setSyncedVentesHist],
+        ['depenses', setSyncedDepsHist],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -457,7 +459,7 @@ useEffect(() => {
     otrMode, toggleOTR,
     ventesHist, setVentesHist: setSyncedVentesHist,
     achatsHist, setAchatsHist,
-    depsHist, setDepsHist,
+    depsHist, setDepsHist: setSyncedDepsHist,
     tva, saveTva,
     devis, setDevis,
     rdvs, setRdvs: setSyncedRdvs,

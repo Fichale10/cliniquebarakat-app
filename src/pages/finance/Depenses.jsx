@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Btn, Field, PrintBtn, FilterPeriode, FilterBar, FilterSelect } from "../../components/ui"
 import { fmtF, newId } from "../../lib/utils"
 import { dbInsert, dbDelete } from "../../lib/db"
@@ -7,34 +7,14 @@ const CATS = ['Achats stock','Salaires','Électricité','Eau','Loyer','WiFi / In
 const CAT_ICON = {'Achats stock':'📦','Salaires':'👤','Électricité':'⚡','Eau':'💧','Loyer':'🏠','WiFi / Internet':'📡','Entretien':'🔧','Transport':'🚗','Frais vétérinaires':'🐾','Autres':'📌'}
 const today = () => new Date().toISOString().split('T')[0]
 
-function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
-  const [deps, setDeps] = useState(() => depsHist || [])
+function Depenses({ otrMode, depsHist = [], setDepsHist, sb }) {
   const [showForm, setShowForm] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ date: today(), categorie: 'Achats stock', description: '', autresDetail: '', montant: '', mode: 'Espèces' })
-  const [fDepCat, setFDepCat] = useState('')
+  const [saving, setSaving]     = useState(false)
+  const [form, setForm]         = useState({ date: today(), categorie: 'Achats stock', description: '', autresDetail: '', montant: '', mode: 'Espèces' })
+  const [fDepCat, setFDepCat]   = useState('')
   const [fDepMode, setFDepMode] = useState('')
   const [fDepPeriode, setFDepPeriode] = useState('')
-  const [searchDep, setSearchDep] = useState('')
-
-  // Charge depuis Supabase au montage
-  useEffect(() => {
-    if (!sb || !navigator.onLine) return
-    sb.from('depenses').select('*').order('created_at', { ascending: false }).limit(500)
-      .then(({ data, error }) => {
-        if (!error && data?.length) {
-          setDeps(data)
-          setDepsHist(data)
-          try { localStorage.setItem('lb_deps_hist', JSON.stringify(data)) } catch(e) {}
-        }
-      })
-      .catch(() => {})
-  }, [])
-
-  const syncHist = (updated) => {
-    setDepsHist(updated)
-    try { localStorage.setItem('lb_deps_hist', JSON.stringify(updated)) } catch(e) {}
-  }
+  const [searchDep, setSearchDep]    = useState('')
 
   const addDep = async () => {
     if (!form.montant) return alert('Montant requis')
@@ -43,19 +23,13 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
 
     setSaving(true)
     try {
-      const row = { id: newId(), date: form.date, categorie: form.categorie, description: desc, montant: parseInt(form.montant), mode: form.mode, created_at: new Date().toISOString() }
-      let saved = row
-      if (sb) {
-        try {
-          const { data, error } = await sb.from('depenses').insert(row).select().single()
-          if (!error && data) saved = data
-        } catch(e) {}
-      }
-      const updated = [saved, ...deps]
-      setDeps(updated)
-      syncHist([saved, ...(depsHist || [])].slice(0, 500))
+      const row = { id: newId(), date: form.date, categorie: form.categorie, description: desc, montant: parseInt(form.montant), mode: form.mode }
+      const saved = await dbInsert(sb, 'depenses', row)
+      setDepsHist([saved, ...depsHist].slice(0, 500))
       setForm({ date: today(), categorie: 'Achats stock', description: '', autresDetail: '', montant: '', mode: 'Espèces' })
       setShowForm(false)
+    } catch (e) {
+      alert('Erreur : ' + (e?.message || e))
     } finally {
       setSaving(false)
     }
@@ -63,28 +37,32 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer cette dépense ?')) return
-    if (sb) {
-      try { await dbDelete(sb, 'depenses', id) } catch(e) {}
+    try {
+      await dbDelete(sb, 'depenses', id)
+      setDepsHist(depsHist.filter(x => x.id !== id))
+    } catch (e) {
+      alert('Erreur suppression : ' + (e?.message || e))
     }
-    const updated = deps.filter(x => x.id !== id)
-    setDeps(updated)
-    syncHist((depsHist || []).filter(x => x.id !== id))
   }
 
-  const depsFiltered = deps.filter(d => {
-    if (fDepCat && d.categorie !== fDepCat) return false
-    if (fDepMode && d.mode !== fDepMode) return false
-    if (fDepPeriode) {
-      const now2 = new Date()
-      const deb = { semaine: new Date(now2.getTime()-now2.getDay()*86400000).toISOString().split('T')[0], mois: new Date(now2.getFullYear(),now2.getMonth(),1).toISOString().split('T')[0], annee: new Date(now2.getFullYear(),0,1).toISOString().split('T')[0], jour: today() }[fDepPeriode]
-      if (deb && d.date < deb) return false
-    }
+  const now2 = new Date()
+  const PERIODE_DEBUT = {
+    semaine: new Date(now2.getTime() - now2.getDay() * 86400000).toISOString().split('T')[0],
+    mois:    new Date(now2.getFullYear(), now2.getMonth(), 1).toISOString().split('T')[0],
+    annee:   new Date(now2.getFullYear(), 0, 1).toISOString().split('T')[0],
+    jour:    today(),
+  }
+
+  const depsFiltered = depsHist.filter(d => {
+    if (fDepCat  && d.categorie !== fDepCat) return false
+    if (fDepMode && d.mode      !== fDepMode) return false
+    if (fDepPeriode && PERIODE_DEBUT[fDepPeriode] && d.date < PERIODE_DEBUT[fDepPeriode]) return false
     if (searchDep && !d.description?.toLowerCase().includes(searchDep.toLowerCase()) && !d.categorie?.toLowerCase().includes(searchDep.toLowerCase())) return false
     return true
   })
 
-  const total = deps.reduce((s, d) => s + (d.montant || 0), 0)
-  const totalFiltered = depsFiltered.reduce((s, d) => s + (d.montant || 0), 0)
+  const total          = depsHist.reduce((s, d) => s + (d.montant || 0), 0)
+  const totalFiltered  = depsFiltered.reduce((s, d) => s + (d.montant || 0), 0)
   const mask = v => otrMode ? '••••• F' : fmtF(v)
 
   return (
@@ -98,10 +76,10 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
           <div className="bg-white border border-slate-200 rounded-2xl p-4">
             <div className="text-xs font-bold text-slate-500 mb-2">Répartition par catégorie</div>
             {CATS.map(c => {
-              const m = deps.filter(d => d.categorie === c).reduce((s,d) => s + (d.montant || 0), 0)
+              const m = depsHist.filter(d => d.categorie === c).reduce((s, d) => s + (d.montant || 0), 0)
               return m > 0 ? (
                 <div key={c} className="flex justify-between text-sm py-0.5">
-                  <span className="flex items-center gap-1">{CAT_ICON[c]||'📌'} {c}</span>
+                  <span className="flex items-center gap-1">{CAT_ICON[c] || '📌'} {c}</span>
                   <span className="font-bold font-mono">{mask(m)}</span>
                 </div>
               ) : null
@@ -113,7 +91,7 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
           <div className="p-5 border-b flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold flex items-center gap-2">💸 Dépenses</h2>
-              <p className="text-xs text-slate-400 mt-0.5">{deps.length} dépense(s)</p>
+              <p className="text-xs text-slate-400 mt-0.5">{depsHist.length} dépense(s)</p>
             </div>
             <div className="flex gap-2 no-print">
               <PrintBtn zoneId="depenses-print" label="🖨 Imprimer"/>
@@ -131,7 +109,8 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
                   ? <div className="md:col-span-2">
                       <label className="text-xs font-bold text-slate-600 mb-1 block">Préciser *</label>
                       <input className="w-full border-2 border-amber-300 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-amber-50"
-                        placeholder="ex: Achat désinfectant, Réparation équipement…" value={form.autresDetail} onChange={e => setForm({...form, autresDetail: e.target.value})}/>
+                        placeholder="ex: Achat désinfectant, Réparation équipement…"
+                        value={form.autresDetail} onChange={e => setForm({...form, autresDetail: e.target.value})}/>
                     </div>
                   : <Field label="Description *" value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Ex: Facture EDO, Abonnement…" className="md:col-span-2"/>}
                 <Field label="Montant (F) *" value={form.montant} onChange={e => setForm({...form, montant: e.target.value})} type="number" placeholder="0"/>
@@ -143,12 +122,12 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
           )}
 
           <FilterBar search={searchDep} onSearch={setSearchDep} placeholder="🔍 Description, catégorie…"
-            activeCount={[fDepCat,fDepMode,fDepPeriode,searchDep].filter(Boolean).length}
+            activeCount={[fDepCat, fDepMode, fDepPeriode, searchDep].filter(Boolean).length}
             onReset={() => { setSearchDep(''); setFDepCat(''); setFDepMode(''); setFDepPeriode('') }}>
             <FilterSelect label="📂 Catégorie" value={fDepCat} onChange={setFDepCat} options={CATS.map(c => ({v:c, l:c}))}/>
             <FilterSelect label="💳 Mode" value={fDepMode} onChange={setFDepMode} options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m, l:m}))}/>
             <FilterPeriode value={fDepPeriode} onChange={setFDepPeriode}/>
-            <span className="text-xs text-slate-400">{depsFiltered.length}/{deps.length} · {mask(totalFiltered)}</span>
+            <span className="text-xs text-slate-400">{depsFiltered.length}/{depsHist.length} · {mask(totalFiltered)}</span>
           </FilterBar>
 
           <div className="overflow-x-auto">
@@ -162,7 +141,7 @@ function Depenses({ otrMode, depsHist, setDepsHist, sb }) {
                 {depsFiltered.map(d => (
                   <tr key={d.id} className="border-t hover:bg-slate-50">
                     <td className="p-3 text-sm">{d.date}</td>
-                    <td className="p-3"><span className="flex items-center gap-1.5 text-sm font-semibold">{CAT_ICON[d.categorie]||'📌'} {d.categorie}</span></td>
+                    <td className="p-3"><span className="flex items-center gap-1.5 text-sm font-semibold">{CAT_ICON[d.categorie] || '📌'} {d.categorie}</span></td>
                     <td className="p-3 text-sm">{d.description}</td>
                     <td className="p-3 text-sm">{d.mode}</td>
                     <td className={`p-3 font-bold font-mono ${otrMode ? 'text-slate-300' : 'text-red-600'}`}>{mask(d.montant)}</td>
