@@ -119,6 +119,7 @@ useEffect(() => {
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
   const [achatsHist,setAchatsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_achats_hist')||'[]');}catch{return [];} });
   const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
+  const [fournisseurs,setFournisseurs]=useState(()=>(getCache('fournisseurs')||[]).map(normalizeFour));
   const [devis,setDevis]=useState(()=>getCache('devis')||[]);
   const [factures,setFactures]=useState(()=>getCache('factures')||[]);
   const [rdvs,setRdvs]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_rdvs')||'[]');}catch{return [];} });
@@ -134,10 +135,22 @@ useEffect(() => {
   const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
   const setSyncedDepsHist   = syncedSet(setDepsHist,   'depenses')
   const setSyncedFactures   = syncedSet(setFactures,   'factures')
-  const setSyncedDevis      = syncedSet(setDevis,      'devis')
+  const setSyncedFournisseurs = syncedSet(setFournisseurs, 'fournisseurs')
+  const setSyncedDevis        = syncedSet(setDevis,        'devis')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
+  const normalizeFour = (row) => {
+    if (!row) return row
+    const out = { ...row }
+    if ('delai_livraison'     in out) { out.delaiLivraison     = out.delai_livraison;     delete out.delai_livraison }
+    if ('conditions_paiement' in out) { out.conditionsPaiement = out.conditions_paiement; delete out.conditions_paiement }
+    if ('note_qualite'        in out) { out.noteQualite        = out.note_qualite;        delete out.note_qualite }
+    if ('date_debut'          in out) { out.dateDebut          = out.date_debut;          delete out.date_debut }
+    if ('site_web'            in out) { out.siteWeb            = out.site_web;            delete out.site_web }
+    return out
+  }
+
   const normalizeMed = (row) => {
   if (!row) return row
   const out = { ...row }
@@ -165,6 +178,7 @@ useEffect(() => {
         ['ventes', setSyncedVentesHist],
         ['depenses', setSyncedDepsHist],
         ['factures', setSyncedFactures],
+        ['fournisseurs', (d) => setSyncedFournisseurs(d.map(normalizeFour))],
         ['devis', setSyncedDevis],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
@@ -466,6 +480,7 @@ useEffect(() => {
     achatsHist, setAchatsHist,
     depsHist, setDepsHist: setSyncedDepsHist,
     tva, saveTva,
+    fournisseurs, setFournisseurs: setSyncedFournisseurs,
     devis, setDevis: setSyncedDevis,
     factures, setFactures: setSyncedFactures,
     rdvs, setRdvs: setSyncedRdvs,
@@ -764,7 +779,7 @@ useEffect(() => {
           {view==='calculateur'&&<Calculateur {...sp}/>}
           {view==='consentements'&&<Consentements {...sp}/>}
           {view==='clients'&&<Clients {...sp}/>}
-          {view==='fournisseurs'&&(isAdmin?<Fournisseurs/>:<Interdit/>)}
+          {view==='fournisseurs'&&(isAdmin?<Fournisseurs {...sp}/>:<Interdit/>)}
           {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}
           {view==='devis'&&<Devis {...sp}/>}
           {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}

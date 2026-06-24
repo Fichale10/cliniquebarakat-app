@@ -1,76 +1,7 @@
-// src/pages/commercial/Fournisseurs.jsx
-// Centre de pilotage fournisseurs — relations commerciales & approvisionnement
-
 import { useState, useMemo } from 'react';
-import { today, fmtF, findDups, newId } from '../../lib/utils';
+import { today, fmtF, findDups } from '../../lib/utils';
+import { newId } from '../../lib/db';
 import { Btn, Badge, Field, DupWarning, FilterBar, FilterSelect, FilterBtns } from '../../components/ui';
-
-// ── Données initiales ─────────────────────────────────────────
-const INIT_FOURNISSEURS = [
-  {
-    id: 1,
-    nom: 'MediVet SARL',
-    contact: 'Kofi Mensah',
-    tel: '+228 22 00 00 00',
-    email: 'contact@medivet.tg',
-    adresse: 'Zone industrielle, Lomé',
-    ville: 'Lomé',
-    pays: 'Togo',
-    specialite: 'Médicaments vétérinaires',
-    delaiLivraison: 3,           // jours
-    conditionsPaiement: '30j',   // '30j' | '60j' | 'immédiat' | 'avance'
-    remise: 5,                   // %
-    noteQualite: 4,              // /5
-    actif: true,
-    notes: 'Fournisseur principal. Livraison rapide et fiable.',
-    dateDebut: '2023-01-15',
-    rib: 'TG53 TG009 001 00123456789 01',
-    siteWeb: 'www.medivet.tg',
-    created_at: '2023-01-15T08:00:00Z',
-  },
-  {
-    id: 2,
-    nom: 'Afrique Pharma',
-    contact: 'Amara Diallo',
-    tel: '+228 90 11 22 33',
-    email: 'info@afriquepharma.com',
-    adresse: 'Blvd 13 Janvier',
-    ville: 'Lomé',
-    pays: 'Togo',
-    specialite: 'Vaccins et antiparasitaires',
-    delaiLivraison: 5,
-    conditionsPaiement: '60j',
-    remise: 3,
-    noteQualite: 5,
-    actif: true,
-    notes: 'Spécialiste vaccins. Chaîne du froid garantie.',
-    dateDebut: '2023-03-01',
-    rib: '',
-    siteWeb: 'www.afriquepharma.com',
-    created_at: '2023-03-01T09:00:00Z',
-  },
-  {
-    id: 3,
-    nom: 'AgroVet Togo',
-    contact: 'Yves Agbeko',
-    tel: '+228 93 44 55 66',
-    email: 'agrovet@togo.net',
-    adresse: 'Quartier central',
-    ville: 'Kara',
-    pays: 'Togo',
-    specialite: 'Matériel et consommables',
-    delaiLivraison: 7,
-    conditionsPaiement: 'immédiat',
-    remise: 0,
-    noteQualite: 3,
-    actif: true,
-    notes: 'Matériel médical et consommables. Délai plus long.',
-    dateDebut: '2024-01-10',
-    rib: '',
-    siteWeb: '',
-    created_at: '2024-01-10T10:00:00Z',
-  },
-];
 
 const SPECIALITES = [
   'Médicaments vétérinaires',
@@ -104,16 +35,26 @@ function specStyle(s) {
   return SPEC_STYLE[s] || { color: 'slate', icon: '📦' };
 }
 
-// Commandes simulées (en vrai, viendraient des props)
-const HISTORIQUE_COMMANDES = [
-  { id: 1, num: 'CMD-2025-001', date: '2025-02-10', fournisseurId: 1, montant: 195000, statut: 'Reçu' },
-  { id: 2, num: 'CMD-2025-002', date: '2025-02-14', fournisseurId: 2, montant: 237500, statut: 'En transit' },
-  { id: 3, num: 'CMD-2025-003', date: '2025-02-15', fournisseurId: 3, montant: 45000,  statut: 'En attente' },
-  { id: 4, num: 'CMD-2025-004', date: '2025-01-20', fournisseurId: 1, montant: 312000, statut: 'Reçu' },
-  { id: 5, num: 'CMD-2024-041', date: '2024-12-05', fournisseurId: 2, montant: 185000, statut: 'Reçu' },
-];
+const toDbRow = (form) => ({
+  nom:                 form.nom,
+  contact:             form.contact,
+  tel:                 form.tel,
+  email:               form.email,
+  adresse:             form.adresse,
+  ville:               form.ville,
+  pays:                form.pays,
+  specialite:          form.specialite,
+  delai_livraison:     parseInt(form.delaiLivraison) || 5,
+  conditions_paiement: form.conditionsPaiement,
+  remise:              parseFloat(form.remise) || 0,
+  note_qualite:        parseInt(form.noteQualite) || 3,
+  actif:               form.actif,
+  notes:               form.notes,
+  date_debut:          form.dateDebut || null,
+  rib:                 form.rib,
+  site_web:            form.siteWeb,
+});
 
-// ── Étoiles de notation ───────────────────────────────────────
 function Stars({ note, onChange, readonly = false }) {
   return (
     <div className="flex gap-0.5">
@@ -129,8 +70,7 @@ function Stars({ note, onChange, readonly = false }) {
   );
 }
 
-// ── Formulaire fournisseur ────────────────────────────────────
-function FormulaireF({ initial, onSave, onCancel }) {
+function FormulaireF({ initial, onSave, onCancel, saving }) {
   const empty = {
     nom: '', contact: '', tel: '', email: '', adresse: '', ville: 'Lomé', pays: 'Togo',
     specialite: 'Médicaments vétérinaires', delaiLivraison: 5,
@@ -146,7 +86,6 @@ function FormulaireF({ initial, onSave, onCancel }) {
         {initial ? '✏️ Modifier le fournisseur' : '+ Nouveau fournisseur'}
       </h3>
 
-      {/* Identité */}
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Identité</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <Field label="Raison sociale *" value={form.nom} onChange={e => set('nom', e.target.value)} placeholder="Ex: MediVet SARL" className="md:col-span-2" />
@@ -157,10 +96,9 @@ function FormulaireF({ initial, onSave, onCancel }) {
         <Field label="Site web" value={form.siteWeb} onChange={e => set('siteWeb', e.target.value)} placeholder="www.fournisseur.com" />
         <Field label="Adresse" value={form.adresse} onChange={e => set('adresse', e.target.value)} placeholder="Rue, quartier" />
         <Field label="Ville" value={form.ville} onChange={e => set('ville', e.target.value)} placeholder="Lomé" />
-        <Field label="Pays" value={form.pays} onChange={e => set('pays', e.target.value)} options={['Togo', 'Bénin', 'Ghana', 'Côte d\'Ivoire', 'Nigeria', 'Sénégal', 'France', 'Autre']} />
+        <Field label="Pays" value={form.pays} onChange={e => set('pays', e.target.value)} options={['Togo', 'Bénin', 'Ghana', "Côte d'Ivoire", 'Nigeria', 'Sénégal', 'France', 'Autre']} />
       </div>
 
-      {/* Conditions commerciales */}
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Conditions commerciales</p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <Field label="Délai livraison (jours)" value={form.delaiLivraison} onChange={e => set('delaiLivraison', parseInt(e.target.value) || 0)} type="number" placeholder="5" />
@@ -170,7 +108,6 @@ function FormulaireF({ initial, onSave, onCancel }) {
         <Field label="Date 1ère collaboration" value={form.dateDebut} onChange={e => set('dateDebut', e.target.value)} type="date" />
       </div>
 
-      {/* Qualité & Notes */}
       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Évaluation & Notes</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <div>
@@ -181,32 +118,25 @@ function FormulaireF({ initial, onSave, onCancel }) {
       </div>
       <Field label="Notes internes" value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} placeholder="Observations, conditions particulières…" />
 
-      {/* Actions */}
       <div className="flex gap-2 mt-4">
-        <Btn onClick={() => onSave(form)}>✓ {initial ? 'Enregistrer les modifications' : 'Créer le fournisseur'}</Btn>
+        <Btn onClick={() => onSave(form)} disabled={saving}>
+          {saving ? '⏳ Enregistrement…' : `✓ ${initial ? 'Enregistrer les modifications' : 'Créer le fournisseur'}`}
+        </Btn>
         <button onClick={onCancel} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors">Annuler</button>
       </div>
     </div>
   );
 }
 
-// ── Fiche détail fournisseur ──────────────────────────────────
 function FicheFournisseur({ f, meds, onEdit, onClose }) {
-  const style = specStyle(f.specialite);
-  const medsF = (meds || []).filter(m => m.fournisseur === f.nom);
-  const cmdsF = HISTORIQUE_COMMANDES.filter(c => c.fournisseurId === f.id);
-  const totalAchats = cmdsF.filter(c => c.statut === 'Reçu').reduce((s, c) => s + c.montant, 0);
-  const dernierCmd  = cmdsF[0];
-
+  const style   = specStyle(f.specialite);
+  const medsF   = (meds || []).filter(m => m.fournisseur === f.nom);
   const condLabel = CONDITIONS_PAIEMENT.find(c => c.v === f.conditionsPaiement)?.l || f.conditionsPaiement;
-
-  const statutBadge = { Reçu: 'green', 'En transit': 'blue', 'En attente': 'yellow', Annulé: 'red' };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 
-        {/* Header */}
         <div className={`bg-${style.color}-50 border-b border-${style.color}-200 p-6 rounded-t-3xl`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -232,13 +162,12 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
 
         <div className="p-6 space-y-6">
 
-          {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { l: 'Total achats', v: fmtF(totalAchats), icon: '💰', c: 'green' },
-              { l: 'Commandes',    v: cmdsF.length,      icon: '📦', c: 'blue'  },
-              { l: 'Produits',     v: medsF.length,      icon: '💊', c: 'purple'},
-              { l: 'Délai livr.', v: `${f.delaiLivraison}j`, icon: '🚚', c: 'amber' },
+              { l: 'Note qualité',  v: `${f.noteQualite}/5`,          icon: '⭐', c: 'amber'  },
+              { l: 'Produits',      v: medsF.length,                   icon: '💊', c: 'purple' },
+              { l: 'Délai livr.',   v: `${f.delaiLivraison}j`,         icon: '🚚', c: 'blue'   },
+              { l: 'Remise',        v: `${f.remise}%`,                 icon: '🏷️', c: 'green'  },
             ].map((s, i) => (
               <div key={i} className={`bg-${s.c}-50 border border-${s.c}-200 rounded-2xl p-3 text-center`}>
                 <div className="text-xl mb-1">{s.icon}</div>
@@ -248,7 +177,6 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
             ))}
           </div>
 
-          {/* Infos contact */}
           <div className="grid md:grid-cols-2 gap-5">
             <div className="bg-slate-50 rounded-2xl p-4">
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Contact</p>
@@ -273,7 +201,6 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
             </div>
           </div>
 
-          {/* Notes */}
           {f.notes && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
               <p className="text-xs font-black text-amber-500 uppercase tracking-widest mb-2">📝 Notes internes</p>
@@ -281,7 +208,6 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
             </div>
           )}
 
-          {/* Médicaments fournis */}
           {medsF.length > 0 && (
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">💊 Médicaments approvisionnés ({medsF.length})</p>
@@ -298,29 +224,6 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Historique commandes */}
-          {cmdsF.length > 0 && (
-            <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">📦 Historique des commandes ({cmdsF.length})</p>
-              <div className="space-y-2">
-                {cmdsF.map(c => (
-                  <div key={c.id} className="flex items-center justify-between bg-white rounded-xl border border-slate-100 px-4 py-2.5">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-slate-400">{c.num}</span>
-                      <Badge color={statutBadge[c.statut] || 'slate'}>{c.statut}</Badge>
-                      <span className="text-xs text-slate-400">{c.date}</span>
-                    </div>
-                    <span className="font-black text-blue-600 font-mono text-sm">{fmtF(c.montant)}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between px-4 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-sm font-bold text-slate-600">Total réceptionné</span>
-                  <span className="font-black text-green-700 font-mono">{fmtF(totalAchats)}</span>
-                </div>
               </div>
             </div>
           )}
@@ -346,64 +249,78 @@ function Row({ icon, val, label, link, mono }) {
   );
 }
 
-// ── Composant principal ───────────────────────────────────────
-export default function Fournisseurs({ meds = [] }) {
-  const [fours, setFours]       = useState(INIT_FOURNISSEURS);
-  const [view, setView]         = useState('liste');   // 'liste' | 'form-new' | 'form-edit'
-  const [selected, setSelected] = useState(null);      // fournisseur en vue détail
-  const [editTarget, setEditTarget] = useState(null);  // fournisseur à éditer
-  const [dups, setDups]         = useState([]);
-  const [pending, setPending]   = useState(null);      // form en attente de confirmation
+export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds = [], sb, dbInsert, dbUpdate, dbDelete }) {
+  const [view, setView]             = useState('liste');
+  const [selected, setSelected]     = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
+  const [dups, setDups]             = useState([]);
+  const [pending, setPending]       = useState(null);
+  const [saving, setSaving]         = useState(false);
 
-  // Filtres
-  const [search, setSearch]     = useState('');
-  const [fSpec, setFSpec]       = useState('');
-  const [fActif, setFActif]     = useState('');
-  const [fNote, setFNote]       = useState('');
-  const [sortBy, setSortBy]     = useState('nom');     // 'nom' | 'note' | 'commandes'
+  const [search, setSearch] = useState('');
+  const [fSpec, setFSpec]   = useState('');
+  const [fActif, setFActif] = useState('');
+  const [fNote, setFNote]   = useState('');
+  const [sortBy, setSortBy] = useState('nom');
 
-  // ── CRUD ───────────────────────────────────────────────────
-  const handleSave = (form, confirmDup = false) => {
+  const handleSave = async (form, confirmDup = false) => {
     if (!form.nom.trim()) return alert('La raison sociale est requise.');
 
     if (!confirmDup && !editTarget) {
-      const d = findDups(form.nom, fours);
+      const d = findDups(form.nom, fournisseurs);
       if (d.length) { setDups(d); setPending(form); return; }
     }
 
-    const entry = {
-      ...form,
-      id: editTarget ? editTarget.id : newId(),
-      created_at: editTarget ? editTarget.created_at : new Date().toISOString(),
-    };
-
-    if (editTarget) {
-      setFours(prev => prev.map(f => f.id === editTarget.id ? entry : f));
-      if (selected?.id === editTarget.id) setSelected(entry);
-    } else {
-      setFours(prev => [entry, ...prev]);
+    setSaving(true);
+    try {
+      if (editTarget) {
+        await dbUpdate(sb, 'fournisseurs', editTarget.id, toDbRow(form));
+        const entry = { ...form, id: editTarget.id, created_at: editTarget.created_at };
+        setFournisseurs(fournisseurs.map(f => f.id === editTarget.id ? entry : f));
+        if (selected?.id === editTarget.id) setSelected(entry);
+      } else {
+        const row = { id: newId(), ...toDbRow(form) };
+        const saved = await dbInsert(sb, 'fournisseurs', row);
+        const entry = { ...form, id: saved.id || row.id, created_at: saved.created_at || new Date().toISOString() };
+        setFournisseurs([entry, ...fournisseurs]);
+      }
+      setView('liste');
+      setEditTarget(null);
+      setDups([]);
+      setPending(null);
+    } catch (e) {
+      alert('Erreur : ' + (e?.message || e));
+    } finally {
+      setSaving(false);
     }
-
-    setView('liste');
-    setEditTarget(null);
-    setDups([]);
-    setPending(null);
   };
 
-  const handleDelete = (id) => {
-    const f = fours.find(x => x.id === id);
+  const handleDelete = async (id) => {
+    const f = fournisseurs.find(x => x.id === id);
     if (!confirm(`Supprimer "${f?.nom}" ? Cette action est irréversible.`)) return;
-    setFours(prev => prev.filter(x => x.id !== id));
-    if (selected?.id === id) setSelected(null);
+    try {
+      await dbDelete(sb, 'fournisseurs', id);
+      setFournisseurs(fournisseurs.filter(x => x.id !== id));
+      if (selected?.id === id) setSelected(null);
+    } catch (e) {
+      alert('Erreur suppression : ' + (e?.message || e));
+    }
   };
 
-  const toggleActif = (id) => {
-    setFours(prev => prev.map(f => f.id === id ? { ...f, actif: !f.actif } : f));
+  const toggleActif = async (id) => {
+    const f = fournisseurs.find(x => x.id === id);
+    if (!f) return;
+    const actif = !f.actif;
+    try {
+      await dbUpdate(sb, 'fournisseurs', id, { actif });
+      setFournisseurs(fournisseurs.map(x => x.id === id ? { ...x, actif } : x));
+    } catch (e) {
+      alert('Erreur : ' + (e?.message || e));
+    }
   };
 
-  // ── Filtrage + tri ─────────────────────────────────────────
   const filtered = useMemo(() => {
-    let r = [...fours];
+    let r = [...fournisseurs];
     if (search) {
       const q = search.toLowerCase();
       r = r.filter(f =>
@@ -413,44 +330,36 @@ export default function Fournisseurs({ meds = [] }) {
         (f.specialite || '').toLowerCase().includes(q)
       );
     }
-    if (fSpec)  r = r.filter(f => f.specialite === fSpec);
+    if (fSpec)            r = r.filter(f => f.specialite === fSpec);
     if (fActif === 'actif')   r = r.filter(f => f.actif);
     if (fActif === 'inactif') r = r.filter(f => !f.actif);
-    if (fNote)  r = r.filter(f => f.noteQualite >= parseInt(fNote));
+    if (fNote)            r = r.filter(f => f.noteQualite >= parseInt(fNote));
 
     r.sort((a, b) => {
-      if (sortBy === 'note')      return (b.noteQualite || 0) - (a.noteQualite || 0);
-      if (sortBy === 'commandes') {
-        const ca = HISTORIQUE_COMMANDES.filter(c => c.fournisseurId === a.id).length;
-        const cb = HISTORIQUE_COMMANDES.filter(c => c.fournisseurId === b.id).length;
-        return cb - ca;
-      }
+      if (sortBy === 'note')  return (b.noteQualite || 0) - (a.noteQualite || 0);
       if (sortBy === 'delai') return (a.delaiLivraison || 99) - (b.delaiLivraison || 99);
       return a.nom.localeCompare(b.nom);
     });
     return r;
-  }, [fours, search, fSpec, fActif, fNote, sortBy]);
+  }, [fournisseurs, search, fSpec, fActif, fNote, sortBy]);
 
-  // ── Stats globales ─────────────────────────────────────────
   const stats = useMemo(() => {
-    const totalAchats = HISTORIQUE_COMMANDES
-      .filter(c => c.statut === 'Reçu')
-      .reduce((s, c) => s + c.montant, 0);
-    const enCours = HISTORIQUE_COMMANDES.filter(c => c.statut !== 'Reçu' && c.statut !== 'Annulé').length;
-    const noteAvg  = fours.length
-      ? (fours.reduce((s, f) => s + (f.noteQualite || 0), 0) / fours.length).toFixed(1)
+    const actifs  = fournisseurs.filter(f => f.actif).length;
+    const noteAvg = fournisseurs.length
+      ? (fournisseurs.reduce((s, f) => s + (f.noteQualite || 0), 0) / fournisseurs.length).toFixed(1)
       : '—';
-    return { totalAchats, enCours, noteAvg };
-  }, [fours]);
+    const delaiMoy = fournisseurs.length
+      ? Math.round(fournisseurs.reduce((s, f) => s + (f.delaiLivraison || 0), 0) / fournisseurs.length)
+      : 0;
+    return { actifs, noteAvg, delaiMoy };
+  }, [fournisseurs]);
 
   const activeFilters = [fSpec, fActif, fNote].filter(Boolean).length;
   const resetFilters  = () => { setSearch(''); setFSpec(''); setFActif(''); setFNote(''); };
 
-  // ── Rendu ──────────────────────────────────────────────────
   return (
     <div className="space-y-5">
 
-      {/* Modal fiche détail */}
       {selected && !editTarget && (
         <FicheFournisseur
           f={selected}
@@ -460,13 +369,12 @@ export default function Fournisseurs({ meds = [] }) {
         />
       )}
 
-      {/* KPIs globaux */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { l: 'Fournisseurs actifs', v: fours.filter(f => f.actif).length, icon: '🏭', bg: 'bg-green-50 border-green-200', t: 'text-green-700' },
-          { l: 'Total achats (reçus)', v: fmtF(stats.totalAchats), icon: '💰', bg: 'bg-blue-50 border-blue-200', t: 'text-blue-700' },
-          { l: 'Commandes en cours', v: stats.enCours, icon: '📦', bg: 'bg-amber-50 border-amber-200', t: 'text-amber-700' },
-          { l: 'Note qualité moy.', v: `${stats.noteAvg} / 5`, icon: '⭐', bg: 'bg-purple-50 border-purple-200', t: 'text-purple-700' },
+          { l: 'Fournisseurs actifs', v: stats.actifs,           icon: '🏭', bg: 'bg-green-50 border-green-200',  t: 'text-green-700'  },
+          { l: 'Total fournisseurs',  v: fournisseurs.length,    icon: '📋', bg: 'bg-blue-50 border-blue-200',    t: 'text-blue-700'   },
+          { l: 'Note qualité moy.',   v: `${stats.noteAvg} / 5`, icon: '⭐', bg: 'bg-purple-50 border-purple-200', t: 'text-purple-700' },
+          { l: 'Délai livr. moy.',    v: `${stats.delaiMoy} j`,  icon: '🚚', bg: 'bg-amber-50 border-amber-200',  t: 'text-amber-700'  },
         ].map((s, i) => (
           <div key={i} className={`${s.bg} border rounded-2xl p-5`}>
             <div className="text-2xl mb-2">{s.icon}</div>
@@ -476,10 +384,8 @@ export default function Fournisseurs({ meds = [] }) {
         ))}
       </div>
 
-      {/* Formulaire nouveau / édition */}
       {(view === 'form-new' || view === 'form-edit') && (
         <div className="app-card overflow-hidden">
-          {/* Confirmation doublon */}
           {dups.length > 0 && pending && (
             <div className="p-5 pb-0">
               <DupWarning
@@ -493,26 +399,24 @@ export default function Fournisseurs({ meds = [] }) {
             initial={editTarget}
             onSave={handleSave}
             onCancel={() => { setView('liste'); setEditTarget(null); setDups([]); setPending(null); }}
+            saving={saving}
           />
         </div>
       )}
 
-      {/* Liste */}
       <div className="app-card">
         <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2">🏭 Fournisseurs</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              {filtered.length} / {fours.length} fournisseur(s) · {fours.filter(f => f.actif).length} actif(s)
+              {filtered.length} / {fournisseurs.length} fournisseur(s) · {stats.actifs} actif(s)
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            {/* Tri */}
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
               className="border-2 border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 outline-none bg-white">
               <option value="nom">🔤 Trier par nom</option>
               <option value="note">⭐ Meilleure note</option>
-              <option value="commandes">📦 Plus commandé</option>
               <option value="delai">🚚 Délai livraison</option>
             </select>
             {view === 'liste'
@@ -522,7 +426,6 @@ export default function Fournisseurs({ meds = [] }) {
           </div>
         </div>
 
-        {/* Filtres */}
         <FilterBar search={search} onSearch={setSearch}
           placeholder="🔍 Nom, contact, ville, spécialité…"
           activeCount={activeFilters} onReset={resetFilters}>
@@ -541,7 +444,6 @@ export default function Fournisseurs({ meds = [] }) {
           />
         </FilterBar>
 
-        {/* Grille des fiches */}
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
             <div className="text-5xl mb-3">🏭</div>
@@ -550,11 +452,8 @@ export default function Fournisseurs({ meds = [] }) {
         ) : (
           <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map(f => {
-              const style    = specStyle(f.specialite);
-              const cmdsF    = HISTORIQUE_COMMANDES.filter(c => c.fournisseurId === f.id);
-              const totalF   = cmdsF.filter(c => c.statut === 'Reçu').reduce((s, c) => s + c.montant, 0);
+              const style     = specStyle(f.specialite);
               const medsCount = (meds || []).filter(m => m.fournisseur === f.nom).length;
-              const enCours  = cmdsF.filter(c => c.statut !== 'Reçu' && c.statut !== 'Annulé').length;
 
               return (
                 <div key={f.id}
@@ -562,11 +461,9 @@ export default function Fournisseurs({ meds = [] }) {
                     ${f.actif ? `border-slate-200 hover:border-${style.color}-400 hover:shadow-lg` : 'border-slate-100 opacity-60'}`}
                   onClick={() => setSelected(f)}>
 
-                  {/* Barre colorée du haut */}
                   <div className={`h-1.5 bg-${style.color}-500`} />
 
                   <div className="p-4">
-                    {/* Header carte */}
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-10 h-10 rounded-xl bg-${style.color}-50 border border-${style.color}-200 flex items-center justify-center text-xl shrink-0`}>
@@ -584,21 +481,19 @@ export default function Fournisseurs({ meds = [] }) {
                       </div>
                     </div>
 
-                    {/* Note qualité */}
                     <div className="flex items-center gap-1.5 mb-3">
                       <Stars note={f.noteQualite} readonly />
                       <span className="text-xs text-slate-400">{f.noteQualite}/5</span>
                     </div>
 
-                    {/* Métriques */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <div className="bg-slate-50 rounded-xl p-2 text-center">
                         <p className="text-xs text-slate-400 font-semibold">Produits</p>
                         <p className="text-base font-black text-slate-700">{medsCount}</p>
                       </div>
                       <div className="bg-slate-50 rounded-xl p-2 text-center">
-                        <p className="text-xs text-slate-400 font-semibold">Commandes</p>
-                        <p className="text-base font-black text-slate-700">{cmdsF.length}</p>
+                        <p className="text-xs text-slate-400 font-semibold">Remise</p>
+                        <p className="text-base font-black text-slate-700">{f.remise}%</p>
                       </div>
                       <div className={`rounded-xl p-2 text-center ${f.delaiLivraison <= 3 ? 'bg-green-50' : f.delaiLivraison <= 7 ? 'bg-amber-50' : 'bg-red-50'}`}>
                         <p className="text-xs text-slate-400 font-semibold">Délai</p>
@@ -608,24 +503,17 @@ export default function Fournisseurs({ meds = [] }) {
                       </div>
                     </div>
 
-                    {/* Total & infos */}
                     <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-slate-400">Total réceptionné</p>
-                        <p className="font-black text-green-700 font-mono text-sm">{fmtF(totalF)}</p>
+                        <p className="text-xs text-slate-400">Paiement</p>
+                        <p className="font-semibold text-slate-700 text-sm">
+                          {CONDITIONS_PAIEMENT.find(c => c.v === f.conditionsPaiement)?.l || f.conditionsPaiement}
+                        </p>
                       </div>
-                      <div className="text-right">
-                        {enCours > 0 && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
-                            {enCours} en cours
-                          </span>
-                        )}
-                        <p className="text-xs text-slate-300 mt-1">{f.ville}</p>
-                      </div>
+                      <p className="text-xs text-slate-300">{f.ville}</p>
                     </div>
                   </div>
 
-                  {/* Actions au survol */}
                   <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all no-print"
                     onClick={e => e.stopPropagation()}>
                     <button
