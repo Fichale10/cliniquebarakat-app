@@ -84,7 +84,13 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
         setValidationMessages(checked.messages);
         return;
       }
-      const slug=checked.data.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'.');
+      const slug=checked.data.nom
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g,'')   // supprimer accents
+        .replace(/[^a-z0-9\s]/g,'')        // supprimer points, tirets, parenth\u00e8ses, etc.
+        .trim()
+        .replace(/\s+/g,'.');              // espaces \u2192 point simple
       setForm(f=>({...f,nom:checked.data.nom,email:f.email||`${slug}@labarakat.tg`}));
       setFormErrors({});setValidationMessages([]);
       setStep(2);
@@ -117,7 +123,9 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       })
 
       if (!result.ok) {
-        alert(result.msg || 'Erreur lors de la création du compte.')
+        const detail = result.msg || 'Erreur lors de la création du compte.'
+        const emailUsed = data.email
+        alert(`Erreur création compte\nEmail : ${emailUsed}\n\n${detail}`)
         return
       }
 
