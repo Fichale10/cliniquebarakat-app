@@ -761,7 +761,7 @@ useEffect(() => {
           {view==='fournisseurs'&&(isAdmin?<Fournisseurs/>:<Interdit/>)}
           {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}
           {view==='devis'&&<Devis clients={clients} meds={meds} otrMode={otrMode} tva={tva} devis={devis} setDevis={setDevis}/>}
-          {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setVentesHist} otrMode={otrMode}/>}
+          {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}
           {view==='medicaments'&&<Medicaments {...sp}/>}
           {view==='commandes'&&<Commandes meds={meds} setMeds={setSyncedMeds}/>}
           {view==='inventaire'&&<Inventaire {...sp}/>}
