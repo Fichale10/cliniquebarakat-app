@@ -1,8 +1,22 @@
+import { createClient } from '@supabase/supabase-js'
 import { sb } from './supabase'
 import { getCache, setCache } from './db'
 
 const CACHE_KEY = 'comptes'
 const delay = (ms) => new Promise((r) => setTimeout(r, ms))
+
+// Client isolé pour signUp — n'écrase PAS la session admin principale
+function makeTempClient() {
+  const url = import.meta.env.VITE_SUPABASE_URL
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+  return createClient(url, key, {
+    auth: {
+      storageKey: 'sb_signup_tmp',
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+}
 
 export function mergeProfiles(...lists) {
   const map = new Map()
@@ -85,9 +99,10 @@ export async function fetchAllProfiles() {
 }
 
 export async function createUserAccount({ nom, email, pw, role, actif = true, pending = false }) {
-  const { data: { session: adminSession } } = await sb.auth.getSession()
+  // Utiliser un client temporaire pour que signUp ne vole pas la session admin
+  const tempSb = makeTempClient()
 
-  const { data, error } = await sb.auth.signUp({
+  const { data, error } = await tempSb.auth.signUp({
     email,
     password: pw,
     options: {
@@ -110,26 +125,16 @@ export async function createUserAccount({ nom, email, pw, role, actif = true, pe
 
   const fields = { nom, role, actif, pending, email }
 
+  // La session admin (sb) est intacte — elle peut écrire dans profiles
   let profile
   try {
-    await waitForProfile(userId, 2)
+    // Attendre le trigger DB s'il existe, puis forcer l'upsert
+    await waitForProfile(userId, 3)
     profile = await saveProfileRow(userId, fields)
   } catch (e) {
-    console.warn('[accounts] saveProfileRow:', e)
+    console.warn('[accounts] saveProfileRow:', e?.message || e)
+    // Fallback local si Supabase échoue
     profile = profileFromForm({ userId, ...fields })
-  }
-
-  // Restaurer la session admin après signUp
-  if (adminSession?.access_token && adminSession?.refresh_token) {
-    try {
-      const { error: sessionError } = await sb.auth.setSession({
-        access_token: adminSession.access_token,
-        refresh_token: adminSession.refresh_token,
-      })
-      if (sessionError) console.warn('[accounts] Restauration session admin:', sessionError.message)
-    } catch (e) {
-      console.warn('[accounts] Restauration session admin:', e)
-    }
   }
 
   const cached = getCache(CACHE_KEY) || []
