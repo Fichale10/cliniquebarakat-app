@@ -124,7 +124,7 @@ useEffect(() => {
   const [factures,setFactures]=useState(()=>getCache('factures')||[]);
   const [rdvs,setRdvs]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_rdvs')||'[]');}catch{return [];} });
   const setSyncedRdvs = syncedSet(setRdvs, 'rdvs')
-  const [ordonnances,setOrdonnances]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_ordonnances')||'[]');}catch{return [];} });
+  const [ordonnances,setOrdonnances]=useState(()=>getCache('ordonnances')||[]);
   const setSyncedOrdonnances = syncedSet(setOrdonnances, 'ordonnances')
   const [chirurgies,setChirurgies]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_chirurgies')||'[]');}catch{return [];} });
   const setSyncedChirurgies = syncedSet(setChirurgies, 'chirurgies')
