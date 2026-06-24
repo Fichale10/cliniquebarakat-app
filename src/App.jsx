@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, Component } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, INIT_PATIENTS, DEFAULT_TEAM, NAV_ALL } from './lib/globals'
+import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, DEFAULT_TEAM, NAV_ALL } from './lib/globals'
 import { isValidView, DEFAULT_VIEW } from './lib/routes'
 
 // UI Components
@@ -92,7 +92,7 @@ useEffect(() => {
       return true;}
     return false;
   });
-  const [patients,setPatients]=useState(()=>getCache('patients')||INIT_PATIENTS);
+  const [patients,setPatients]=useState(()=>getCache('patients')||[]);
   const [clients,setClients]=useState(()=>getCache('clients')||[]);
   const [meds,setMeds]=useState(()=>getCache('medicaments')||[]);
   const [equipe,setEquipe]=useState(()=>getCache('equipe')||DEFAULT_TEAM);
