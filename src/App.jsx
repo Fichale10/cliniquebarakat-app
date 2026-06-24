@@ -116,7 +116,7 @@ useEffect(() => {
   const [syncing,setSyncing]=useState(false);
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
-  const [ventesHist,setVentesHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_ventes_hist')||'[]');}catch{return [];} });
+  const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
   const [achatsHist,setAchatsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_achats_hist')||'[]');}catch{return [];} });
   const [depsHist,setDepsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_deps_hist')||'[]');}catch{return [];} });
   const [devis,setDevis]=useState([]);
@@ -128,6 +128,9 @@ useEffect(() => {
   const setSyncedChirurgies = syncedSet(setChirurgies, 'chirurgies')
   const [hospitalisations,setHospitalisations]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_hospitalisations')||'[]');}catch{return [];} });
   const setSyncedHospitalisations = syncedSet(setHospitalisations, 'hospitalisations')
+  const [taches,setTaches]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_taches')||'[]');}catch{return [];} });
+  const setSyncedTaches     = syncedSet(setTaches,     'taches')
+  const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -154,6 +157,8 @@ useEffect(() => {
         ['ordonnances', setSyncedOrdonnances],
         ['chirurgies', setSyncedChirurgies],
         ['hospitalisations', setSyncedHospitalisations],
+        ['taches', setSyncedTaches],
+        ['ventes', setSyncedVentesHist],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -450,7 +455,7 @@ useEffect(() => {
     setEquipe:setSyncedEquipe, clinique, isAdmin,
     comptes, setComptes:setSyncedComptes,
     otrMode, toggleOTR,
-    ventesHist, setVentesHist,
+    ventesHist, setVentesHist: setSyncedVentesHist,
     achatsHist, setAchatsHist,
     depsHist, setDepsHist,
     tva, saveTva,
@@ -459,6 +464,7 @@ useEffect(() => {
     ordonnances, setOrdonnances: setSyncedOrdonnances,
     chirurgies, setChirurgies: setSyncedChirurgies,
     hospitalisations, setHospitalisations: setSyncedHospitalisations,
+    taches, setTaches: setSyncedTaches,
     dbInsert, dbUpdate, dbDelete,
     user, sb, logAction,
     setSyncPending: ()=>setSyncPending(getQ().length),

@@ -131,7 +131,6 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
       const newHist = [saved, ...ventes].slice(0, 500)
       setVentesHist(newHist)
-      try { localStorage.setItem('lb_ventes_hist', JSON.stringify(newHist)) } catch (e) {}
 
       if (validated.statut === 'Payé') {
         await applyStockDelta(validated.lignes, -1)
