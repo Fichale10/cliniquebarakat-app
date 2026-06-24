@@ -117,20 +117,20 @@ useEffect(() => {
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
-  const [achatsHist,setAchatsHist]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_achats_hist')||'[]');}catch{return [];} });
+  const [achatsHist,setAchatsHist]=useState(()=>getCache('achats_hist')||[]);
   const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
   const [fournisseurs,setFournisseurs]=useState(()=>(getCache('fournisseurs')||[]).map(normalizeFour));
   const [devis,setDevis]=useState(()=>getCache('devis')||[]);
   const [factures,setFactures]=useState(()=>getCache('factures')||[]);
-  const [rdvs,setRdvs]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_rdvs')||'[]');}catch{return [];} });
+  const [rdvs,setRdvs]=useState(()=>getCache('rdvs')||[]);
   const setSyncedRdvs = syncedSet(setRdvs, 'rdvs')
   const [ordonnances,setOrdonnances]=useState(()=>getCache('ordonnances')||[]);
   const setSyncedOrdonnances = syncedSet(setOrdonnances, 'ordonnances')
-  const [chirurgies,setChirurgies]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_chirurgies')||'[]');}catch{return [];} });
+  const [chirurgies,setChirurgies]=useState(()=>getCache('chirurgies')||[]);
   const setSyncedChirurgies = syncedSet(setChirurgies, 'chirurgies')
-  const [hospitalisations,setHospitalisations]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_hospitalisations')||'[]');}catch{return [];} });
+  const [hospitalisations,setHospitalisations]=useState(()=>getCache('hospitalisations')||[]);
   const setSyncedHospitalisations = syncedSet(setHospitalisations, 'hospitalisations')
-  const [taches,setTaches]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_taches')||'[]');}catch{return [];} });
+  const [taches,setTaches]=useState(()=>getCache('taches')||[]);
   const setSyncedTaches     = syncedSet(setTaches,     'taches')
   const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
   const setSyncedDepsHist   = syncedSet(setDepsHist,   'depenses')
