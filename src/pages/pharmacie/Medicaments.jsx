@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Btn, Badge, Field, DupWarning, ValidationBanner,
   FilterBar, FilterSelect, FilterBtns, Pagination, usePagination,
 } from '../../components/ui'
-import { dbInsert, dbUpdate, dbDelete, dbFetch, getCache, setCache, isCacheFresh, markSynced, newId } from '../../lib/db'
+import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import {
   validateMedicamentForm,
   medicamentFormToRow,
@@ -14,7 +14,7 @@ const FOURNISSEUR_PLACEHOLDER = '— Choisir un fournisseur —'
 
 const FOURNISSEURS_FALLBACK = ['MediVet SARL', 'Afrique Pharma', 'AgroVet Togo']
 
-function Medicaments({ meds, setMeds, user, sb, logAction }) {
+function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) {
   const getDefaultForm = () => ({
     nom: '', categorie: 'Antibiotique', stock: '', seuil: '',
     unite: 'comprimés', prixAchat: '', prixVente: '',
@@ -32,44 +32,13 @@ function Medicaments({ meds, setMeds, user, sb, logAction }) {
   const [saving, setSaving]     = useState(false)
   const [formErrors, setFormErrors] = useState({})
   const [validationMessages, setValidationMessages] = useState([])
-  const [fournisseurOptions, setFournisseurOptions] = useState(FOURNISSEURS_FALLBACK)
-
-  useEffect(() => {
-    let cancelled = false
-    const CACHE_KEY = 'fournisseurs_options'
-    const STALE_MS = 5 * 60 * 1000
-
-    const mergeLists = (fromDb, fromMeds) =>
-      [...new Set([...fromDb, ...fromMeds, ...FOURNISSEURS_FALLBACK])].sort((a, b) =>
-        a.localeCompare(b, 'fr', { sensitivity: 'base' }),
-      )
-
-    const loadFournisseurs = async () => {
-      const fromMeds = meds.map((m) => m.fournisseur).filter(Boolean)
-      const cached = getCache(CACHE_KEY)
-      if (cached?.length && isCacheFresh(CACHE_KEY, STALE_MS)) {
-        setFournisseurOptions(mergeLists(cached, fromMeds))
-        return
-      }
-
-      let fromDb = []
-      try {
-        const rows = await dbFetch(sb, 'fournisseurs', { staleMs: STALE_MS })
-        fromDb = (rows || [])
-          .filter((f) => f.actif !== false)
-          .map((f) => f.nom)
-          .filter(Boolean)
-      } catch (e) {
-        console.warn('[Medicaments] chargement fournisseurs:', e)
-      }
-      const merged = mergeLists(fromDb, fromMeds)
-      setCache(CACHE_KEY, fromDb)
-      markSynced(CACHE_KEY)
-      if (!cancelled) setFournisseurOptions(merged)
-    }
-    loadFournisseurs()
-    return () => { cancelled = true }
-  }, [meds, sb])
+  const fournisseurOptions = useMemo(() => {
+    const fromProp = (fournisseurs || []).filter(f => f.actif !== false).map(f => f.nom).filter(Boolean)
+    const fromMeds = meds.map(m => m.fournisseur).filter(Boolean)
+    return [...new Set([...fromProp, ...fromMeds, ...FOURNISSEURS_FALLBACK])].sort((a, b) =>
+      a.localeCompare(b, 'fr', { sensitivity: 'base' })
+    )
+  }, [fournisseurs, meds])
 
   const fournisseurSelectOptions = useMemo(
     () => [FOURNISSEUR_PLACEHOLDER, ...fournisseurOptions],
