@@ -77,24 +77,24 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
   };
 
   const nextStep=()=>{
-    if(step===1){
-      const checked=validateUserAccountStep1(form);
-      if(!checked.ok){
-        setFormErrors(checked.fieldErrors);
-        setValidationMessages(checked.messages);
-        return;
-      }
-      const slug=checked.data.nom
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g,'')   // supprimer accents
-        .replace(/[^a-z0-9\s]/g,'')        // supprimer points, tirets, parenth\u00e8ses, etc.
-        .trim()
-        .replace(/\s+/g,'.');              // espaces \u2192 point simple
-      setForm(f=>({...f,nom:checked.data.nom,email:f.email||`${slug}@labarakat.tg`}));
-      setFormErrors({});setValidationMessages([]);
-      setStep(2);
+    if(step!==1) return;
+    const checked=validateUserAccountStep1(form);
+    if(!checked.ok){
+      setFormErrors(checked.fieldErrors);
+      setValidationMessages(checked.messages);
+      return;
     }
+    const slug=checked.data.nom
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9 ]/g,'')
+      .trim()
+      .replace(/ +/g,'.');
+    setForm(f=>({...f,nom:checked.data.nom,email:f.email||`${slug}@labarakat.tg`}));
+    setFormErrors({});
+    setValidationMessages([]);
+    setStep(2);
   };
 
   const addCompte = async () => {
