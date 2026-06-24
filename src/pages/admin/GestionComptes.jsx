@@ -84,14 +84,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       setValidationMessages(checked.messages);
       return;
     }
-    const slug=checked.data.nom
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .replace(/[^a-z0-9 ]/g,'')
-      .trim()
-      .replace(/ +/g,'.');
-    setForm(f=>({...f,nom:checked.data.nom,email:f.email||`${slug}@labarakat.tg`}));
+    setForm(f=>({...f, nom:checked.data.nom}));
     setFormErrors({});
     setValidationMessages([]);
     setStep(2);
@@ -268,7 +261,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3">
-          <Field label="Email *" value={form.email} onChange={e=>patchForm({email:e.target.value})} error={formErrors.email} type="email" placeholder="email@labarakat.tg"/>
+          <Field label="Email *" value={form.email} onChange={e=>patchForm({email:e.target.value})} error={formErrors.email} type="email" placeholder="ex: kofi@gmail.com"/>
           <Field label="Mot de passe *" value={form.pw} onChange={e=>patchForm({pw:e.target.value})} error={formErrors.pw} type="password" placeholder="Minimum 6 caractères"/>
           <div>
             <label className="text-xs font-bold text-slate-600 mb-2 block">Rôle *</label>
