@@ -137,7 +137,9 @@ useEffect(() => {
   const setSyncedFactures   = syncedSet(setFactures,   'factures')
   const setSyncedFournisseurs = syncedSet(setFournisseurs, 'fournisseurs')
   const setSyncedDevis        = syncedSet(setDevis,        'devis')
-  const setSyncedAchatsHist   = syncedSet(setAchatsHist,   'commandes')
+  const setSyncedAchatsHist     = syncedSet(setAchatsHist,     'commandes')
+  const [versements, setVersements] = useState(() => getCache('versements_fournisseurs') || [])
+  const setSyncedVersements         = syncedSet(setVersements, 'versements_fournisseurs')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -155,9 +157,11 @@ useEffect(() => {
   const normalizeMed = (row) => {
   if (!row) return row
   const out = { ...row }
-  if ('prix_achat' in out) { out.prixAchat = out.prix_achat; delete out.prix_achat }
-  if ('prix_vente' in out) { out.prixVente = out.prix_vente; delete out.prix_vente }
-  if ('dose_mg_kg' in out) { out.doseMgKg  = out.dose_mg_kg;  delete out.dose_mg_kg }
+  if ('prix_achat'    in out) { out.prixAchat    = out.prix_achat;    delete out.prix_achat }
+  if ('prix_vente'    in out) { out.prixVente    = out.prix_vente;    delete out.prix_vente }
+  if ('dose_mg_kg'    in out) { out.doseMgKg     = out.dose_mg_kg;    delete out.dose_mg_kg }
+  if ('prix_gros'     in out) { out.prixGros     = out.prix_gros;     delete out.prix_gros }
+  if ('paliers_gros'  in out) { out.paliersGros  = out.paliers_gros;  delete out.paliers_gros }
   return out
 }
 
@@ -182,6 +186,7 @@ useEffect(() => {
         ['fournisseurs', (d) => setSyncedFournisseurs(d.map(normalizeFour))],
         ['devis', setSyncedDevis],
         ['commandes', setSyncedAchatsHist],
+        ['versements_fournisseurs', setSyncedVersements],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -237,6 +242,13 @@ useEffect(() => {
       window.removeEventListener('offline', onOffline)
     }
   }, [])
+
+  // ── Rafraîchissement périodique (synchronisation inter-machines) ──
+  useEffect(() => {
+    if (!sb) return;
+    const id = setInterval(() => loadAll({ force: true, background: true }), 120000);
+    return () => clearInterval(id);
+  }, [sb]);
 
   // Auth handled by Root component
 
@@ -299,7 +311,7 @@ useEffect(() => {
     {id:'rapports',        label:'Rapports & Analyse',    icon:'📊', cat:'Financier', admin:true},
     {id:'historique',      label:'Historique produits',   icon:'🗂️', cat:'Pharmacie'},
   ];
-  const isAdmin = user?.role==='admin';
+  const isAdmin = user?.role==='admin' || user?.role==='admin2';
 
   // ── Notifs admin : à chaque modification de médicament ──
   useEffect(()=>{
@@ -310,22 +322,27 @@ useEffect(() => {
       return String(text || '').replace(/\d/g, '•')
     };
 
+    const NOTIF_META = {
+      medicament_modified: { type:'warning', icon:'💊', titre:'Médicament modifié',  cat:'Pharmacie' },
+      medicament_added:    { type:'info',    icon:'💊', titre:'Nouveau médicament',  cat:'Pharmacie' },
+      vente_added:         { type:'info',    icon:'🛒', titre:'Nouvelle vente',      cat:'Commercial' },
+      client_added:        { type:'info',    icon:'👥', titre:'Nouveau client',      cat:'Commercial' },
+      patient_added:       { type:'info',    icon:'🐾', titre:'Nouveau patient',     cat:'Clinique' },
+      depense_added:       { type:'warning', icon:'💸', titre:'Nouvelle dépense',    cat:'Finance' },
+    };
     const pushNotif = (entry) => {
-      if(!entry || (entry.action !== 'medicament_modified' && entry.action !== 'medicament_added')) return;
-      const isAdded = entry.action === 'medicament_added';
+      if (!entry || !entry.action) return;
       const id = `activity-${entry.id}`;
+      const meta = NOTIF_META[entry.action] || { type:'info', icon:'🔔', titre: entry.action.replace(/_/g,' '), cat:'Général' };
       const notif = {
         id,
-        type: isAdded ? 'info' : 'warning',
-        icon: '💊',
-        titre: isAdded ? 'Nouveau médicament ajouté' : 'Médicament modifié',
-        msg: maskOTR(`${entry.user_name}: ${entry.details || 'Modification'}`),
-        cat: 'Pharmacie',
+        type:  meta.type,
+        icon:  meta.icon,
+        titre: meta.titre,
+        msg:   maskOTR(`${entry.user_name}: ${entry.details || ''}`),
+        cat:   meta.cat,
       };
-
       setActivityNotifs((prev)=> prev.some(n=>n.id===id) ? prev : [notif, ...prev].slice(0, 20));
-
-      // Notification navigateur (si autorisée)
       try{
         if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
           new Notification('La Barakat 🐄', { body: notif.msg });
@@ -361,10 +378,8 @@ useEffect(() => {
     if(!isAdmin) return;
     if(!sb || !navigator.onLine) return;
 
-    const KEY='lb_activity_last_seen_medicaments';
+    const KEY='lb_activity_last_seen';
     const POLL_MS = 120000;
-    const PHARMACY_VIEWS = new Set(['dashboard', 'medicaments', 'commandes', 'inventaire', 'lots', 'historique'])
-    if (!PHARMACY_VIEWS.has(view)) return
     let cancelled = false;
     let inFlight = false;
     let failStreak = 0;
@@ -372,6 +387,15 @@ useEffect(() => {
     const maskOTR = (text) => {
       if(!otrMode) return text;
       return String(text || '').replace(/\d/g, '•')
+    };
+
+    const NOTIF_META = {
+      medicament_modified: { type:'warning', icon:'💊', titre:'Médicament modifié',  cat:'Pharmacie' },
+      medicament_added:    { type:'info',    icon:'💊', titre:'Nouveau médicament',  cat:'Pharmacie' },
+      vente_added:         { type:'info',    icon:'🛒', titre:'Nouvelle vente',      cat:'Commercial' },
+      client_added:        { type:'info',    icon:'👥', titre:'Nouveau client',      cat:'Commercial' },
+      patient_added:       { type:'info',    icon:'🐾', titre:'Nouveau patient',     cat:'Clinique' },
+      depense_added:       { type:'warning', icon:'💸', titre:'Nouvelle dépense',    cat:'Finance' },
     };
 
     const tick = async () => {
@@ -384,7 +408,6 @@ useEffect(() => {
         const lastSeen = localStorage.getItem(KEY) || '';
         let query = sb.from('activity_logs')
           .select('*')
-          .in('action', ['medicament_modified', 'medicament_added'])
           .order('created_at', { ascending: false })
           .limit(40);
 
@@ -399,21 +422,19 @@ useEffect(() => {
         const rows = data || [];
         if(!rows.length) return;
 
-        // Appliquer du plus ancien vers le plus récent
         rows.slice().reverse().forEach((entry)=>{
-          const isAdded = entry.action === 'medicament_added';
+          if (!entry?.action) return;
           const id = `activity-${entry.id}`;
+          const meta = NOTIF_META[entry.action] || { type:'info', icon:'🔔', titre: entry.action.replace(/_/g,' '), cat:'Général' };
           const notif = {
             id,
-            type: isAdded ? 'info' : 'warning',
-            icon: '💊',
-            titre: isAdded ? 'Nouveau médicament ajouté' : 'Médicament modifié',
-            msg: maskOTR(`${entry.user_name}: ${entry.details || 'Modification'}`),
-            cat: 'Pharmacie',
+            type:  meta.type,
+            icon:  meta.icon,
+            titre: meta.titre,
+            msg:   maskOTR(`${entry.user_name}: ${entry.details || ''}`),
+            cat:   meta.cat,
           };
-
           setActivityNotifs((prev)=> prev.some(n=>n.id===id) ? prev : [notif, ...prev].slice(0, 20));
-
           try{
             if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
               new Notification('La Barakat 🐄', { body: notif.msg });
@@ -480,6 +501,7 @@ useEffect(() => {
     otrMode, toggleOTR,
     ventesHist, setVentesHist: setSyncedVentesHist,
     achatsHist, setAchatsHist: setSyncedAchatsHist,
+    versements, setVersements: setSyncedVersements,
     depsHist, setDepsHist: setSyncedDepsHist,
     tva, saveTva,
     fournisseurs, setFournisseurs: setSyncedFournisseurs,
@@ -769,7 +791,7 @@ useEffect(() => {
           {view==='dashboard'&&<Dashboard {...sp}/>}
           {view==='monprofil'&&<MonProfil user={user}/>}
           {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
-          {view==='comptes'&&(isAdmin?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
+          {view==='comptes'&&(user?.role==='admin'?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
           {view==='patients'&&<Patients {...sp}/>}
           {view==='consultations' && <Consultations {...sp} />}
           {view==='dossiers'&&<Dossiers {...sp}/>}

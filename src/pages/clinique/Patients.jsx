@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, ValidationBanner, FilterBar, FilterSelect, FilterBtns, Pagination, usePagination } from '../../components/ui'
+import { Btn, Badge, Field, DupWarning, ValidationBanner, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, Pagination, usePagination } from '../../components/ui'
 import { dbInsert, dbDelete, newId } from '../../lib/db'
 import { validatePatientForm, patientFormToRow } from '../../lib/validation'
 
@@ -123,10 +123,10 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
         </div>
 
         {showForm && (
-          <div className="p-5 bg-blue-50 border-b border-blue-200">
-            <h3 className="font-bold text-blue-800 mb-3">Nouveau patient</h3>
+          <FormPanel icon="🐾" title="Nouveau patient" subtitle="Enregistrez les informations de l'animal" color="teal" onClose={() => setShowForm(false)}>
             {pending && <DupWarning dups={dups} entity="patient" onOk={doAdd} onCancel={() => { setDups([]); setPending(false) }} />}
             <ValidationBanner messages={validationMessages} onDismiss={() => setValidationMessages([])} />
+            <FormSection label="Animal" icon="🐾" color="teal" noTopMargin>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
               <Field label="Nom *"     value={form.nom}     onChange={f('nom')}     error={formErrors.nom}     placeholder="Nom de l'animal" />
               <Field label="Espèce"    value={form.espece}  onChange={f('espece')}  error={formErrors.espece}  options={['Chien','Chat','Bovin','Caprin','Ovin','Volaille']} />
@@ -138,21 +138,28 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
 
               {/* Autocomplete propriétaire */}
               <div className="relative">
-                <label className="text-xs font-bold text-slate-600 mb-1 block">Propriétaire *</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: formErrors.proprio ? '#dc2626' : '#64748b', letterSpacing: '.06em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6, userSelect: 'none' }}>
+                  {formErrors.proprio && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f87171', display: 'inline-block', flexShrink: 0 }} />}
+                  Propriétaire *
+                </label>
                 <input
-                  className={`w-full border-2 rounded-lg px-3 py-2 text-sm focus:border-blue-400 outline-none ${formErrors.proprio ? 'border-red-400' : 'border-slate-200'}`}
+                  style={{ border: `1.5px solid ${formErrors.proprio ? '#f87171' : '#e2e8f0'}`, borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', width: '100%', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', lineHeight: '1.45', color: 'var(--app-text)' }}
+                  onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                  onBlur={e  => { e.target.style.borderColor= formErrors.proprio ? '#f87171' : '#e2e8f0'; e.target.style.boxShadow='none' }}
                   placeholder="Nom du propriétaire"
                   value={form.proprio}
                   onChange={f('proprio')}
                 />
                 {formErrors.proprio && (
-                  <p style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px', fontWeight: 600 }}>{formErrors.proprio}</p>
+                  <p style={{ fontSize: '11px', color: '#dc2626', marginTop: '5px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 14, lineHeight: 1 }}>⚠</span>{formErrors.proprio}
+                  </p>
                 )}
                 {clientSugg.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-200 rounded-lg shadow-lg mt-1">
+                  <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-200 rounded-xl shadow-lg mt-1">
                     {clientSugg.map((c, i) => (
                       <div key={i} onClick={() => patchForm({ proprio: c.nom, tel: c.tel })}
-                        className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm flex justify-between">
+                        className="px-3 py-2.5 hover:bg-teal-50 cursor-pointer text-sm flex justify-between">
                         <span className="font-semibold">{c.nom}</span>
                         <span className="text-slate-400">{c.tel}</span>
                       </div>
@@ -163,15 +170,22 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
 
               <Field label="Téléphone" value={form.tel} onChange={f('tel')} error={formErrors.tel} placeholder="+228 XX XX XX XX" />
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <Field label="⚠️ Allergies connues"    value={form.allergies}   onChange={f('allergies')}   error={formErrors.allergies}   placeholder="ex: Pénicilline…" />
-              <Field label="📋 Antécédents médicaux" value={form.antecedents} onChange={f('antecedents')} error={formErrors.antecedents} placeholder="ex: Stérilisation 2024…" />
-              <Field label="📷 Photo URL (optionnel)" value={form.photo}      onChange={f('photo')}       error={formErrors.photo}       placeholder="https://…" className="md:col-span-2" />
+            </FormSection>
+
+            <FormSection label="Informations médicales" icon="🩺" color="teal">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="⚠️ Allergies connues"    value={form.allergies}   onChange={f('allergies')}   error={formErrors.allergies}   placeholder="ex: Pénicilline…" />
+                <Field label="📋 Antécédents médicaux" value={form.antecedents} onChange={f('antecedents')} error={formErrors.antecedents} placeholder="ex: Stérilisation 2024…" />
+                <Field label="📷 Photo URL (optionnel)" value={form.photo}      onChange={f('photo')}       error={formErrors.photo}       placeholder="https://…" className="md:col-span-2" />
+              </div>
+            </FormSection>
+
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <Btn onClick={handleAdd} disabled={saving}>
+                {saving ? '⏳ Enregistrement…' : '✓ Enregistrer le patient'}
+              </Btn>
             </div>
-            <Btn onClick={handleAdd} disabled={saving}>
-              {saving ? '⏳ Enregistrement…' : '✓ Enregistrer'}
-            </Btn>
-          </div>
+          </FormPanel>
         )}
 
         <FilterBar search={search} onSearch={setSearch} placeholder="🔍 Patient, propriétaire, espèce…" activeCount={activeFilters} onReset={resetFilters}>

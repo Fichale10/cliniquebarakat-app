@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import {
   Btn, Badge, Field, DupWarning, ValidationBanner,
+  FormPanel, FormSection,
   FilterBar, FilterSelect, FilterBtns, Pagination, usePagination,
 } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -14,12 +15,13 @@ const FOURNISSEUR_PLACEHOLDER = '— Choisir un fournisseur —'
 
 const FOURNISSEURS_FALLBACK = ['MediVet SARL', 'Afrique Pharma', 'AgroVet Togo']
 
-function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) {
+function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, sb, logAction }) {
   const getDefaultForm = () => ({
     nom: '', categorie: 'Antibiotique', stock: '', seuil: '',
     unite: 'comprimés', prixAchat: '', prixVente: '',
     fournisseur: '', doseMgKg: '', lot: '',
     peremption: new Date().toISOString().split('T')[0],
+    prixGros: '', paliersGros: [],
   })
 
   const [search, setSearch]     = useState('')
@@ -90,6 +92,8 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
           id: newId(),
           ref: `VET-${Date.now()}`,
         })
+        row.prix_gros    = parseInt(form.prixGros) || 0
+        row.paliers_gros = (form.paliersGros || []).map(p => ({ qte: parseInt(p.qte)||0, remise: parseFloat(p.remise)||0 }))
 
         // Insérer dans Supabase
         const saved = await dbInsert(sb, 'medicaments', row)
@@ -97,9 +101,11 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
         // Normaliser pour le state React (camelCase)
         const forState = {
           ...saved,
-          prixAchat: saved.prix_achat ?? row.prix_achat,
-          prixVente: saved.prix_vente ?? row.prix_vente,
-          doseMgKg:  saved.dose_mg_kg ?? row.dose_mg_kg,
+          prixAchat:   saved.prix_achat   ?? row.prix_achat,
+          prixVente:   saved.prix_vente   ?? row.prix_vente,
+          doseMgKg:    saved.dose_mg_kg   ?? row.dose_mg_kg,
+          prixGros:    saved.prix_gros    ?? row.prix_gros,
+          paliersGros: saved.paliers_gros ?? row.paliers_gros,
         }
 
         setMeds([...meds, forState])
@@ -111,6 +117,8 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
         if (!before) return
 
         const updates = medicamentFormToUpdates(validated)
+        updates.prix_gros    = parseInt(form.prixGros) || 0
+        updates.paliers_gros = (form.paliersGros || []).map(p => ({ qte: parseInt(p.qte)||0, remise: parseFloat(p.remise)||0 }))
 
         await dbUpdate(sb, 'medicaments', editingId, updates)
 
@@ -118,9 +126,11 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
         const updated = {
           ...before,
           ...updates,
-          prixAchat: updates.prix_achat,
-          prixVente: updates.prix_vente,
-          doseMgKg:  updates.dose_mg_kg,
+          prixAchat:   updates.prix_achat,
+          prixVente:   updates.prix_vente,
+          doseMgKg:    updates.dose_mg_kg,
+          prixGros:    updates.prix_gros,
+          paliersGros: updates.paliers_gros,
         }
 
         setMeds(meds.map(m => m.id === editingId ? updated : m))
@@ -183,6 +193,8 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
       doseMgKg:    m.doseMgKg === null || m.doseMgKg === undefined ? '' : String(m.doseMgKg),
       lot:         m.lot         || '',
       peremption:  m.peremption  || getDefaultForm().peremption,
+      prixGros:    String(m.prixGros ?? m.prix_gros ?? ''),
+      paliersGros: m.paliersGros ?? m.paliers_gros ?? [],
     })
     setShowForm(true)
   }
@@ -211,6 +223,34 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
   const [fCat, setFCat]     = useState('')
   const [fStock, setFStock] = useState('')
   const [fPerem, setFPerem] = useState('')
+  const [showQuickFour, setShowQuickFour] = useState(false)
+  const [quickFourNom, setQuickFourNom]   = useState('')
+  const [savingFour, setSavingFour]       = useState(false)
+
+  const saveQuickFour = async () => {
+    if (!quickFourNom.trim()) return
+    setSavingFour(true)
+    try {
+      const row = {
+        id: newId(), nom: quickFourNom.trim(), contact: '', tel: '', email: '',
+        adresse: '', ville: 'Lomé', pays: 'Togo',
+        specialite: 'Médicaments vétérinaires',
+        delai_livraison: 5, conditions_paiement: '30j',
+        remise: 0, note_qualite: 3, actif: true, notes: '',
+        date_debut: new Date().toISOString().split('T')[0], rib: '', site_web: '',
+      }
+      const saved = await dbInsert(sb, 'fournisseurs', row)
+      const entry = { ...row, id: saved?.id || row.id }
+      if (setFournisseurs) setFournisseurs(prev => [entry, ...(Array.isArray(prev) ? prev : [])])
+      patchForm({ fournisseur: row.nom })
+      setShowQuickFour(false)
+      setQuickFourNom('')
+    } catch(e) {
+      alert('Erreur : ' + (e?.message || e))
+    } finally {
+      setSavingFour(false)
+    }
+  }
 
   const categories = useMemo(() => [...new Set(meds.map(m => m.categorie))].filter(Boolean), [meds])
 
@@ -249,7 +289,13 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
         </div>
 
         {showForm && (
-          <div className="p-5 bg-blue-50 border-b border-blue-200">
+          <FormPanel
+            icon={formMode === 'edit' ? '✏️' : '💊'}
+            title={formMode === 'edit' ? 'Modifier le médicament' : 'Nouveau médicament'}
+            subtitle={formMode === 'edit' ? 'Mettez à jour les informations' : 'Remplissez tous les champs requis'}
+            color="blue"
+            onClose={handleCloseForm}
+          >
             {pending && <DupWarning dups={dups} entity="médicament" onOk={commitSave} onCancel={handleCloseForm} />}
             <ValidationBanner messages={validationMessages} onDismiss={() => setValidationMessages([])} />
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -263,25 +309,100 @@ function Medicaments({ meds, setMeds, fournisseurs = [], user, sb, logAction }) 
               <Field label="Seuil alerte" value={form.seuil} onChange={e => patchForm({ seuil: e.target.value })} error={formErrors.seuil} type="number" placeholder="0" />
               <Field label="Prix achat (F)" value={form.prixAchat} onChange={e => patchForm({ prixAchat: e.target.value })} error={formErrors.prixAchat} type="number" placeholder="0" />
               <Field label="Prix vente (F)" value={form.prixVente} onChange={e => patchForm({ prixVente: e.target.value })} error={formErrors.prixVente} type="number" placeholder="0" />
-              <Field
-                label="Fournisseur"
-                value={form.fournisseur || FOURNISSEUR_PLACEHOLDER}
-                onChange={(e) => {
-                  const v = e.target.value
-                  patchForm({ fournisseur: v === FOURNISSEUR_PLACEHOLDER ? '' : v })
-                }}
-                error={formErrors.fournisseur}
-                options={fournisseurSelectOptions}
-              />
+              <div>
+                <div className="flex items-end gap-1.5">
+                  <div className="flex-1">
+                    <Field
+                      label="Fournisseur"
+                      value={form.fournisseur || FOURNISSEUR_PLACEHOLDER}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        patchForm({ fournisseur: v === FOURNISSEUR_PLACEHOLDER ? '' : v })
+                      }}
+                      error={formErrors.fournisseur}
+                      options={fournisseurSelectOptions}
+                    />
+                  </div>
+                  <button type="button" onClick={() => setShowQuickFour(q => !q)}
+                    title="Créer un nouveau fournisseur"
+                    className="mb-0.5 px-2.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border-2 border-blue-200 rounded-xl text-sm font-black transition-all">
+                    +
+                  </button>
+                </div>
+                {showQuickFour && (
+                  <div className="mt-1.5 bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Nouveau fournisseur rapide</p>
+                    <input type="text" placeholder="Nom du fournisseur *"
+                      value={quickFourNom} onChange={e => setQuickFourNom(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && saveQuickFour()}
+                      className="w-full border-2 border-blue-200 rounded-lg px-3 py-2 text-sm focus:border-blue-400 outline-none bg-white" />
+                    <div className="flex gap-2">
+                      <button type="button" onClick={saveQuickFour} disabled={!quickFourNom.trim() || savingFour}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg disabled:opacity-40 transition-all">
+                        {savingFour ? '⏳' : '✓ Créer'}
+                      </button>
+                      <button type="button" onClick={() => { setShowQuickFour(false); setQuickFourNom('') }}
+                        className="px-3 py-1.5 text-slate-500 text-xs rounded-lg hover:bg-slate-100 transition-all">
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <Field label="N° de lot" value={form.lot} onChange={e => patchForm({ lot: e.target.value })} error={formErrors.lot} placeholder="ex: LOT-2024-01" />
               <Field label="Date péremption" value={form.peremption} onChange={e => patchForm({ peremption: e.target.value })} error={formErrors.peremption} type="date" />
             </div>
-            <div className="mt-3 flex gap-2">
+            {/* Vente en gros (optionnel) */}
+            <FormSection label="Vente en gros" icon="📦" color="orange">
+              <p className="text-xs text-slate-400 -mt-2 mb-3">Optionnel — laissez vide pour désactiver</p>
+              <div className="flex flex-wrap gap-3 items-start">
+                <div style={{width:'160px'}}>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Prix gros (F)</label>
+                  <input type="number" min="0" placeholder="0 = désactivé"
+                    value={form.prixGros}
+                    onChange={e => patchForm({prixGros: e.target.value})}
+                    className="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-orange-400 outline-none bg-white" />
+                </div>
+                <div className="flex-1" style={{minWidth:'260px'}}>
+                  <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Paliers de remise</label>
+                  <div className="flex gap-2 flex-wrap items-center">
+                    {(form.paliersGros||[]).map((p,pi) => (
+                      <div key={pi} className="flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-lg px-2 py-1.5">
+                        <span className="text-xs text-orange-600">≥</span>
+                        <input type="number" min="1" value={p.qte}
+                          onChange={e => { const pl=[...(form.paliersGros||[])]; pl[pi]={...pl[pi],qte:e.target.value}; patchForm({paliersGros:pl}) }}
+                          className="w-14 text-xs border border-orange-200 rounded px-1 py-0.5 outline-none text-center bg-white" placeholder="qté" />
+                        <span className="text-xs text-orange-600">→</span>
+                        <input type="number" min="0" max="99" value={p.remise}
+                          onChange={e => { const pl=[...(form.paliersGros||[])]; pl[pi]={...pl[pi],remise:e.target.value}; patchForm({paliersGros:pl}) }}
+                          className="w-10 text-xs border border-orange-200 rounded px-1 py-0.5 outline-none text-center bg-white" placeholder="%" />
+                        <span className="text-xs text-orange-600">%</span>
+                        <button type="button"
+                          onClick={() => patchForm({paliersGros:(form.paliersGros||[]).filter((_,j)=>j!==pi)})}
+                          className="text-red-400 hover:text-red-600 text-xs ml-0.5 font-bold leading-none">✕</button>
+                      </div>
+                    ))}
+                    {(form.paliersGros||[]).length < 4 && (
+                      <button type="button"
+                        onClick={() => patchForm({paliersGros:[...(form.paliersGros||[]),{qte:'10',remise:'5'}]})}
+                        className="text-xs text-orange-600 border border-orange-200 rounded-lg px-2.5 py-1.5 hover:bg-orange-50 font-semibold transition-all">
+                        + Palier
+                      </button>
+                    )}
+                    {!(form.paliersGros||[]).length && (
+                      <span className="text-xs text-slate-400 italic">Aucun palier — prix gros fixe</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </FormSection>
+
+            <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
               <Btn onClick={handlePrimarySave} disabled={saving}>
-                {saving ? '⏳ Enregistrement…' : formMode === 'edit' ? '✓ Enregistrer' : '✓ Ajouter'}
+                {saving ? '⏳ Enregistrement…' : formMode === 'edit' ? '✓ Enregistrer les modifications' : '✓ Ajouter le médicament'}
               </Btn>
             </div>
-          </div>
+          </FormPanel>
         )}
 
         <FilterBar search={search} onSearch={setSearch} placeholder="🔍 Nom, catégorie, référence…" activeCount={activeFilters} onReset={resetFilters}>

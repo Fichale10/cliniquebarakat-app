@@ -22,8 +22,8 @@ export const ROLE_ACCESS = {
   veterinaire: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
   // Alias de droits pour compatibilité avec d'anciens comptes
   utilisateur: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
-  pharmacien:  ['dashboard','monprofil','patients','clients','medicaments','commandes','inventaire','ventes','devis','creances','ordonnances','factures','caisse','lots','ia','carteclients','traitements'],
-  caissier:    ['dashboard','monprofil','ventes','clients','devis','creances','factures','caisse','carteclients'],
+  pharmacien:  ['dashboard','monprofil','patients','clients','medicaments','commandes','inventaire','ventes','devis','creances','ordonnances','factures','caisse','lots','ia','carteclients','traitements','historique'],
+  caissier:    ['dashboard','monprofil','ventes','clients','devis','creances','factures','caisse','carteclients','historique'],
 }
 
 export const canAccess = (role, id) => {

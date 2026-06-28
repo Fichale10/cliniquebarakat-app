@@ -1,3 +1,4 @@
+export { default as FormPanel, FormSection } from './FormPanel'
 export { default as Btn } from './Btn'
 export { default as Badge } from './Badge'
 export { default as Field } from './Field'

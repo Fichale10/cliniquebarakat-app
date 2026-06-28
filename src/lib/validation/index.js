@@ -222,10 +222,11 @@ export function venteToDbRow(row) {
     note: row.note ?? '',
     tva_amt: row.tva_amt ?? row.tvaAmt ?? 0,
     caissier: row.caissier ?? '',
+    type: row.type ?? 'detail',
   }
 }
 
-export function venteFormToRow(validated, id) {
+export function venteFormToRow(validated, id, extras = {}) {
   return venteToDbRow({
     id,
     date: validated.date,
@@ -234,6 +235,7 @@ export function venteFormToRow(validated, id) {
     total: validated.total,
     statut: validated.statut,
     mode: validated.mode,
+    ...extras,
   })
 }
 

@@ -10,7 +10,7 @@ import {
   FilterSelect,
   FilterBtns
 } from "../../components/ui"
-function Historique({ventesHist,achatsHist,meds}){
+function Historique({ventesHist=[],achatsHist=[],meds=[]}){
   const [tab,setTab]=useState('ventes');
   const [search,setSearch]=useState('');
   const [fHStatut,setFHStatut]=useState('');

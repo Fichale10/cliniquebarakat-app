@@ -249,13 +249,18 @@ function Row({ icon, val, label, link, mono }) {
   );
 }
 
-export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds = [], sb, dbInsert, dbUpdate, dbDelete }) {
+export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds = [], sb, dbInsert, dbUpdate, dbDelete, versements = [], setVersements, achatsHist = [] }) {
   const [view, setView]             = useState('liste');
   const [selected, setSelected]     = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [dups, setDups]             = useState([]);
   const [pending, setPending]       = useState(null);
   const [saving, setSaving]         = useState(false);
+  const [activeTab, setActiveTab]   = useState('liste');
+  const [showVForm, setShowVForm]   = useState(false);
+  const [savingV, setSavingV]       = useState(false);
+  const [expV, setExpV]             = useState(null);
+  const [vForm, setVForm]           = useState({ fournisseur: '', montant: '', date: today(), mode: 'Espèces', note: '' });
 
   const [search, setSearch] = useState('');
   const [fSpec, setFSpec]   = useState('');
@@ -357,6 +362,49 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
   const activeFilters = [fSpec, fActif, fNote].filter(Boolean).length;
   const resetFilters  = () => { setSearch(''); setFSpec(''); setFActif(''); setFNote(''); };
 
+  const debtData = useMemo(() => {
+    return fournisseurs
+      .map(f => {
+        const recu       = (achatsHist || []).filter(c => c.fournisseur === f.nom && c.statut === 'Reçu')
+        const totalCmd   = recu.reduce((s, c) => s + (c.total || 0), 0)
+        const totalVerse = (versements || []).filter(v => v.fournisseur === f.nom).reduce((s, v) => s + (v.montant || 0), 0)
+        const solde      = totalCmd - totalVerse
+        return { ...f, totalCmd, totalVerse, solde, nbCommandes: recu.length }
+      })
+      .filter(d => d.totalCmd > 0 || d.totalVerse > 0)
+      .sort((a, b) => b.solde - a.solde)
+  }, [fournisseurs, achatsHist, versements])
+
+  const totalDette = debtData.reduce((s, d) => s + Math.max(0, d.solde), 0)
+
+  const addVersement = async () => {
+    if (!vForm.fournisseur) return alert('Sélectionnez un fournisseur')
+    const m = parseInt(vForm.montant)
+    if (isNaN(m) || m <= 0) return alert('Montant invalide (doit être > 0)')
+    setSavingV(true)
+    try {
+      const row = { id: newId(), fournisseur: vForm.fournisseur, montant: m, date: vForm.date, mode: vForm.mode, note: vForm.note || '' }
+      const saved = await dbInsert(sb, 'versements_fournisseurs', row)
+      setVersements([saved, ...(versements || [])])
+      setVForm({ fournisseur: '', montant: '', date: today(), mode: 'Espèces', note: '' })
+      setShowVForm(false)
+    } catch(e) {
+      alert('Erreur : ' + (e?.message || e))
+    } finally {
+      setSavingV(false)
+    }
+  }
+
+  const delVersement = async (id) => {
+    if (!confirm('Supprimer ce versement ?')) return
+    try {
+      await dbDelete(sb, 'versements_fournisseurs', id)
+      setVersements((versements || []).filter(v => v.id !== id))
+    } catch(e) {
+      alert('Erreur : ' + (e?.message || e))
+    }
+  }
+
   return (
     <div className="space-y-5">
 
@@ -369,6 +417,19 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
         />
       )}
 
+      <div className="flex gap-2">
+        {[
+          { k: 'liste',  l: '🏭 Fournisseurs',       c: fournisseurs.length                      },
+          { k: 'dettes', l: '💰 Dettes & Paiements', c: debtData.filter(d => d.solde > 0).length },
+        ].map(t => (
+          <button key={t.k} onClick={() => setActiveTab(t.k)}
+            className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${activeTab===t.k?'border-emerald-500 bg-emerald-50 text-emerald-700':'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+            {t.l} <span className="ml-1 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">{t.c}</span>
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'liste' && <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { l: 'Fournisseurs actifs', v: stats.actifs,           icon: '🏭', bg: 'bg-green-50 border-green-200',  t: 'text-green-700'  },
@@ -538,6 +599,152 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
           </div>
         )}
       </div>
+      </>}
+
+      {activeTab === 'dettes' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { l: 'Total dettes',          v: fmtF(totalDette),                                                          icon: '💸', bg: 'bg-red-50 border-red-200',    t: 'text-red-700'    },
+              { l: 'Fournisseurs à régler', v: debtData.filter(d => d.solde > 0).length,                                  icon: '🏭', bg: 'bg-amber-50 border-amber-200', t: 'text-amber-700'  },
+              { l: 'Total versé',           v: fmtF((versements||[]).reduce((s,v)=>s+(v.montant||0),0)),                  icon: '✅', bg: 'bg-green-50 border-green-200', t: 'text-green-700'  },
+            ].map((s, i) => (
+              <div key={i} className={`${s.bg} border rounded-2xl p-5`}>
+                <div className="text-2xl mb-2">{s.icon}</div>
+                <p className={`text-xs font-bold uppercase tracking-wide ${s.t} opacity-70 mb-1`}>{s.l}</p>
+                <p className={`text-xl font-black font-mono ${s.t}`}>{s.v}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="app-card">
+            <div className="p-5 border-b flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold flex items-center gap-2">📋 Dettes par fournisseur</h2>
+                <p className="text-xs text-slate-400 mt-0.5">{debtData.length} fournisseur(s) avec transactions</p>
+              </div>
+              <Btn onClick={() => setShowVForm(!showVForm)}>{showVForm ? '✕ Annuler' : '+ Enregistrer un paiement'}</Btn>
+            </div>
+
+            {showVForm && (
+              <div className="p-5 bg-emerald-50 border-b border-emerald-200">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Fournisseur *</label>
+                    <select className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none bg-white"
+                      value={vForm.fournisseur} onChange={e => setVForm(f => ({...f, fournisseur: e.target.value}))}>
+                      <option value="">— Choisir —</option>
+                      {debtData.map(d => <option key={d.id} value={d.nom}>{d.nom}{d.solde > 0 ? ` (solde: ${fmtF(d.solde)})` : ''}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Montant (F) *</label>
+                    <input type="number" min="1" placeholder="0"
+                      value={vForm.montant} onChange={e => setVForm(f => ({...f, montant: e.target.value}))}
+                      className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Date</label>
+                    <input type="date" value={vForm.date} onChange={e => setVForm(f => ({...f, date: e.target.value}))}
+                      className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Mode de paiement</label>
+                    <select className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none bg-white"
+                      value={vForm.mode} onChange={e => setVForm(f => ({...f, mode: e.target.value}))}>
+                      {['Espèces','Mobile Money','Virement','Chèque'].map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Note</label>
+                    <input type="text" placeholder="Référence, objet du paiement…"
+                      value={vForm.note} onChange={e => setVForm(f => ({...f, note: e.target.value}))}
+                      className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none" />
+                  </div>
+                </div>
+                <Btn onClick={addVersement} disabled={savingV}>{savingV ? '⏳ Enregistrement…' : '✓ Enregistrer le paiement'}</Btn>
+              </div>
+            )}
+
+            {!debtData.length ? (
+              <div className="text-center py-12 text-slate-400">
+                <div className="text-4xl mb-2">✅</div>
+                <p className="font-semibold">Aucune transaction avec les fournisseurs</p>
+                <p className="text-sm mt-1">Les commandes reçues (statut Reçu) et les paiements apparaîtront ici</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {debtData.map(d => {
+                  const versFourn = (versements||[]).filter(v => v.fournisseur === d.nom).sort((a,b) => b.date.localeCompare(a.date))
+                  const isExp     = expV === d.id
+                  return (
+                    <div key={d.id}>
+                      <div className="p-5 hover:bg-slate-50 cursor-pointer" onClick={() => setExpV(isExp ? null : d.id)}>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-bold text-slate-900">{d.nom}</span>
+                              {d.solde > 0
+                                ? <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">🔴 Dette</span>
+                                : d.solde < 0
+                                  ? <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">🔵 Crédit</span>
+                                  : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">✅ Soldé</span>}
+                            </div>
+                            <p className="text-xs text-slate-400">{d.nbCommandes} commande(s) reçue(s) · {versFourn.length} versement(s)</p>
+                          </div>
+                          <div className="shrink-0">
+                            <div className="flex gap-6 text-center">
+                              <div>
+                                <p className="text-xs text-slate-400">Commandé</p>
+                                <p className="font-black text-sm font-mono text-slate-700">{fmtF(d.totalCmd)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Versé</p>
+                                <p className="font-black text-sm font-mono text-green-600">{fmtF(d.totalVerse)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Solde</p>
+                                <p className={`font-black text-sm font-mono ${d.solde > 0 ? 'text-red-600' : d.solde < 0 ? 'text-blue-600' : 'text-green-600'}`}>
+                                  {d.solde !== 0 ? fmtF(Math.abs(d.solde)) : '0 F'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isExp && (
+                        <div className="bg-slate-50 border-t px-5 pb-4">
+                          <div className="flex items-center justify-between pt-3 mb-3">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Historique des versements</p>
+                            <button onClick={e => { e.stopPropagation(); setVForm(f => ({...f, fournisseur: d.nom})); setShowVForm(true); setExpV(null) }}
+                              className="text-xs text-emerald-600 font-bold hover:underline">+ Ajouter un versement</button>
+                          </div>
+                          {!versFourn.length ? (
+                            <p className="text-sm text-slate-400 py-2">Aucun versement enregistré pour ce fournisseur</p>
+                          ) : versFourn.map(v => (
+                            <div key={v.id} className="flex items-center justify-between bg-white rounded-xl px-4 py-2.5 border border-slate-200 mb-2">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-xs text-slate-400">{v.date}</span>
+                                <span className="text-sm font-semibold text-slate-700">{v.mode}</span>
+                                {v.note && <span className="text-xs text-slate-400">· {v.note}</span>}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="font-black text-green-600 font-mono">{fmtF(v.montant)}</span>
+                                <button onClick={() => delVersement(v.id)} className="text-red-400 hover:text-red-600 text-xs no-print">🗑</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

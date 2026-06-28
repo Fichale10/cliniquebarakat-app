@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner, Pagination, usePagination } from '../../components/ui'
+import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination } from '../../components/ui'
 import { dbInsert, dbDelete, newId } from '../../lib/db'
 import { validateClientForm, clientFormToRow } from '../../lib/validation'
 
@@ -73,13 +73,15 @@ function Clients({ clients, setClients, user, sb, logAction }) {
   // ── Suppression avec Supabase ─────────────────────────────
   const doDelete = async (id) => {
     const c = clients.find((x) => x.id === id)
+    setClients(clients.filter((x) => x.id !== id))
+    setConfirmDel(null)
     try {
       await dbDelete(sb, 'clients', id)
-      setClients(clients.filter((x) => x.id !== id))
-      setConfirmDel(null)
       if (logAction && sb) logAction(sb, user, 'client_deleted', c?.nom || id)
     } catch (e) {
-      alert(e?.message || 'Suppression impossible.')
+      console.error('[Clients] Erreur suppression:', e)
+      setClients(prev => c && !prev.some(x => x.id === c.id) ? [...prev, c] : prev)
+      alert(e?.message || 'Suppression impossible — client restauré.')
     }
   }
 
@@ -125,8 +127,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
         </div>
 
         {showForm && (
-          <div className="p-5 bg-green-50 border-b border-green-200">
-            <h3 className="font-bold text-green-800 mb-3">Nouveau client</h3>
+          <FormPanel icon="👥" title="Nouveau client" subtitle="Remplissez les coordonnées du client" color="green" onClose={() => setShowForm(false)}>
             {pending && <DupWarning dups={dups} entity="client" onOk={doAdd} onCancel={() => { setDups([]); setPending(false) }} />}
             <ValidationBanner messages={validationMessages} onDismiss={() => setValidationMessages([])} />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -142,12 +143,12 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                   placeholder={fi.ph} />
               ))}
             </div>
-            <div className="mt-3">
+            <div className="mt-4">
               <Btn onClick={handleAdd} disabled={saving}>
-                {saving ? '⏳ Enregistrement…' : '✓ Enregistrer'}
+                {saving ? '⏳ Enregistrement…' : '✓ Enregistrer le client'}
               </Btn>
             </div>
-          </div>
+          </FormPanel>
         )}
 
         <div className="p-5">

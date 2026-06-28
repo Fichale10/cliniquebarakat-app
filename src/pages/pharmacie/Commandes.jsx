@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
-import { Btn, Badge, Field, FilterBar, FilterSelect, FilterBtns, FilterPeriode } from '../../components/ui'
+import { Btn, Badge, Field, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode } from '../../components/ui'
 
 const today = () => new Date().toISOString().split('T')[0]
 const SC = { Reçu: 'green', 'En transit': 'blue', 'En attente': 'yellow', Annulé: 'red' }
@@ -127,36 +127,42 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
         </div>
 
         {showForm && (
-          <div className="p-5 bg-blue-50 border-b border-blue-200">
-            <h3 className="font-bold text-blue-800 mb-3">Nouvelle commande fournisseur</h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <Field label="Date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} type="date" />
-              <div>
-                <label className="text-xs font-bold text-slate-600 mb-1 block uppercase">Fournisseur *</label>
-                <input list="cmd-fournisseurs" value={form.fournisseur}
-                  onChange={e => setForm({ ...form, fournisseur: e.target.value })}
-                  placeholder="Nom du fournisseur…"
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none bg-white" />
-                <datalist id="cmd-fournisseurs">
-                  {fournisseurOptions.map(f => <option key={f} value={f} />)}
-                </datalist>
+          <FormPanel icon="📦" title="Nouvelle commande fournisseur" subtitle="Passez une commande auprès d'un fournisseur" color="blue" onClose={() => setShowForm(false)}>
+            <FormSection label="Informations" icon="📋" color="blue" noTopMargin>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} type="date" />
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '.06em', textTransform: 'uppercase', display: 'block', marginBottom: 6, userSelect: 'none' }}>Fournisseur *</label>
+                  <input list="cmd-fournisseurs" value={form.fournisseur}
+                    onChange={e => setForm({ ...form, fournisseur: e.target.value })}
+                    placeholder="Nom du fournisseur…"
+                    style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', width: '100%', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', lineHeight: '1.45', color: 'var(--app-text)' }}
+                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
+                  <datalist id="cmd-fournisseurs">
+                    {fournisseurOptions.map(f => <option key={f} value={f} />)}
+                  </datalist>
+                </div>
               </div>
-            </div>
+            </FormSection>
 
-            <div className="mb-3">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Produits commandés</label>
+            <FormSection label="Produits commandés" icon="💊" color="blue"
+              action={
                 <button onClick={() => setForm({ ...form, lignes: [...form.lignes, { produit: '', qte: '', pu: '' }] })}
-                  className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg font-bold">+ Ajouter</button>
-              </div>
-              <div className="grid gap-2 mb-1" style={{ gridTemplateColumns: '2fr 1fr 1fr 28px' }}>
+                  className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">
+                  + Ajouter
+                </button>
+              }>
+              <div className="grid gap-1.5 mb-1.5" style={{ gridTemplateColumns: '2fr 1fr 1fr 28px' }}>
                 {['Produit', 'Qté', 'Prix unit. (F)', ''].map((h, i) => (
-                  <div key={i} className="text-xs font-bold text-slate-400">{h}</div>
+                  <div key={i} className="text-xs font-bold text-slate-400 px-1">{h}</div>
                 ))}
               </div>
               {form.lignes.map((l, i) => (
                 <div key={i} className="grid gap-2 mb-1.5 items-center" style={{ gridTemplateColumns: '2fr 1fr 1fr 28px' }}>
-                  <select className="border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none bg-white"
+                  <select style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', cursor: 'pointer', color: 'var(--app-text)', width: '100%' }}
+                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }}
                     value={l.produit} onChange={e => {
                       const med = meds.find(m => m.nom === e.target.value)
                       updLigne(i, { produit: e.target.value, pu: med ? med.prixAchat || '' : l.pu })
@@ -165,28 +171,36 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                     {(meds || []).map(m => <option key={m.id} value={m.nom}>{m.nom} ({m.unite})</option>)}
                     <option value="__autre__">Autre produit…</option>
                   </select>
-                  {l.produit === '__autre__'
-                    ? <input placeholder="Nom du produit" value={l.nomLibre || ''} onChange={e => updLigne(i, { nomLibre: e.target.value })}
-                        className="border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none" />
-                    : null}
+                  {l.produit === '__autre__' && (
+                    <input placeholder="Nom du produit" value={l.nomLibre || ''} onChange={e => updLigne(i, { nomLibre: e.target.value })}
+                      style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%' }}
+                      onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                      onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
+                  )}
                   <input type="number" placeholder="0" value={l.qte} onChange={e => updLigne(i, { qte: e.target.value })}
-                    className="border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none" />
+                    style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%', textAlign: 'center' }}
+                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
                   <input type="number" placeholder="0" value={l.pu} onChange={e => updLigne(i, { pu: e.target.value })}
-                    className="border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-blue-400 outline-none" />
+                    style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%' }}
+                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
                   {form.lignes.length > 1
                     ? <button onClick={() => setForm({ ...form, lignes: form.lignes.filter((_, j) => j !== i) })}
-                        className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-50 rounded-lg text-xs">✕</button>
+                        className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-50 rounded-lg text-xs transition-all">✕</button>
                     : <div />}
                 </div>
               ))}
-            </div>
+            </FormSection>
 
-            <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-blue-200 mb-4">
-              <span className="font-bold text-slate-700">Total commande :</span>
-              <span className="text-xl font-black text-blue-600 font-mono">{fmtF(montantTotal)}</span>
+            <div className="flex items-center justify-between mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Total commande</p>
+                <span className="text-2xl font-black text-blue-600 font-mono">{fmtF(montantTotal)}</span>
+              </div>
+              <Btn color="blue" onClick={addCommande} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Passer la commande'}</Btn>
             </div>
-            <Btn onClick={addCommande} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Passer la commande'}</Btn>
-          </div>
+          </FormPanel>
         )}
 
         <FilterBar search={searchCmd} onSearch={setSearchCmd} placeholder="🔍 N° commande, fournisseur…"

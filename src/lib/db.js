@@ -121,6 +121,7 @@ const prepareInsertRow = (table, row) => {
       note: r.note ?? '',
       tva_amt: r.tva_amt ?? r.tvaAmt ?? 0,
       caissier: r.caissier ?? '',
+      type: r.type ?? 'detail',
       created_at: r.created_at,
     }
     return payload
