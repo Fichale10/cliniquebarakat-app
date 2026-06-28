@@ -176,8 +176,8 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       <div class="row" style="padding-left:12px"><span>${l.qte} × ${new Intl.NumberFormat('fr-FR').format(l.pu)} F</span><span>${new Intl.NumberFormat('fr-FR').format(l.qte * l.pu)} F</span></div>
     `).join('')}
     <div class="sep"></div>
-    ${v.tvaAmt > 0 ? `<div class="row"><span>Sous-total HT</span><span>${new Intl.NumberFormat('fr-FR').format(v.total - v.tvaAmt)} F</span></div>
-    <div class="row"><span>TVA (${tva?.taux || 18}%)</span><span>${new Intl.NumberFormat('fr-FR').format(v.tvaAmt)} F</span></div>` : ''}
+    ${(v.tva_amt || v.tvaAmt || 0) > 0 ? `<div class="row"><span>Sous-total HT</span><span>${new Intl.NumberFormat('fr-FR').format(v.total - (v.tva_amt || v.tvaAmt || 0))} F</span></div>
+    <div class="row"><span>TVA (${tva?.taux || 18}%)</span><span>${new Intl.NumberFormat('fr-FR').format(v.tva_amt || v.tvaAmt || 0)} F</span></div>` : ''}
     <div class="row total-row"><span>TOTAL TTC</span><span>${new Intl.NumberFormat('fr-FR').format(v.total)} F</span></div>
     ${v.note ? `<div style="margin-top:8px;font-size:10px;color:#555">Note: ${v.note}</div>` : ''}
     <div class="sep"></div>

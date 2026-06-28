@@ -1,21 +1,32 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
-import { fmtF } from "../../lib/utils";
-import {
-  Btn,
-  Badge,
-  PrintBtn,
-  FilterPeriode,
-  DupWarning,
-  FilterBar,
-  FilterSelect,
-  FilterBtns
-} from "../../components/ui"
-function Inventaire({meds,setMeds}){
-  const [adjId,setAdjId]=useState(null);
-  const [adjQty,setAdjQty]=useState('');
-  const valTotal=meds.reduce((s,m)=>s+(m.stock*(m.prixAchat||0)),0);
-  const crits=meds.filter(m=>m.stock<=m.seuil);
-  const doAdj=(id)=>{const q=parseInt(adjQty);if(isNaN(q))return;setMeds(meds.map(m=>m.id===id?{...m,stock:Math.max(0,m.stock+q)}:m));setAdjId(null);setAdjQty('');};
+import { useState } from 'react'
+import { fmtF } from "../../lib/utils"
+import { dbUpdate } from '../../lib/db'
+import { Btn, Badge, PrintBtn } from "../../components/ui"
+function Inventaire({ meds, setMeds, sb }) {
+  const [adjId, setAdjId] = useState(null)
+  const [adjQty, setAdjQty] = useState('')
+  const [adjSaving, setAdjSaving] = useState(false)
+  const valTotal = meds.reduce((s, m) => s + (m.stock * (m.prixAchat || 0)), 0)
+  const crits = meds.filter(m => m.stock <= m.seuil)
+
+  const doAdj = async (id) => {
+    const q = parseInt(adjQty)
+    if (isNaN(q) || q === 0) return
+    const med = meds.find(m => m.id === id)
+    if (!med) return
+    const newStock = Math.max(0, (med.stock || 0) + q)
+    setAdjSaving(true)
+    try {
+      await dbUpdate(sb, 'medicaments', id, { stock: newStock })
+      setMeds(meds.map(m => m.id === id ? { ...m, stock: newStock } : m))
+      setAdjId(null)
+      setAdjQty('')
+    } catch (e) {
+      alert('Erreur ajustement : ' + (e?.message || e))
+    } finally {
+      setAdjSaving(false)
+    }
+  }
   return <div className="app-page space-y-5">
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {[
@@ -65,7 +76,7 @@ function Inventaire({meds,setMeds}){
                         value={adjQty}
                         onChange={e=>setAdjQty(e.target.value)}
                       />
-                      <Btn onClick={()=>doAdj(m.id)} sm>✓ Valider</Btn>
+                      <Btn onClick={()=>doAdj(m.id)} sm disabled={adjSaving}>{adjSaving ? '⏳' : '✓ Valider'}</Btn>
                       <button onClick={()=>setAdjId(null)} className="text-slate-500 text-sm">✕</button>
                     </div>
                   </td>

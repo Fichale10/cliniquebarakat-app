@@ -117,7 +117,7 @@ useEffect(() => {
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
-  const [achatsHist,setAchatsHist]=useState(()=>getCache('achats_hist')||[]);
+  const [achatsHist,setAchatsHist]=useState(()=>getCache('commandes')||[]);
   const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
   const [fournisseurs,setFournisseurs]=useState(()=>(getCache('fournisseurs')||[]).map(normalizeFour));
   const [devis,setDevis]=useState(()=>getCache('devis')||[]);
@@ -137,6 +137,7 @@ useEffect(() => {
   const setSyncedFactures   = syncedSet(setFactures,   'factures')
   const setSyncedFournisseurs = syncedSet(setFournisseurs, 'fournisseurs')
   const setSyncedDevis        = syncedSet(setDevis,        'devis')
+  const setSyncedAchatsHist   = syncedSet(setAchatsHist,   'commandes')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
@@ -180,6 +181,7 @@ useEffect(() => {
         ['factures', setSyncedFactures],
         ['fournisseurs', (d) => setSyncedFournisseurs(d.map(normalizeFour))],
         ['devis', setSyncedDevis],
+        ['commandes', setSyncedAchatsHist],
       ]
       await Promise.all(tables.map(async ([t, setter]) => {
         const d = await dbFetch(sb, t, { force })
@@ -477,7 +479,7 @@ useEffect(() => {
     comptes, setComptes:setSyncedComptes,
     otrMode, toggleOTR,
     ventesHist, setVentesHist: setSyncedVentesHist,
-    achatsHist, setAchatsHist,
+    achatsHist, setAchatsHist: setSyncedAchatsHist,
     depsHist, setDepsHist: setSyncedDepsHist,
     tva, saveTva,
     fournisseurs, setFournisseurs: setSyncedFournisseurs,
@@ -784,7 +786,7 @@ useEffect(() => {
           {view==='devis'&&<Devis {...sp}/>}
           {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}
           {view==='medicaments'&&<Medicaments {...sp}/>}
-          {view==='commandes'&&<Commandes meds={meds} setMeds={setSyncedMeds}/>}
+          {view==='commandes'&&<Commandes {...sp}/>}
           {view==='inventaire'&&<Inventaire {...sp}/>}
           {view==='ventes'&&<Ventes {...sp}/>}
           {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}

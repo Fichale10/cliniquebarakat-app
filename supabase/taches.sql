@@ -1,18 +1,21 @@
 -- Table tâches équipe
-CREATE TABLE IF NOT EXISTS taches (
+CREATE TABLE IF NOT EXISTS public.taches (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  titre       text NOT NULL,
+  titre       text NOT NULL DEFAULT '',
   membres     jsonb NOT NULL DEFAULT '[]',
-  priorite    text DEFAULT 'Normale',
-  statut      text DEFAULT 'À faire',
+  priorite    text NOT NULL DEFAULT 'Normale',
+  statut      text NOT NULL DEFAULT 'À faire',
   echeance    date NOT NULL DEFAULT CURRENT_DATE,
-  categorie   text DEFAULT 'Autre',
-  created_at  timestamptz DEFAULT now()
+  categorie   text NOT NULL DEFAULT 'Autre',
+  created_at  timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE taches ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS taches_statut_idx   ON public.taches (statut);
+CREATE INDEX IF NOT EXISTS taches_echeance_idx ON public.taches (echeance DESC);
 
-CREATE POLICY "taches_select" ON taches FOR SELECT TO authenticated USING (true);
-CREATE POLICY "taches_insert" ON taches FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "taches_update" ON taches FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "taches_delete" ON taches FOR DELETE TO authenticated USING (true);
+ALTER TABLE public.taches ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "taches_select" ON public.taches FOR SELECT TO authenticated USING (true);
+CREATE POLICY "taches_insert" ON public.taches FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "taches_update" ON public.taches FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "taches_delete" ON public.taches FOR DELETE TO authenticated USING (true);
