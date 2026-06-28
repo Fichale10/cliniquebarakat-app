@@ -92,6 +92,17 @@ useEffect(() => {
       return true;}
     return false;
   });
+  const normalizeFour = (row) => {
+    if (!row) return row
+    const out = { ...row }
+    if ('delai_livraison'     in out) { out.delaiLivraison     = out.delai_livraison;     delete out.delai_livraison }
+    if ('conditions_paiement' in out) { out.conditionsPaiement = out.conditions_paiement; delete out.conditions_paiement }
+    if ('note_qualite'        in out) { out.noteQualite        = out.note_qualite;        delete out.note_qualite }
+    if ('date_debut'          in out) { out.dateDebut          = out.date_debut;          delete out.date_debut }
+    if ('site_web'            in out) { out.siteWeb            = out.site_web;            delete out.site_web }
+    return out
+  }
+
   const [patients,setPatients]=useState(()=>getCache('patients')||[]);
   const [clients,setClients]=useState(()=>getCache('clients')||[]);
   const [meds,setMeds]=useState(()=>getCache('medicaments')||[]);
@@ -143,16 +154,6 @@ useEffect(() => {
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
   const [sbError,setSbError]=useState(false);
-  const normalizeFour = (row) => {
-    if (!row) return row
-    const out = { ...row }
-    if ('delai_livraison'     in out) { out.delaiLivraison     = out.delai_livraison;     delete out.delai_livraison }
-    if ('conditions_paiement' in out) { out.conditionsPaiement = out.conditions_paiement; delete out.conditions_paiement }
-    if ('note_qualite'        in out) { out.noteQualite        = out.note_qualite;        delete out.note_qualite }
-    if ('date_debut'          in out) { out.dateDebut          = out.date_debut;          delete out.date_debut }
-    if ('site_web'            in out) { out.siteWeb            = out.site_web;            delete out.site_web }
-    return out
-  }
 
   const normalizeMed = (row) => {
   if (!row) return row
