@@ -33,14 +33,14 @@ function AssistantIA({ patients, meds, user, sb }) {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
+          model:'claude-haiku-4-5-20251001',
           max_tokens:1000,
           system:buildContext(),
           messages:[...messages.filter(m=>m.role!=='assistant'||messages.indexOf(m)>0),userMsg].map(m=>({role:m.role,content:m.content})),
         })
       });
       const data=await resp.json();
-      const reply=data.content?.[0]?.text||'Désolé, je n\'ai pas pu traiter votre demande.';
+      const reply=data.content?.[0]?.text||(data.error?`❌ Erreur : ${data.error}`:'Désolé, je n\'ai pas pu traiter votre demande.');
       setMessages(m=>[...m,{role:'assistant',content:reply}]);
       if (sb && user) logAction(sb, user, 'assistant_ia', input.substring(0, 80))
     }catch(e){

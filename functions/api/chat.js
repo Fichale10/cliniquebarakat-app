@@ -22,8 +22,18 @@ export async function onRequestPost(context) {
 
   const data = await upstream.json()
 
+  if (!upstream.ok) {
+    return new Response(JSON.stringify({
+      error: data?.error?.message || 'Erreur API Anthropic',
+      type: data?.error?.type,
+    }), {
+      status: upstream.status,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   return new Response(JSON.stringify(data), {
-    status: upstream.status,
+    status: 200,
     headers: { 'Content-Type': 'application/json' },
   })
 }
