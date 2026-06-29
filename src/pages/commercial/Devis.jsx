@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Field, AutoSuggest, Badge } from '../../components/ui'
+import { Btn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -187,12 +187,7 @@ ${d.notes ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-ra
         )}
 
         <div className="divide-y">
-          {!devis.length && (
-            <div className="text-center py-12 text-slate-400">
-              <div className="text-4xl mb-2">📋</div>
-              <p className="font-semibold">Aucun devis pour le moment</p>
-            </div>
-          )}
+          {!devis.length && <EmptyState icon="📋" title="Aucun devis pour le moment" subtitle="Créez un devis pour un client et suivez sa conversion en facture." />}
           {devis.map(d => (
             <div key={d.id} className="p-5 hover:bg-slate-50">
               <div className="flex items-start justify-between gap-4">

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { today, fmtF, findDups } from '../../lib/utils';
 import { newId } from '../../lib/db';
-import { Btn, Badge, Field, DupWarning, FilterBar, FilterSelect, FilterBtns } from '../../components/ui';
+import { Btn, Badge, Field, DupWarning, FilterBar, FilterSelect, FilterBtns, EmptyState } from '../../components/ui';
 
 const SPECIALITES = [
   'Médicaments vétérinaires',
@@ -506,10 +506,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
         </FilterBar>
 
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
-            <div className="text-5xl mb-3">🏭</div>
-            <p className="font-semibold">Aucun fournisseur trouvé</p>
-          </div>
+          <EmptyState icon="🏭" title="Aucun fournisseur trouvé" subtitle="Ajoutez vos fournisseurs pour gérer vos approvisionnements." />
         ) : (
           <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map(f => {

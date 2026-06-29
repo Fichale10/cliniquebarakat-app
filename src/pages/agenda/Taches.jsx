@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Btn, Badge, Field } from '../../components/ui'
+import { Btn, Badge, Field, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -286,13 +286,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
           </div>
         </div>
 
-        {taches.length === 0 && (
-          <div className="p-12 text-center text-slate-400 border-t">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="font-semibold">Aucune tâche créée</p>
-            <p className="text-sm mt-1">Cliquez sur « + Nouvelle tâche » pour commencer</p>
-          </div>
-        )}
+        {taches.length === 0 && <EmptyState icon="✅" title="Aucune tâche créée" subtitle="Organisez votre équipe en créant votre première tâche." />}
       </div>
     </div>
   )

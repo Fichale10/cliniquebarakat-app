@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import AgendaCalendrier from './AgendaCalendrier'
-import { Btn, Badge, Field, AutoSuggest } from '../../components/ui'
+import { Btn, Badge, Field, AutoSuggest, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
 const TYPE_DOT = {
@@ -285,13 +285,7 @@ function Agenda({ patients, rdvs = [], setRdvs, sb, dbInsert, dbUpdate, dbDelete
             </div>
           )}
 
-          {rdvs.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-              <div className="text-4xl mb-3">📅</div>
-              <p className="font-semibold">Aucun rendez-vous enregistré</p>
-              <p className="text-sm mt-1">Cliquez sur « + Nouveau RDV » pour commencer</p>
-            </div>
-          )}
+          {rdvs.length === 0 && <EmptyState icon="📅" title="Aucun rendez-vous enregistré" subtitle="Planifiez votre premier rendez-vous pour commencer." />}
         </div>
       </div>
     </div>

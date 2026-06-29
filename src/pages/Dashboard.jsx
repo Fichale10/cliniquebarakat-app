@@ -4,6 +4,35 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
   const today = () => new Date().toISOString().split('T')[0]
   const fmtF = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
 
+  // ── Trend revenus mois courant vs mois précédent ─────────────
+  const thisMonthStr  = new Date().toISOString().slice(0, 7)
+  const lastMonthDate = new Date(); lastMonthDate.setMonth(lastMonthDate.getMonth() - 1)
+  const lastMonthStr  = lastMonthDate.toISOString().slice(0, 7)
+  const totalDernierMois = (ventesHist || [])
+    .filter((v) => v.date?.startsWith(lastMonthStr))
+    .reduce((s, v) => s + (v.total || 0), 0)
+
+  // ── Top 5 médicaments vendus (toutes périodes) ───────────────
+  const topMeds = useMemo(() => {
+    const counts = {}
+    for (const v of (ventesHist || [])) {
+      for (const l of (v.lignes || [])) {
+        if (l.med) counts[l.med] = (counts[l.med] || 0) + (Number(l.qte) || 1)
+      }
+    }
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+  }, [ventesHist])
+  const maxTopMed = topMeds.length ? topMeds[0][1] : 1
+
+  // ── Patients récemment enregistrés ───────────────────────────
+  const patientsRecents = useMemo(
+    () => [...patients].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 4),
+    [patients]
+  )
+
+  const SPECIES_EMOJI = { Chien: '🐕', Chat: '🐈', Bovin: '🐄', Caprin: '🐐', Ovin: '🐑', Volaille: '🐓' }
+  const MED_COLORS    = ['#7c3aed', '#2563eb', '#0d9488', '#d97706', '#dc2626']
+
   const alertesStock = meds.filter((m) => m.stock <= m.seuil)
   const rdvsLocaux =
     rdvs ||
@@ -12,8 +41,11 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
       catch { return [] }
     })()
   const rdvsAujourdhui = rdvsLocaux.filter((r) => r.date === today())
-  const ventesMois = (ventesHist || []).filter((v) => v.date?.startsWith(new Date().toISOString().slice(0, 7)))
-  const totalMois = ventesMois.reduce((s, v) => s + (v.total || 0), 0)
+  const ventesMois = (ventesHist || []).filter((v) => v.date?.startsWith(thisMonthStr))
+  const totalMois  = ventesMois.reduce((s, v) => s + (v.total || 0), 0)
+  const revenuTrend = totalDernierMois > 0
+    ? Math.round(((totalMois - totalDernierMois) / totalDernierMois) * 100)
+    : null
 
   const especes = patients.reduce((a, p) => {
     a[p.espece] = (a[p.espece] || 0) + 1
@@ -35,7 +67,8 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
       }),
     [ventesHist]
   )
-  const maxVente = Math.max(...ventes7.map((v) => v.val), 1)
+  const maxVente     = Math.max(...ventes7.map((v) => v.val), 1)
+  const totalSemaine = ventes7.reduce((s, v) => s + v.val, 0)
 
   const now = Date.now()
   const peremProches = meds
@@ -66,6 +99,7 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
       label: 'Revenus ce mois', val: fmtF(totalMois), icon: '💰',
       grad: 'linear-gradient(135deg,#b45309,#f59e0b)',
       shadow: 'rgba(180,83,9,0.4)', vw: 'rapports', sub: 'FCFA encaissés',
+      trend: revenuTrend,
     },
   ]
 
@@ -118,7 +152,15 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
               <div className="dash-kpi-icon" style={{ fontSize: 22 }}>{k.icon}</div>
             </div>
             <div className="dash-kpi-foot" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 10, opacity: 0.7 }}>{k.sub}</span>
+              <span style={{ fontSize: 10, opacity: 0.85 }}>
+                {k.trend != null ? (
+                  <span style={{ color: k.trend >= 0 ? '#4ade80' : '#fca5a5', fontWeight: 800 }}>
+                    {k.trend >= 0 ? '↑' : '↓'} {Math.abs(k.trend)}% vs mois préc.
+                  </span>
+                ) : (
+                  <span style={{ opacity: 0.7 }}>{k.sub}</span>
+                )}
+              </span>
               <span>Voir →</span>
             </div>
           </button>
@@ -183,7 +225,14 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
               <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>📈</span>
               Ventes — 7 derniers jours
             </div>
-            <button type="button" className="dash-link" onClick={() => setView('rapports')}>Rapport →</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {totalSemaine > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 800, fontFamily: "'Space Mono',monospace", color: '#0d9488' }}>
+                  {fmtF(totalSemaine)}
+                </span>
+              )}
+              <button type="button" className="dash-link" onClick={() => setView('rapports')}>Rapport →</button>
+            </div>
           </div>
           <div className="dash-chart" style={{ height: 120, alignItems: 'flex-end', gap: 5 }}>
             {ventes7.map((v, i) => {
@@ -270,6 +319,84 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
                   +{rdvsAujourdhui.length - 4} autres →
                 </button>
               )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Ligne 3 : Top médicaments + Patients récents ── */}
+      <div className="dash-grid-2">
+        {/* Top 5 médicaments vendus */}
+        <div className="dash-card">
+          <div className="dash-card-head">
+            <div className="dash-card-title">
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)' }}>💊</span>
+              Top médicaments vendus
+            </div>
+            <button type="button" className="dash-link" onClick={() => setView('medicaments')}>Stock →</button>
+          </div>
+          {topMeds.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>📊</div>
+              <p style={{ fontSize: 12, color: 'var(--app-muted)' }}>Aucune vente enregistrée</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+              {topMeds.map(([nom, qte], i) => {
+                const pct = Math.round((qte / maxTopMed) * 100)
+                return (
+                  <div key={nom}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--app-text)', display: 'flex', alignItems: 'center', gap: 7, overflow: 'hidden' }}>
+                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: MED_COLORS[i] || '#64748b', display: 'inline-block', flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nom}</span>
+                      </span>
+                      <span style={{ fontSize: 11, color: MED_COLORS[i] || '#64748b', fontFamily: "'Space Mono',monospace", fontWeight: 800, flexShrink: 0, marginLeft: 8 }}>
+                        ×{qte}
+                      </span>
+                    </div>
+                    <div style={{ height: 6, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: MED_COLORS[i] || '#64748b', borderRadius: 999, width: `${pct}%`, transition: 'width 0.8s cubic-bezier(.22,1,.36,1)' }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Patients récents */}
+        <div className="dash-card">
+          <div className="dash-card-head">
+            <div className="dash-card-title">
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#0d9488,#2563eb)' }}>🐾</span>
+              Patients récents
+            </div>
+            <button type="button" className="dash-link" onClick={() => setView('patients')}>Voir tous →</button>
+          </div>
+          {patientsRecents.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>🐾</div>
+              <p style={{ fontSize: 12, color: 'var(--app-muted)' }}>Aucun patient enregistré</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {patientsRecents.map((p) => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'var(--app-bg)', border: '1px solid var(--app-border)' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#f0fdfa,#dbeafe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                    {SPECIES_EMOJI[p.espece] || '🐾'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--app-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</div>
+                    <div style={{ fontSize: 11, color: 'var(--app-muted)' }}>{p.espece}{p.proprio ? ` · ${p.proprio}` : ''}</div>
+                  </div>
+                  {p.created_at && (
+                    <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'Space Mono',monospace", flexShrink: 0 }}>
+                      {new Date(p.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

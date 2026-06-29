@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbUpdate } from '../../lib/db'
-import { Btn, Badge, PrintBtn } from '../../components/ui'
+import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
 
 function Inventaire({ meds, setMeds, sb }) {
   const [adjId,      setAdjId]      = useState(null)
@@ -13,8 +13,11 @@ function Inventaire({ meds, setMeds, sb }) {
   const prixAchat = m => parseFloat(m.prixAchat || m.prix_achat) || 0
   const prixVente = m => parseFloat(m.prixVente || m.prix_vente) || 0
 
-  const valTotal  = meds.reduce((s, m) => s + stockNum(m) * prixAchat(m), 0)
-  const crits     = meds.filter(m => stockNum(m) <= (parseInt(m.seuil) || 0))
+  const valTotal   = meds.reduce((s, m) => s + stockNum(m) * prixAchat(m), 0)
+  const caTotal    = meds.reduce((s, m) => s + stockNum(m) * prixVente(m), 0)
+  const margeTotal = caTotal - valTotal
+  const pctMarge   = caTotal > 0 ? Math.round((margeTotal / caTotal) * 100) : 0
+  const crits      = meds.filter(m => stockNum(m) <= (parseInt(m.seuil) || 0))
 
   // ── Calcul du nouveau stock selon le mode ────────────────
   const previewStock = (med) => {
@@ -53,19 +56,39 @@ function Inventaire({ meds, setMeds, sb }) {
   return (
     <div className="app-page space-y-5">
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* KPIs opérationnels */}
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { l: 'Références',   v: meds.length,                          mod: 'stat-tile--blue'   },
-          { l: 'Valeur stock', v: fmtF(valTotal),                       mod: 'stat-tile--green'  },
-          { l: 'Critique',     v: crits.length,                         mod: 'stat-tile--red'    },
-          { l: 'Produits OK',  v: meds.length - crits.length,           mod: 'stat-tile--purple' },
+          { l: 'Références',   v: meds.length,               mod: 'stat-tile--blue'   },
+          { l: 'Critique',     v: crits.length,               mod: 'stat-tile--red'    },
+          { l: 'Produits OK',  v: meds.length - crits.length, mod: 'stat-tile--purple' },
         ].map((s, i) => (
           <div key={i} className={`stat-tile ${s.mod}`}>
             <div className="stat-tile__label">{s.l}</div>
             <div className="stat-tile__value">{s.v}</div>
           </div>
         ))}
+      </div>
+
+      {/* KPIs financiers */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="stat-tile stat-tile--green">
+          <div className="stat-tile__label">💰 Valeur stock (coût)</div>
+          <div className="stat-tile__value">{fmtF(valTotal)}</div>
+          <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>prix d'achat × stock</div>
+        </div>
+        <div className="stat-tile stat-tile--blue">
+          <div className="stat-tile__label">📈 CA potentiel</div>
+          <div className="stat-tile__value">{fmtF(caTotal)}</div>
+          <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>prix de vente × stock</div>
+        </div>
+        <div className={`stat-tile ${margeTotal >= 0 ? 'stat-tile--purple' : 'stat-tile--red'}`}>
+          <div className="stat-tile__label">📊 Marge brute potentielle</div>
+          <div className="stat-tile__value">{fmtF(margeTotal)}</div>
+          <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>
+            {caTotal > 0 ? `${pctMarge}% du CA potentiel` : 'prix de vente non renseignés'}
+          </div>
+        </div>
       </div>
 
       {/* Alertes stock critique */}
@@ -94,7 +117,7 @@ function Inventaire({ meds, setMeds, sb }) {
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
-                {['Produit', 'Catégorie', 'Stock actuel', 'Unité', 'Seuil', 'Prix achat', 'Valeur stock', 'Statut', 'Action'].map(h => (
+                {['Produit', 'Catégorie', 'Stock actuel', 'Unité', 'Seuil', 'Prix achat', 'Valeur coût', 'Prix vente', 'CA potentiel', 'Statut', 'Action'].map(h => (
                   <th key={h} className="text-left p-3 text-xs font-bold text-slate-600 uppercase whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -103,6 +126,7 @@ function Inventaire({ meds, setMeds, sb }) {
               {meds.map(m => {
                 const stk  = stockNum(m)
                 const pa   = prixAchat(m)
+                const pv   = prixVente(m)
                 const crit = stk <= (parseInt(m.seuil) || 0)
                 const pct  = Math.min(100, Math.round((stk / (Math.max(parseInt(m.seuil) || 1, 1) * 3)) * 100))
                 const isOpen = adjId === m.id
@@ -122,6 +146,8 @@ function Inventaire({ meds, setMeds, sb }) {
                       <td className="p-3 text-sm font-mono">{m.seuil}</td>
                       <td className="p-3 text-sm font-mono">{pa > 0 ? fmtF(pa) : <span className="text-slate-300">—</span>}</td>
                       <td className="p-3 font-mono text-sm font-bold">{pa > 0 ? fmtF(stk * pa) : <span className="text-slate-300">—</span>}</td>
+                      <td className="p-3 text-sm font-mono text-blue-600">{pv > 0 ? fmtF(pv) : <span className="text-slate-300">—</span>}</td>
+                      <td className="p-3 font-mono text-sm font-bold text-blue-700">{pv > 0 ? fmtF(stk * pv) : <span className="text-slate-300">—</span>}</td>
                       <td className="p-3">{crit ? <Badge color="red">🚨 Critique</Badge> : <Badge color="green">✓ OK</Badge>}</td>
                       <td className="p-3 no-print">
                         <button onClick={() => openAdj(m.id)}
@@ -206,14 +232,22 @@ function Inventaire({ meds, setMeds, sb }) {
                   </>
                 )
               })}
+              {meds.length > 0 && (
+                <tr style={{ borderTop: '2px solid #e2e8f0', background: 'linear-gradient(135deg,#f8fafc,#f0fdfa)' }}>
+                  <td colSpan="6" className="p-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Totaux</td>
+                  <td className="p-3 font-mono font-black text-sm text-green-700">{fmtF(valTotal)}</td>
+                  <td className="p-3 text-slate-300 text-center text-sm">—</td>
+                  <td className="p-3 font-mono font-black text-sm text-blue-700">{fmtF(caTotal)}</td>
+                  <td colSpan="2" className="p-3">
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: margeTotal >= 0 ? '#dcfce7' : '#fef2f2', color: margeTotal >= 0 ? '#166534' : '#dc2626' }}>
+                      Marge {margeTotal >= 0 ? '+' : ''}{fmtF(margeTotal)} ({pctMarge}%)
+                    </span>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-          {!meds.length && (
-            <div className="text-center py-12 text-slate-400">
-              <div className="text-4xl mb-2">💊</div>
-              <p className="font-semibold">Aucun médicament enregistré</p>
-            </div>
-          )}
+          {!meds.length && <EmptyState icon="💊" title="Aucun médicament enregistré" subtitle="Ajoutez des médicaments depuis la page Pharmacie." />}
         </div>
       </div>
     </div>

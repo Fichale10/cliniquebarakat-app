@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, ValidationBanner, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, Pagination, usePagination } from '../../components/ui'
+import { Btn, Badge, Field, DupWarning, ValidationBanner, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbDelete, newId } from '../../lib/db'
 import { validatePatientForm, patientFormToRow } from '../../lib/validation'
 
@@ -234,7 +234,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                 </div>
               )
             })}
-            {!filtered.length && <p className="text-center text-slate-400 py-8">Aucun patient</p>}
+            {!filtered.length && <EmptyState icon="🐾" title="Aucun patient" subtitle="Enregistrez le premier patient pour commencer à gérer vos consultations." />}
           </div>
         </div>
         <Pagination {...pagination} />

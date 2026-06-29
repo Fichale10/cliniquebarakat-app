@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, PrintBtn, Field, AutoSuggest, Badge } from '../../components/ui'
+import { Btn, PrintBtn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
 const today  = () => new Date().toISOString().split('T')[0]
@@ -219,7 +219,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
                 </tr>
               ))}
               {!factures.length && (
-                <tr><td colSpan={8} className="text-center text-slate-400 py-10">Aucune facture</td></tr>
+                <tr><td colSpan={8}><EmptyState icon="📄" title="Aucune facture" subtitle="Émettez votre première facture client." /></td></tr>
               )}
             </tbody>
           </table>

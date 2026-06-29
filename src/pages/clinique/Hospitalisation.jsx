@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Btn, Badge, Field, AutoSuggest } from '../../components/ui'
+import { Btn, Badge, Field, AutoSuggest, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -393,13 +393,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
         </div>
       )}
 
-      {hospitalisations.length === 0 && (
-        <div className="app-card p-12 text-center text-slate-400">
-          <div className="text-4xl mb-3">🏥</div>
-          <p className="font-semibold">Aucune hospitalisation</p>
-          <p className="text-sm mt-1">Cliquez sur « + Hospitaliser un patient » pour commencer</p>
-        </div>
-      )}
+      {hospitalisations.length === 0 && <div className="app-card"><EmptyState icon="🏥" title="Aucune hospitalisation" subtitle="Hospitalisez un patient pour suivre ses soins et ses constantes." /></div>}
     </div>
   )
 }

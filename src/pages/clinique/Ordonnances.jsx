@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Btn, Badge, FilterBar, FilterSelect, usePagination, Pagination } from '../../components/ui'
-import { AutoSuggest } from '../../components/ui'
+import { Btn, Badge, FilterBar, FilterSelect, usePagination, Pagination, EmptyState, AutoSuggest } from '../../components/ui'
 import { newId } from '../../lib/db'
 import { printZone } from '../../lib/utils'
 
@@ -341,13 +340,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
             </div>
           ))}
 
-          {!filtered.length && (
-            <div className="text-center py-12 text-slate-400">
-              <div className="text-4xl mb-3">📝</div>
-              <p className="font-semibold">Aucune ordonnance</p>
-              <p className="text-sm mt-1">Cliquez sur « + Nouvelle ordonnance » pour commencer</p>
-            </div>
-          )}
+          {!filtered.length && <EmptyState icon="📝" title="Aucune ordonnance" subtitle="Rédigez une ordonnance lors de vos consultations." />}
         </div>
         <Pagination {...pagination} />
       </div>

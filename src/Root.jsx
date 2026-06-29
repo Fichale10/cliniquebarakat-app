@@ -13,6 +13,7 @@ import { isValidView, DEFAULT_VIEW } from './lib/routes'
 import { logAction } from './lib/roles'
 import { validateUserRegister } from './lib/validation'
 import { fetchAllProfiles } from './lib/accounts'
+import { SkAppShell } from './components/Skeleton'
 import { getCache } from './lib/db'
 import App from './App'
 
@@ -507,14 +508,7 @@ function Root() {
 
   // ── Rendu ─────────────────────────────────────────────────
   if (appLoading) {
-    return (
-      <div style={{ position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'#0a0f1a' }}>
-        <div style={{ textAlign:'center', color:'white' }}>
-          <div style={{ fontSize:'48px', marginBottom:'16px' }}>🐄</div>
-          <p style={{ color:'rgba(255,255,255,0.5)', fontSize:'14px' }}>Chargement…</p>
-        </div>
-      </div>
-    )
+    return <SkAppShell />
   }
 
   if (!user) {

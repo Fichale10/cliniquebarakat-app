@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { EmptyState } from '../../components/ui'
 
 function SuiviTraitements({patients, meds, user}){
   const today=()=>new Date().toISOString().split('T')[0];
@@ -138,10 +139,7 @@ function SuiviTraitements({patients, meds, user}){
       </div>}
 
       <div className="divide-y">
-        {!filtered.length&&<div style={{textAlign:'center',padding:'40px',color:'#94a3b8'}}>
-          <div style={{fontSize:'36px',marginBottom:'8px'}}>💊</div>
-          <p style={{fontWeight:600}}>{filter==='actifs'?'Aucun traitement actif':filter==='termines'?'Aucun traitement terminé':'Aucun traitement enregistré'}</p>
-        </div>}
+        {!filtered.length&&<EmptyState icon="💊" title={filter==='actifs'?'Aucun traitement actif':filter==='termines'?'Aucun traitement terminé':'Aucun traitement enregistré'} subtitle="Les traitements en cours de suivi apparaîtront ici." />}
         {filtered.map(t=>{
           const pat=patients.find(p=>p.nom===t.patient);
           const jRestants=t.fin?Math.round((new Date(t.fin)-new Date())/86400000):null;

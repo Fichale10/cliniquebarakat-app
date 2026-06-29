@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterSelect, FilterBtns, usePagination, Pagination } from '../../components/ui'
+import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterSelect, FilterBtns, usePagination, Pagination, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 import { fmtF } from '../../lib/utils'
 
@@ -234,13 +234,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
           </table>
         </div>
 
-        {!filtered.length && (
-          <div className="text-center py-12 text-slate-400">
-            <div className="text-4xl mb-3">🔬</div>
-            <p className="font-semibold">Aucun acte chirurgical</p>
-            <p className="text-sm mt-1">Cliquez sur « + Nouvel acte » pour commencer</p>
-          </div>
-        )}
+        {!filtered.length && <EmptyState icon="🔬" title="Aucun acte chirurgical" subtitle="Enregistrez les actes chirurgicaux réalisés à la clinique." />}
 
         <Pagination {...pagination} />
       </div>

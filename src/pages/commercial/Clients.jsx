@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination } from '../../components/ui'
+import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbDelete, newId } from '../../lib/db'
 import { validateClientForm, clientFormToRow } from '../../lib/validation'
 
@@ -207,9 +207,8 @@ function Clients({ clients, setClients, user, sb, logAction }) {
             ))}
 
             {!filtered.length && (
-              <div className="col-span-2 text-center py-12 text-slate-400">
-                <div className="text-4xl mb-2">🔍</div>
-                <p className="font-semibold">Aucun client trouvé</p>
+              <div className="col-span-2">
+                <EmptyState icon="👥" title="Aucun client trouvé" subtitle="Ajoutez votre premier client ou affinez votre recherche." />
               </div>
             )}
           </div>

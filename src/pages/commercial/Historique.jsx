@@ -8,7 +8,8 @@ import {
   DupWarning,
   FilterBar,
   FilterSelect,
-  FilterBtns
+  FilterBtns,
+  EmptyState
 } from "../../components/ui"
 function Historique({ventesHist=[],achatsHist=[],meds=[]}){
   const [tab,setTab]=useState('ventes');
@@ -50,11 +51,7 @@ function Historique({ventesHist=[],achatsHist=[],meds=[]}){
           {tab==='ventes'&&allProds.length>0&&<FilterSelect label="💊 Produit" value={fHProduit} onChange={setFHProduit} options={allProds.map(p=>({v:p,l:p}))}/>}
           <span className="text-xs text-slate-400">{filtered.length} résultat(s)</span>
         </FilterBar>
-        {!filtered.length?<div className="text-center py-12 text-slate-400">
-          <div className="text-4xl mb-2">{tab==='ventes'?'🛒':'📦'}</div>
-          <p className="font-semibold">Aucun historique disponible</p>
-          <p className="text-sm mt-1">Les {tab==='ventes'?'ventes enregistrées':'commandes reçues'} apparaîtront ici</p>
-        </div>:
+        {!filtered.length?<EmptyState icon={tab==='ventes'?'🛒':'📦'} title="Aucun historique disponible" subtitle={`Les ${tab==='ventes'?'ventes enregistrées':'commandes reçues'} apparaîtront ici.`} />:
         <div className="space-y-2">{filtered.slice(0,100).map((e,i)=><div key={i} className="border border-slate-200 rounded-xl p-4 hover:bg-slate-50">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">

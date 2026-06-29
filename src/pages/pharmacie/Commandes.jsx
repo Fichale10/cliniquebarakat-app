@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
-import { Btn, Badge, Field, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode } from '../../components/ui'
+import { Btn, Badge, Field, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode, EmptyState } from '../../components/ui'
 
 const today = () => new Date().toISOString().split('T')[0]
 const SC = { Reçu: 'green', 'En transit': 'blue', 'En attente': 'yellow', Annulé: 'red' }
@@ -214,12 +214,7 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
         </FilterBar>
 
         <div className="divide-y">
-          {!cmdFiltered.length && (
-            <div className="text-center py-12 text-slate-400">
-              <div className="text-4xl mb-2">📦</div>
-              <p className="font-semibold">Aucune commande enregistrée</p>
-            </div>
-          )}
+          {!cmdFiltered.length && <EmptyState icon="📦" title="Aucune commande enregistrée" subtitle="Créez une commande fournisseur pour réapprovisionner votre stock." />}
           {cmdFiltered.map(c => (
             <div key={c.id}>
               <div className="p-5 hover:bg-slate-50 cursor-pointer" onClick={() => setExp(exp === c.id ? null : c.id)}>

@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, Component } from 'react'
+import { useState, useEffect, useRef, useMemo, Component } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, DEFAULT_TEAM, NAV_ALL } from './lib/globals'
 import { isValidView, DEFAULT_VIEW } from './lib/routes'
 
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
+import { ToastContainer } from './components/Toast'
+import { SkPage } from './components/Skeleton'
 
 // Pages - Clinique
 import { Patients, Consultations, Dossiers, Hospitalisation, Chirurgies, Ordonnances, Calculateur, Consentements } from './pages/clinique'
@@ -29,6 +31,47 @@ import { AssistantIA, GestionNotifications, CarteClients, SuiviTraitements, Gest
 
 // Dashboard
 import Dashboard from './pages/Dashboard'
+
+// ── Transition animée entre les vues ────────────────────────────
+function ViewTransition({ viewKey, children }) {
+  const [shown, setShown]   = useState(children)
+  const [anim, setAnim]     = useState('')
+  const nextRef             = useRef(children)
+  const timerRef            = useRef(null)
+  const prevKey             = useRef(viewKey)
+
+  useEffect(() => {
+    // Même vue — mise à jour silencieuse du contenu
+    if (viewKey === prevKey.current) {
+      if (anim === '') setShown(children)
+      else nextRef.current = children
+      return
+    }
+    prevKey.current  = viewKey
+    nextRef.current  = children
+    clearTimeout(timerRef.current)
+
+    // 1. Animation de sortie (155ms)
+    setAnim('vt-exit')
+    timerRef.current = setTimeout(() => {
+      // 2. Swap + animation d'entrée
+      setShown(nextRef.current)
+      setAnim('vt-enter')
+    }, 155)
+
+    return () => clearTimeout(timerRef.current)
+  }, [viewKey, children])
+
+  return (
+    <div
+      className={anim}
+      onAnimationEnd={() => { if (anim === 'vt-enter') setAnim('') }}
+      style={{ minHeight: '100%' }}
+    >
+      {shown}
+    </div>
+  )
+}
 
 class ScreenErrorBoundary extends Component {
   constructor(props) {
@@ -533,7 +576,7 @@ useEffect(() => {
     return { patients: p, meds: m, clients: c };
   },[globalSearch, patients, meds, clients]);
 
-  return <div className="app-layout flex min-h-screen flex-col md:flex-row">
+  return <><div className="app-layout flex min-h-screen flex-col md:flex-row">
 
     {/* ══ SIDEBAR ══ */}
     {sidebarOpen&&<div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={()=>setSidebarOpen(false)}/>}
@@ -574,6 +617,11 @@ useEffect(() => {
               <div className="sidebar-items">
                 {items.map(item=>{
                   const active=view===item.id;
+                  const todayS=new Date().toISOString().split('T')[0];
+                  const badge=
+                    item.id==='medicaments' ? meds.filter(m=>m.stock<=m.seuil).length :
+                    item.id==='agenda'      ? rdvs.filter(r=>r.date===todayS).length :
+                    0;
                   return (
                     <button
                       key={item.id}
@@ -581,10 +629,27 @@ useEffect(() => {
                       className={`sidebar-item w-full flex items-center gap-3 transition-all text-left ${active?'sidebar-active':''}`}
                       style={{padding:'9px 12px',color:active?'#0f766e':'#64748b'}}
                     >
-                      <span className="nav-icon shrink-0" style={{fontSize:'15px',width:'18px',textAlign:'center'}}>{item.icon}</span>
+                      {/* Icône avec chip teal quand actif */}
+                      <span className="nav-icon shrink-0" style={{
+                        fontSize:'15px',
+                        width:'22px',height:'22px',
+                        display:'flex',alignItems:'center',justifyContent:'center',
+                        borderRadius:'7px',flexShrink:0,
+                        background:active?'rgba(13,148,136,0.14)':'transparent',
+                        boxShadow:active?'0 0 0 1.5px rgba(13,148,136,0.22)':'none',
+                        transition:'all .18s',
+                      }}>{item.icon}</span>
                       {!sidebarCollapsed&&<span className="nav-label truncate" style={{fontSize:'13px',fontWeight:active?700:500}}>{item.label}</span>}
-                      {active&&<span style={{marginLeft:'auto',width:'6px',height:'6px',borderRadius:'50%',background:'#0d9488',flexShrink:0,boxShadow:'0 0 8px rgba(13,148,136,0.5)'}}/>}
-                      {!active&&item.admin&&<span style={{marginLeft:'auto',fontSize:'10px',opacity:.25}}>🔒</span>}
+                      {/* Partie droite : badge prioritaire, sinon dot ou lock */}
+                      {!sidebarCollapsed&&(
+                        badge>0
+                          ? <span className={`sidebar-badge${item.id==='medicaments'?' sidebar-badge--warn':''}`}>{badge>9?'9+':badge}</span>
+                          : active
+                            ? <span className="sidebar-active-dot"/>
+                            : item.admin
+                              ? <span style={{marginLeft:'auto',fontSize:'10px',opacity:.25}}>🔒</span>
+                              : null
+                      )}
                     </button>
                   );
                 })}
@@ -786,41 +851,50 @@ useEffect(() => {
 
       {/* Content */}
       <ScreenErrorBoundary key={view}>
-        <div className="app-main-scroll section-anim flex-1 overflow-y-auto p-4 sm:p-6">
-          {view==='dashboard'&&<Dashboard {...sp}/>}
-          {view==='monprofil'&&<MonProfil user={user}/>}
-          {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
-          {view==='comptes'&&(user?.role==='admin'?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
-          {view==='patients'&&<Patients {...sp}/>}
-          {view==='consultations' && <Consultations {...sp} />}
-          {view==='dossiers'&&<Dossiers {...sp}/>}
-          {view==='ordonnances'&&<Ordonnances {...sp}/>}
-          {view==='chirurgies'&&<Chirurgies {...sp}/>}
-          {view==='hospitalisation'&&<Hospitalisation {...sp}/>}
-          {view==='agenda'&&<Agenda {...sp}/>}
-          {view==='taches'&&<Taches {...sp}/>}
-          {view==='calculateur'&&<Calculateur {...sp}/>}
-          {view==='consentements'&&<Consentements {...sp}/>}
-          {view==='clients'&&<Clients {...sp}/>}
-          {view==='fournisseurs'&&(isAdmin?<Fournisseurs {...sp}/>:<Interdit/>)}
-          {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}
-          {view==='devis'&&<Devis {...sp}/>}
-          {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}
-          {view==='medicaments'&&<Medicaments {...sp}/>}
-          {view==='commandes'&&<Commandes {...sp}/>}
-          {view==='inventaire'&&<Inventaire {...sp}/>}
-          {view==='ventes'&&<Ventes {...sp}/>}
-          {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}
-          {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setSyncedDepsHist} sb={sb}/>:<Interdit/>)}
-          {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}
-          {view==='journal'&&<JournalActivite user={user}/>}
-          {view==='lots'&&<GestionLots meds={meds} ventesHist={ventesHist} user={user}/>}
-          {view==='caisse'&&<Caisse {...sp}/>}
-          {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user} sb={sb}/>}
-          {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
-          {view==='rapports'&&<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>}
-          {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
-          {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} user={user}/>}
+        <div className="app-main-scroll flex-1 overflow-y-auto">
+          <ViewTransition viewKey={view}>
+            <div className="p-4 sm:p-6">
+              {/* Skeleton au premier chargement (aucune donnée en cache) */}
+              {syncing && patients.length === 0 && meds.length === 0 && clients.length === 0
+                ? <SkPage stats={4} rows={7} />
+                : <>
+              {view==='dashboard'&&<Dashboard {...sp}/>}
+              {view==='monprofil'&&<MonProfil user={user}/>}
+              {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
+              {view==='comptes'&&(user?.role==='admin'?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
+              {view==='patients'&&<Patients {...sp}/>}
+              {view==='consultations'&&<Consultations {...sp}/>}
+              {view==='dossiers'&&<Dossiers {...sp}/>}
+              {view==='ordonnances'&&<Ordonnances {...sp}/>}
+              {view==='chirurgies'&&<Chirurgies {...sp}/>}
+              {view==='hospitalisation'&&<Hospitalisation {...sp}/>}
+              {view==='agenda'&&<Agenda {...sp}/>}
+              {view==='taches'&&<Taches {...sp}/>}
+              {view==='calculateur'&&<Calculateur {...sp}/>}
+              {view==='consentements'&&<Consentements {...sp}/>}
+              {view==='clients'&&<Clients {...sp}/>}
+              {view==='fournisseurs'&&(isAdmin?<Fournisseurs {...sp}/>:<Interdit/>)}
+              {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}
+              {view==='devis'&&<Devis {...sp}/>}
+              {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}
+              {view==='medicaments'&&<Medicaments {...sp}/>}
+              {view==='commandes'&&<Commandes {...sp}/>}
+              {view==='inventaire'&&<Inventaire {...sp}/>}
+              {view==='ventes'&&<Ventes {...sp}/>}
+              {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}
+              {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setSyncedDepsHist} sb={sb}/>:<Interdit/>)}
+              {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}
+              {view==='journal'&&<JournalActivite user={user}/>}
+              {view==='lots'&&<GestionLots meds={meds} ventesHist={ventesHist} user={user}/>}
+              {view==='caisse'&&<Caisse {...sp}/>}
+              {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user} sb={sb}/>}
+              {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
+              {view==='rapports'&&<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>}
+              {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
+              {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} user={user}/>}
+              </>}
+            </div>
+          </ViewTransition>
         </div>
       </ScreenErrorBoundary>
     </main>
@@ -952,9 +1026,9 @@ useEffect(() => {
         </div>
       </div>
     </>}
-  </div>;
-
-
+  </div>
+  <ToastContainer />
+</>
 }
 
 export default App

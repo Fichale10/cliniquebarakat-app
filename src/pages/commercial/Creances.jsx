@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge } from '../../components/ui'
+import { Badge, EmptyState } from '../../components/ui'
 import { dbUpdate } from '../../lib/db'
 
 function Creances({ ventesHist, setVentesHist, otrMode, sb }) {
@@ -50,13 +50,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb }) {
           <p className="text-xs text-slate-400 mt-0.5">Clients qui n'ont pas encore payé — groupés par client</p>
         </div>
 
-        {!listeClients.length && (
-          <div className="text-center py-12 text-slate-400">
-            <div className="text-4xl mb-2">✅</div>
-            <p className="font-semibold">Aucune créance en attente</p>
-            <p className="text-sm mt-1">Tous vos clients sont à jour 🎉</p>
-          </div>
-        )}
+        {!listeClients.length && <EmptyState icon="✅" title="Aucune créance en attente" subtitle="Tous vos clients sont à jour — félicitations !" />}
 
         <div className="divide-y">
           {listeClients.map(c => (

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode, Pagination, usePagination } from '../../components/ui'
+import { Btn, Badge, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 
@@ -486,7 +486,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
               </div>
             </div>
           ))}
-          {!filtered.length && <p className="text-center text-slate-400 py-8">Aucune vente</p>}
+          {!filtered.length && <EmptyState icon="🛒" title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />}
         </div>
         <Pagination {...pagination} />
       </div>

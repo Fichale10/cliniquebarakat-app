@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode } from '../../components/ui'
+import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode, EmptyState } from '../../components/ui'
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
 
 function Consultations({ patients, consultations, setConsultations, user, sb, logAction }) {
@@ -231,7 +231,7 @@ function Consultations({ patients, consultations, setConsultations, user, sb, lo
               )}
             </div>
           ))}
-          {!cFiltered.length && <p className="text-center text-slate-400 py-8">Aucune consultation</p>}
+          {!cFiltered.length && <EmptyState icon="🩺" title="Aucune consultation" subtitle="Les consultations enregistrées apparaîtront ici." />}
         </div>
       </div>
     </div>

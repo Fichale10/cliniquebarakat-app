@@ -13,6 +13,7 @@ export { default as PrintBtn } from './PrintBtn'
 export { default as Interdit } from './Interdit'
 
 export { default as Pagination } from './Pagination'
+export { EmptyState } from './EmptyState'
 
 // Hooks partagés (réexportés ici pour `import { … } from 'components/ui'`)
 export { useDateFilter, today } from '../../hooks/useDateFilter'
