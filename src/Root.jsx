@@ -69,9 +69,9 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
         <div style={{ textAlign:'center', marginBottom:'18px' }}>
           <div style={{ position:'relative', display:'inline-block', marginBottom:'10px' }}>
             <div style={{ background:'conic-gradient(#fbbf24 0deg,#fde68a 90deg,#d97706 180deg,#fbbf24 360deg)', padding:'3px', borderRadius:'50%', display:'inline-flex' }}>
-              <div style={{ width:'82px', height:'82px', borderRadius:'50%', background:'linear-gradient(135deg,#0d4f28,#1e3a8a)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'38px' }}>🐄</div>
+              <img src="/logo.png" alt="La Barakat" style={{ width:'88px', height:'88px', borderRadius:'50%', objectFit:'cover', display:'block' }} />
             </div>
-            {[[-5,-5],[-5,85],[85,-5],[85,85]].map(([t,l],i) => (
+            {[[-5,-5],[-5,91],[91,-5],[91,91]].map(([t,l],i) => (
               <span key={i} style={{ position:'absolute', top:t, left:l, color:'#fbbf24', fontSize:'12px', fontWeight:900 }}>★</span>
             ))}
           </div>

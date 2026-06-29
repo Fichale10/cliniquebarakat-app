@@ -15,8 +15,13 @@ function FacPrint({ f }) {
       <div style={{ fontFamily: 'sans-serif', padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px solid #16a34a', paddingBottom: '20px', marginBottom: '24px' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '22px', color: '#14532d', fontWeight: '900' }}>🐾 La Barakat</h1>
-            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '12px' }}>Pharmacie & Clinique Vétérinaire · Lomé, Togo</p>
+            <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+              <img src="/logo.png" alt="La Barakat" style={{ width:'52px', height:'52px', borderRadius:'50%', objectFit:'cover' }} />
+              <div>
+                <h1 style={{ margin: 0, fontSize: '22px', color: '#14532d', fontWeight: '900' }}>LA BARAKAT</h1>
+                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '12px' }}>Pharmacie & Clinique Vétérinaire · Lomé, Togo</p>
+              </div>
+            </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#16a34a' }}>FACTURE</div>

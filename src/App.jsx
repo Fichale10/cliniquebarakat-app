@@ -548,9 +548,7 @@ useEffect(() => {
         <div className="px-4 pt-5 pb-4" style={{borderBottom:'1px solid #e8edf2'}}>
           <div className="flex items-center gap-3">
             <div className="sidebar-logo-ring shrink-0" style={{padding:'2.5px'}}>
-              <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{background:'linear-gradient(135deg,#0d9488,#14b8a6)'}}>
-                <span style={{fontSize:'22px'}}>🐾</span>
-              </div>
+              <img src="/logo.png" alt="La Barakat" style={{width:'44px',height:'44px',borderRadius:'50%',objectFit:'cover',display:'block'}} />
             </div>
             {!sidebarCollapsed&&<div className="min-w-0 flex-1">
               <div className="mb-0.5">

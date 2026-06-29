@@ -84,7 +84,7 @@ th{background:#f0fdf4;padding:8px;text-align:left;font-size:12px;color:#166534;b
 td{padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}
 @media print{button{display:none}}</style></head><body>
 <div style="display:flex;justify-content:space-between;border-bottom:3px solid #166534;padding-bottom:16px;margin-bottom:20px">
-  <div><h1 style="margin:0;color:#14532d">LA BARAKAT</h1><p style="margin:4px 0;color:#666;font-size:12px">Pharmacie & Clinique Vétérinaire</p></div>
+  <div style="display:flex;align-items:center;gap:10px"><img src="/logo.png" alt="La Barakat" style="width:56px;height:56px;border-radius:50%;object-fit:cover"><div><h1 style="margin:0;color:#14532d">LA BARAKAT</h1><p style="margin:4px 0;color:#666;font-size:12px">Pharmacie & Clinique Vétérinaire</p></div></div>
   <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#166534">DEVIS</div><div style="color:#666;font-size:12px">${d.num} · ${d.date}</div></div>
 </div>
 <div style="margin-bottom:16px"><b>Client :</b> ${d.client}<br><b>Objet :</b> ${d.objet}${d.validite ? `<br><b>Validité :</b> ${d.validite}` : ''}</div>

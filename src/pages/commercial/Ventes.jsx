@@ -222,7 +222,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       .total{font-size:18px;font-weight:900;color:#166534}
       .footer{text-align:center;color:#999;font-size:11px;margin-top:16px}
       @media print{button{display:none}}</style></head><body>
-      <div style="text-align:center"><h1>LA BARAKAT</h1><p style="margin:2px 0;color:#666">Pharmacie & Clinique Vétérinaire</p></div><hr>
+      <div style="text-align:center"><img src="/logo.png" alt="La Barakat" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:6px"><h1 style="margin:2px 0">LA BARAKAT</h1><p style="margin:2px 0;color:#666">Pharmacie & Clinique Vétérinaire</p></div><hr>
       <div class="row"><span>Date</span><span>${v.date}</span></div>
       <div class="row"><span>Client</span><span><b>${v.client}</b></span></div>
       <div class="row"><span>Mode</span><span>${v.mode}</span></div>
