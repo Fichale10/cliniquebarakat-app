@@ -111,14 +111,21 @@ function CarteClients({ clients, patients }) {
           </div>
 
           {/* Zone carte */}
-          <div style={{ position:'relative', padding:'16px', background:'linear-gradient(135deg,#f0fdf4,#eff6ff)' }}>
+          <div style={{ position:'relative', padding:'16px', background:'#f0fdf4' }}>
             <div style={{ position:'relative', maxWidth:360, margin:'0 auto' }}>
-              {/* Image de la carte */}
-              <img
-                src="/togo-map.jpg"
-                alt="Carte du Togo"
-                style={{ width:'100%', display:'block', borderRadius:12, filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.10))' }}
-              />
+              {/* Image de la carte — fond transparent + filigrane rogné */}
+              <div style={{ overflow:'hidden', borderRadius:12, boxShadow:'0 4px 20px rgba(0,0,0,0.08)' }}>
+                <img
+                  src="/togo-map.jpg"
+                  alt="Carte du Togo"
+                  style={{
+                    width:'100%',
+                    display:'block',
+                    mixBlendMode:'multiply',
+                    marginBottom:'-10%',
+                  }}
+                />
+              </div>
 
               {/* Marqueurs des villes */}
               {parVille.map(v => {
@@ -148,14 +155,14 @@ function CarteClients({ clients, patients }) {
                     <div style={{
                       width:size, height:size, borderRadius:'50%',
                       background:color,
-                      border:`2.5px solid white`,
+                      border:`3px solid white`,
                       boxShadow: isActive
-                        ? `0 0 0 3px ${color}55, 0 4px 12px rgba(0,0,0,0.25)`
-                        : '0 2px 8px rgba(0,0,0,0.2)',
+                        ? `0 0 0 4px ${color}66, 0 6px 16px rgba(0,0,0,0.35)`
+                        : '0 3px 10px rgba(0,0,0,0.35)',
                       display:'flex', alignItems:'center', justifyContent:'center',
-                      color:'white', fontWeight:800, fontSize:size > 28 ? 13 : 11,
+                      color:'white', fontWeight:900, fontSize:size > 28 ? 13 : 11,
                       transition:'all .2s',
-                      transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                      transform: isActive ? 'scale(1.2)' : 'scale(1)',
                     }}>
                       {v.clients.length}
                     </div>
@@ -163,11 +170,12 @@ function CarteClients({ clients, patients }) {
                     <div style={{
                       position:'absolute', bottom:'110%', left:'50%',
                       transform:'translateX(-50%)',
-                      background:'rgba(15,23,42,0.85)',
-                      color:'white', fontSize:10, fontWeight:700,
-                      padding:'2px 7px', borderRadius:999,
+                      background:color,
+                      color:'white', fontSize:10, fontWeight:800,
+                      padding:'3px 8px', borderRadius:999,
                       whiteSpace:'nowrap', pointerEvents:'none',
-                      boxShadow:'0 2px 6px rgba(0,0,0,0.2)',
+                      boxShadow:'0 2px 8px rgba(0,0,0,0.3)',
+                      letterSpacing:'.02em',
                     }}>
                       {v.ville.nom}
                     </div>
