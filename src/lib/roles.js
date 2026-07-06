@@ -7,6 +7,7 @@ export const ROLES = {
   // et attendaient les mêmes droits que "veterinaire".
   utilisateur: { label: 'Utilisateur',    color: '#2563eb', bg: 'rgba(37,99,235,0.15)',   icon: '👤' },
   pharmacien:  { label: 'Pharmacien',     color: '#16a34a', bg: 'rgba(22,163,74,0.15)',   icon: '💊' },
+  technicien:  { label: 'Technicien',     color: '#0891b2', bg: 'rgba(8,145,178,0.15)',   icon: '🔬' },
   caissier:    { label: 'Caissier',       color: '#7c3aed', bg: 'rgba(124,58,237,0.15)',  icon: '🛒' },
 }
 
@@ -23,6 +24,7 @@ export const ROLE_ACCESS = {
   // Alias de droits pour compatibilité avec d'anciens comptes
   utilisateur: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
   pharmacien:  ['dashboard','monprofil','patients','clients','medicaments','commandes','inventaire','ventes','devis','creances','ordonnances','factures','caisse','lots','ia','carteclients','traitements','historique'],
+  technicien:  ['dashboard','monprofil','patients','consultations','ordonnances','medicaments','inventaire','lots','taches','ia','traitements','calculateur','agenda'],
   caissier:    ['dashboard','monprofil','ventes','clients','devis','creances','factures','caisse','carteclients','historique'],
 }
 

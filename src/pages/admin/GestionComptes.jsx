@@ -267,18 +267,21 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
             <label className="text-xs font-bold text-slate-600 mb-2 block">Rôle *</label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                {r:'admin',icon:'👑',label:'Administrateur',desc:'Accès complet : tout le système',color:'amber'},
-                {r:'admin2',icon:'🛡️',label:'Admin secondaire',desc:'Accès complet sauf gestion des comptes',color:'purple'},
-                {r:'utilisateur',icon:'👤',label:'Utilisateur',desc:'Accès clinique : patients, RDV, etc.',color:'blue'}
+                {r:'admin',      icon:'👑',  label:'Administrateur',    desc:'Accès complet à tout le système',                         color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
+                {r:'admin2',     icon:'🛡️', label:'Admin secondaire',  desc:'Accès complet sauf gestion des comptes',                  color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
+                {r:'veterinaire',icon:'🩺',  label:'Vétérinaire',       desc:'Patients, consultations, ordonnances, RDV, chirurgies',   color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
+                {r:'pharmacien', icon:'💊',  label:'Pharmacien',        desc:'Médicaments, stock, ventes, caisse, commandes',           color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
+                {r:'technicien', icon:'🔬',  label:'Technicien',        desc:'Patients, préparations, inventaire, tâches, agenda',      color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'},
+                {r:'caissier',   icon:'🛒',  label:'Caissier',          desc:'Ventes, facturation, créances, caisse',                   color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
               ].map(opt=>(
                 <div key={opt.r} onClick={()=>patchForm({role:opt.r})}
-                  className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${form.role===opt.r?(opt.color==='amber'?'border-amber-400 bg-amber-50':'border-blue-400 bg-blue-50'):'border-slate-200 hover:border-slate-300 bg-[var(--app-surface)]'}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">{opt.icon}</span>
-                    <span className={`font-bold text-sm ${form.role===opt.r?(opt.color==='amber'?'text-amber-700':'text-blue-700'):'text-slate-700'}`}>{opt.label}</span>
-                    {form.role===opt.r&&<span className="ml-auto text-green-500 text-base">✓</span>}
+                  style={{cursor:'pointer',borderRadius:12,padding:'12px',border:`2px solid ${form.role===opt.r?opt.border:'#e2e8f0'}`,background:form.role===opt.r?opt.bg:'var(--app-surface)',transition:'all .15s'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <span style={{fontSize:18}}>{opt.icon}</span>
+                    <span style={{fontWeight:700,fontSize:13,color:form.role===opt.r?opt.color:'#334155'}}>{opt.label}</span>
+                    {form.role===opt.r&&<span style={{marginLeft:'auto',color:'#16a34a',fontSize:14}}>✓</span>}
                   </div>
-                  <p className="text-xs text-slate-500">{opt.desc}</p>
+                  <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.4}}>{opt.desc}</p>
                 </div>
               ))}
             </div>
@@ -338,15 +341,20 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
             {/* Changer rôle inline */}
             {editId===c.id&&editRole!==null&&<div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-sm font-bold text-amber-800 mb-2">Changer le rôle de {c.nom} :</p>
-              <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 {[
-                  {r:'admin',icon:'👑',label:'Administrateur'},
-                  {r:'admin2',icon:'🛡️',label:'Admin secondaire'},
-                  {r:'utilisateur',icon:'👤',label:'Utilisateur'}
+                  {r:'admin',      icon:'👑',  label:'Administrateur',   color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
+                  {r:'admin2',     icon:'🛡️', label:'Admin secondaire', color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
+                  {r:'veterinaire',icon:'🩺',  label:'Vétérinaire',      color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
+                  {r:'pharmacien', icon:'💊',  label:'Pharmacien',       color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
+                  {r:'technicien', icon:'🔬',  label:'Technicien',       color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'},
+                  {r:'caissier',   icon:'🛒',  label:'Caissier',         color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
                 ].map(opt=>(
-                  <div key={opt.r} onClick={()=>setEditRole(opt.r)} className={`cursor-pointer p-3 rounded-xl border-2 flex items-center gap-2 transition-all ${editRole===opt.r?'border-amber-400 bg-amber-100':'border-slate-200 bg-white'}`}>
-                    <span>{opt.icon}</span><span className="font-semibold text-sm">{opt.label}</span>
-                    {editRole===opt.r&&<span className="ml-auto text-green-500">✓</span>}
+                  <div key={opt.r} onClick={()=>setEditRole(opt.r)}
+                    style={{cursor:'pointer',padding:'10px 12px',borderRadius:10,border:`2px solid ${editRole===opt.r?opt.border:'#e2e8f0'}`,background:editRole===opt.r?opt.bg:'white',display:'flex',alignItems:'center',gap:8,transition:'all .15s'}}>
+                    <span style={{fontSize:16}}>{opt.icon}</span>
+                    <span style={{fontWeight:700,fontSize:12,color:editRole===opt.r?opt.color:'#475569'}}>{opt.label}</span>
+                    {editRole===opt.r&&<span style={{marginLeft:'auto',color:'#16a34a',fontSize:14}}>✓</span>}
                   </div>
                 ))}
               </div>
@@ -371,16 +379,26 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
     </div>
 
     {/* Info rôles */}
-    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-      <h3 className="font-bold text-amber-800 mb-3 flex items-center gap-2">ℹ️ Différence entre les rôles</h3>
-      <div className="grid grid-cols-2 gap-4">
+    <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:20,padding:20}}>
+      <h3 style={{fontWeight:800,color:'#92400e',marginBottom:16,fontSize:14,display:'flex',alignItems:'center',gap:8}}>ℹ️ Récapitulatif des accès par rôle</h3>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}}>
         {[
-          {icon:'👑',role:'Administrateur',color:'amber',items:['Tous les modules cliniques','Finances & Facturation','Fournisseurs & Dépenses','Paramètres & Comptes','Rapports complets']},
-          {icon:'👤',role:'Utilisateur',color:'blue',items:['Patients & Consultations','Ordonnances & RDV','Chirurgies & Hospitalisation','Médicaments & Inventaire','Tâches équipe']}
+          {icon:'👑', role:'Administrateur',   color:'#d97706', bg:'#fff7ed', items:['Tous les modules','Comptes utilisateurs','Finances & rapports','Paramètres clinique']},
+          {icon:'🛡️',role:'Admin secondaire',  color:'#7c3aed', bg:'#faf5ff', items:['Tout sauf gestion comptes','Finances & rapports','Fournisseurs','Paramètres']},
+          {icon:'🩺', role:'Vétérinaire',       color:'#2563eb', bg:'#eff6ff', items:['Patients & dossiers','Consultations & RDV','Ordonnances','Chirurgies & hospitalisation']},
+          {icon:'💊', role:'Pharmacien',        color:'#16a34a', bg:'#f0fdf4', items:['Médicaments & stock','Ventes & caisse','Commandes fournisseurs','Ordonnances']},
+          {icon:'🔬', role:'Technicien',        color:'#0891b2', bg:'#ecfeff', items:['Patients (consultation)','Médicaments & inventaire','Lots & préparations','Tâches & agenda']},
+          {icon:'🛒', role:'Caissier',          color:'#7c3aed', bg:'#faf5ff', items:['Ventes & facturation','Créances clients','Caisse','Historique ventes']},
         ].map((r,i)=>(
-          <div key={i} className="bg-[var(--app-surface)] rounded-xl p-4 border border-amber-200">
-            <p className={`font-bold mb-2 ${r.color==='amber'?'text-amber-700':'text-blue-700'}`}>{r.icon} {r.role}</p>
-            <ul className="space-y-1">{r.items.map((item,j)=><li key={j} className="text-xs text-slate-600 flex items-center gap-1.5"><span className="text-green-500">✓</span>{item}</li>)}</ul>
+          <div key={i} style={{background:r.bg,borderRadius:14,padding:'12px 14px',border:`1px solid ${r.color}22`}}>
+            <p style={{fontWeight:800,marginBottom:10,fontSize:13,color:r.color,display:'flex',alignItems:'center',gap:6}}><span>{r.icon}</span>{r.role}</p>
+            <ul style={{listStyle:'none',padding:0,margin:0,display:'flex',flexDirection:'column',gap:5}}>
+              {r.items.map((item,j)=>(
+                <li key={j} style={{fontSize:11,color:'#475569',display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{color:'#16a34a',fontSize:10,flexShrink:0}}>✓</span>{item}
+                </li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
