@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 
-function GestionNotifications({meds, user}){
+function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
   const [pushEnabled, setPushEnabled]=useState(false);
   const [notifStatus, setNotifStatus]=useState('idle');
   const [schedules, setSchedules]=useState(()=>{
@@ -12,9 +12,8 @@ function GestionNotifications({meds, user}){
 
   // Alertes stock critique
   const alertesStock=meds.filter(m=>m.stock<=m.seuil);
-  // RDV du jour
-  const rdvs=JSON.parse(localStorage.getItem('lb_rdvs')||'[]');
-  const rdvsAujourdhui=rdvs.filter(r=>r.date===today());
+  // RDV du jour (depuis le state Supabase)
+  const rdvsAujourdhui = rdvsProp.filter(r => r.date === today() && r.statut !== 'Annulé' && r.statut !== 'Terminé');
 
   const demanderPermission=async()=>{
     if(!('Notification' in window)){
