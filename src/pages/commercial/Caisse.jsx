@@ -94,6 +94,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const [searchV, setSearchV]           = useState('')
   const [venteFormErrors, setVenteFormErrors] = useState({})
   const [venteValidMsgs, setVenteValidMsgs]   = useState([])
+  const [expandedVId, setExpandedVId]   = useState(null)
 
   // ── Shared helpers ────────────────────────────────────────
   const ventes   = ventesHist || []
@@ -471,6 +472,12 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const totalCredit     = ventes.filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + (v.total||0), 0)
   const totalCreditGros = ventes.filter(v => v.type === 'gros' && ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + (v.total||0), 0)
 
+  // ── KPI du jour (caisse tab) ──────────────────────────────
+  const ventesJour   = ventes.filter(v => v.date === today() && v.statut !== 'Annulé')
+  const caJour       = ventesJour.reduce((s, v) => s + (v.total||0), 0)
+  const avgJour      = ventesJour.length ? Math.round(caJour / ventesJour.length) : 0
+  const creditJour   = ventesJour.filter(v => v.statut !== 'Payé').reduce((s, v) => s + (v.total||0), 0)
+
   // ─────────────────────────────────────────────────────────
   return (
     <div className="app-page space-y-5">
@@ -496,6 +503,25 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       {/* ══════════════ ONGLET CAISSE ══════════════ */}
       {tab === 'caisse' && (
         <>
+          {/* KPI du jour */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { icon:'🛒', label:'Ventes aujourd\'hui', value: ventesJour.length,   color:'#0d9488', sub: ventesJour.length === 1 ? '1 transaction' : `${ventesJour.length} transactions` },
+              { icon:'💰', label:'CA du jour',          value: mask(caJour),        color:'#16a34a', sub: `moy. ${mask(avgJour)}` },
+              { icon:'⏳', label:'Crédit du jour',      value: mask(creditJour),    color:'#d97706', sub: creditJour > 0 ? 'à recouvrer' : 'Tout payé ✅' },
+              { icon:'📋', label:'Total ventes',        value: ventes.length,       color:'#7c3aed', sub: `${mask(totalPaye)} encaissé` },
+            ].map((k, i) => (
+              <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <div style={{ width:34, height:34, borderRadius:10, background:k.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{k.icon}</div>
+                  <span style={{ fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.05em' }}>{k.label}</span>
+                </div>
+                <div style={{ fontSize:20, fontWeight:900, color:'#0f172a', lineHeight:1 }}>{k.value}</div>
+                <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>{k.sub}</div>
+              </div>
+            ))}
+          </div>
+
           {/* Bannière reçu */}
           {recu && (
             <div style={{ background:'#f0fdf4', border:'2px solid #86efac', borderRadius:'16px', padding:'16px 20px' }}>
@@ -889,43 +915,83 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
               <FilterPeriode value={fVPeriode} onChange={setFVPeriode} />
             </FilterBar>
 
-            <div className="divide-y divide-slate-100">
-              {pagination.pageItems.map(v => (
-                <div key={v.id} className="p-5 hover:bg-slate-50">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-bold">👤 {v.client}</span>
-                        <Badge color={STATUT_COLOR[v.statut]||'slate'}>{v.statut}</Badge>
-                        <Badge color="slate">{v.mode}</Badge>
-                        {v.type === 'gros' && <Badge color="orange">📦 Gros</Badge>}
-                        {v.caissier && <Badge color="blue">🧾 Caisse</Badge>}
-                        <span className="text-xs text-slate-400">{v.date}</span>
+            <div className="p-4 space-y-2">
+              {!pagination.pageItems.length && (
+                <EmptyState icon="🛒" title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />
+              )}
+              {pagination.pageItems.map(v => {
+                const isExp = expandedVId === v.id
+                const SC = STATUT_COLOR[v.statut] || 'slate'
+                const SC_MAP = { green:'#16a34a', orange:'#d97706', amber:'#f59e0b', yellow:'#ca8a04', red:'#dc2626', blue:'#2563eb', slate:'#64748b' }
+                const statColor = SC_MAP[SC] || '#64748b'
+                const statBg    = { green:'#f0fdf4', orange:'#fffbeb', amber:'#fff7ed', yellow:'#fefce8', red:'#fef2f2', blue:'#eff6ff', slate:'#f8fafc' }[SC] || '#f8fafc'
+                const statBorder= { green:'#bbf7d0', orange:'#fde68a', amber:'#fed7aa', yellow:'#fef08a', red:'#fecaca', blue:'#bfdbfe', slate:'#e2e8f0' }[SC] || '#e2e8f0'
+                return (
+                  <div key={v.id} style={{ borderRadius:14, border:`1px solid ${isExp ? '#99f6e4' : '#f1f5f9'}`, background: isExp ? '#fafffe' : 'white', overflow:'hidden', transition:'all .15s', boxShadow: isExp ? '0 4px 16px rgba(13,148,136,0.07)' : 'none' }}>
+                    {/* Header cliquable */}
+                    <button type="button" onClick={() => setExpandedVId(isExp ? null : v.id)}
+                      style={{ width:'100%', background:'none', border:'none', cursor:'pointer', textAlign:'left', padding:'13px 16px', display:'flex', alignItems:'center', gap:12 }}>
+                      {/* Date */}
+                      <div style={{ flexShrink:0, textAlign:'center', width:42 }}>
+                        <div style={{ fontSize:17, fontWeight:900, color:'#0f172a', lineHeight:1 }}>{(v.date||'').split('-')[2]||'—'}</div>
+                        <div style={{ fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' }}>
+                          {v.date ? new Date(v.date+'T00:00:00').toLocaleDateString('fr-FR',{month:'short'}) : ''}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(v.lignes || []).map((l, i) => (
-                          <span key={i} className="text-xs bg-slate-100 rounded-lg px-2.5 py-1">
-                            💊 {l.med} · {l.cond} × {l.qte}
+                      <div style={{ width:1, height:34, background:'#f1f5f9', flexShrink:0 }} />
+                      {/* Infos */}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap', marginBottom:3 }}>
+                          <span style={{ fontWeight:800, fontSize:14, color:'#0f172a' }}>👤 {v.client||'Comptoir'}</span>
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background:statBg, border:`1px solid ${statBorder}`, color:statColor }}>
+                            <span style={{ width:5, height:5, borderRadius:'50%', background:statColor, flexShrink:0 }} />{v.statut}
                           </span>
-                        ))}
+                          {v.type === 'gros' && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c' }}>📦 Gros</span>}
+                          {v.caissier && <span style={{ fontSize:10, color:'#94a3b8' }}>🧾 {v.caissier}</span>}
+                        </div>
+                        <div style={{ fontSize:11, color:'#64748b' }}>
+                          {(v.lignes||[]).length} article{(v.lignes||[]).length>1?'s':''}
+                          {(v.lignes||[]).length>0 && ' · '+(v.lignes||[]).slice(0,2).map(l=>l.med||'?').join(', ')+((v.lignes||[]).length>2?'…':'')}
+                          {v.mode && <span style={{ marginLeft:6, color:'#94a3b8' }}>· {v.mode}</span>}
+                        </div>
                       </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className={`text-xl font-black font-mono ${otrMode?'text-slate-300':'text-green-600'}`}>{mask(v.total)}</div>
-                      {tva?.active && !otrMode && <div className="text-xs text-slate-400 mt-0.5">TTC: {fmtF(totalTTCV(v))} (TVA {fmtF(tvaAmtV(v))})</div>}
-                      <div className="flex gap-1 mt-1 justify-end flex-wrap">
-                        <button onClick={() => imprimerRecu(v)} className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1.5 rounded-lg font-bold no-print">🖨️</button>
-                        {v.statut !== 'Payé' && v.statut !== 'Annulé' && <>
-                          <button onClick={() => handleStatut(v.id,'Payé')} className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-bold">✓ Payé</button>
-                          <button onClick={() => handleStatut(v.id,'Annulé')} className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1.5 rounded-lg font-bold">✕</button>
-                        </>}
-                        <button onClick={() => deleteVente(v.id)} className="text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1.5 rounded-lg font-bold no-print" title="Supprimer">🗑</button>
+                      {/* Montant */}
+                      <div style={{ textAlign:'right', flexShrink:0 }}>
+                        <div style={{ fontSize:16, fontWeight:900, color: otrMode ? '#cbd5e1' : '#0d9488', fontVariantNumeric:'tabular-nums' }}>{mask(v.total)}</div>
+                        {tva?.active && !otrMode && <div style={{ fontSize:10, color:'#94a3b8' }}>+TVA {fmtF(tvaAmtV(v))}</div>}
                       </div>
-                    </div>
+                      <span style={{ color:'#cbd5e1', fontSize:12, flexShrink:0 }}>{isExp?'▲':'▼'}</span>
+                    </button>
+
+                    {/* Détail déplié */}
+                    {isExp && (
+                      <div style={{ padding:'0 16px 14px', borderTop:'1px solid #f0fdfa' }}>
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))', gap:8, paddingTop:12 }}>
+                          {(v.lignes||[]).map((l, i) => (
+                            <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:10, background:'#f8fafc', border:'1px solid #f1f5f9' }}>
+                              <span style={{ fontSize:18 }}>💊</span>
+                              <div style={{ minWidth:0 }}>
+                                <div style={{ fontWeight:700, fontSize:12, color:'#1e293b' }}>{l.med||'?'}</div>
+                                <div style={{ fontSize:11, color:'#94a3b8' }}>{l.cond||''}{l.cond&&l.qte?' · ':''}{l.qte?`×${l.qte}`:''}{l.pu?` · ${fmtF((l.pu||0)*(l.qte||0))}`:''}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {v.note && <div style={{ marginTop:10, padding:'8px 12px', borderRadius:10, background:'#fffbeb', border:'1px solid #fde68a', fontSize:12, color:'#92400e' }}>📌 {v.note}</div>}
+                        {/* Actions */}
+                        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:12 }}>
+                          <button onClick={() => imprimerRecu(v)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#475569', cursor:'pointer' }}>🖨️ Imprimer</button>
+                          {v.statut !== 'Payé' && v.statut !== 'Annulé' && <>
+                            <button onClick={() => handleStatut(v.id,'Payé')} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #bbf7d0', background:'#f0fdf4', color:'#16a34a', cursor:'pointer' }}>✓ Marquer Payé</button>
+                            <button onClick={() => handleStatut(v.id,'Annulé')} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer' }}>✕ Annuler</button>
+                          </>}
+                          <button onClick={() => deleteVente(v.id)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #fecaca', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>🗑 Supprimer</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-              {!filtered.length && <EmptyState icon="🛒" title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />}
+                )
+              })}
             </div>
             <Pagination {...pagination} />
           </div>

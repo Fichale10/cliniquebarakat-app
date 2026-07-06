@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { today, fmtF, findDups } from '../../lib/utils';
 import { newId } from '../../lib/db';
-import { Btn, Badge, Field, DupWarning, FilterBar, FilterSelect, FilterBtns, EmptyState } from '../../components/ui';
+import { Btn, Field, DupWarning, EmptyState } from '../../components/ui';
 
 const SPECIALITES = [
   'Médicaments vétérinaires',
@@ -22,47 +22,38 @@ const CONDITIONS_PAIEMENT = [
 ];
 
 const SPEC_STYLE = {
-  'Médicaments vétérinaires':    { color: 'green',  icon: '💊' },
-  'Vaccins et antiparasitaires': { color: 'blue',   icon: '💉' },
-  'Matériel et consommables':    { color: 'purple', icon: '🔧' },
-  'Alimentation animale':        { color: 'amber',  icon: '🌾' },
-  'Équipements médicaux':        { color: 'cyan',   icon: '🏥' },
-  'Produits désinfectants':      { color: 'orange', icon: '🧴' },
-  'Autre':                       { color: 'slate',  icon: '📦' },
+  'Médicaments vétérinaires':    { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', icon: '💊' },
+  'Vaccins et antiparasitaires': { bg: '#eff6ff', border: '#bfdbfe', text: '#2563eb', icon: '💉' },
+  'Matériel et consommables':    { bg: '#faf5ff', border: '#e9d5ff', text: '#9333ea', icon: '🔧' },
+  'Alimentation animale':        { bg: '#fffbeb', border: '#fde68a', text: '#d97706', icon: '🌾' },
+  'Équipements médicaux':        { bg: '#ecfeff', border: '#a5f3fc', text: '#0891b2', icon: '🏥' },
+  'Produits désinfectants':      { bg: '#fff7ed', border: '#fed7aa', text: '#ea580c', icon: '🧴' },
+  'Autre':                       { bg: '#f8fafc', border: '#e2e8f0', text: '#64748b', icon: '📦' },
 };
-
-function specStyle(s) {
-  return SPEC_STYLE[s] || { color: 'slate', icon: '📦' };
-}
+const specStyle = (s) => SPEC_STYLE[s] || SPEC_STYLE['Autre'];
 
 const toDbRow = (form) => ({
-  nom:                 form.nom,
-  contact:             form.contact,
-  tel:                 form.tel,
-  email:               form.email,
-  adresse:             form.adresse,
-  ville:               form.ville,
-  pays:                form.pays,
-  specialite:          form.specialite,
+  nom: form.nom, contact: form.contact, tel: form.tel, email: form.email,
+  adresse: form.adresse, ville: form.ville, pays: form.pays,
+  specialite: form.specialite,
   delai_livraison:     parseInt(form.delaiLivraison) || 5,
   conditions_paiement: form.conditionsPaiement,
   remise:              parseFloat(form.remise) || 0,
   note_qualite:        parseInt(form.noteQualite) || 3,
-  actif:               form.actif,
-  notes:               form.notes,
-  date_debut:          form.dateDebut || null,
-  rib:                 form.rib,
-  site_web:            form.siteWeb,
+  actif: form.actif, notes: form.notes,
+  date_debut: form.dateDebut || null,
+  rib: form.rib, site_web: form.siteWeb,
 });
 
+// ── Stars ────────────────────────────────────────────────────────
 function Stars({ note, onChange, readonly = false }) {
   return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(n => (
-        <button key={n}
-          onClick={readonly ? undefined : () => onChange(n)}
-          className={`text-lg transition-transform ${readonly ? '' : 'hover:scale-125 cursor-pointer'}`}
-          style={{ cursor: readonly ? 'default' : 'pointer', background: 'none', border: 'none', padding: 0 }}>
+    <div style={{ display: 'flex', gap: 2 }}>
+      {[1,2,3,4,5].map(n => (
+        <button key={n} onClick={readonly ? undefined : () => onChange(n)}
+          style={{ cursor: readonly ? 'default' : 'pointer', background: 'none', border: 'none', padding: 0, fontSize: 16, transition: 'transform .12s' }}
+          onMouseEnter={e => { if (!readonly) e.currentTarget.style.transform = 'scale(1.25)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}>
           <span style={{ color: n <= note ? '#f59e0b' : '#e2e8f0' }}>★</span>
         </button>
       ))}
@@ -70,6 +61,7 @@ function Stars({ note, onChange, readonly = false }) {
   );
 }
 
+// ── Formulaire ───────────────────────────────────────────────────
 function FormulaireF({ initial, onSave, onCancel, saving }) {
   const empty = {
     nom: '', contact: '', tel: '', email: '', adresse: '', ville: 'Lomé', pays: 'Togo',
@@ -80,13 +72,17 @@ function FormulaireF({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState(initial || empty);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const Section = ({ title }) => (
+    <p style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10, marginTop: 4 }}>{title}</p>
+  );
+
   return (
-    <div className="p-6 bg-emerald-50 border-b border-emerald-200">
-      <h3 className="font-bold text-emerald-800 text-base mb-4 flex items-center gap-2">
-        {initial ? '✏️ Modifier le fournisseur' : '+ Nouveau fournisseur'}
+    <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg,#f0fdfa,#f5fffe)', borderBottom: '1px solid rgba(13,148,136,0.15)' }}>
+      <h3 style={{ fontWeight: 800, color: '#0f766e', fontSize: 15, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {initial ? '✏️ Modifier le fournisseur' : '✚ Nouveau fournisseur'}
       </h3>
 
-      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Identité</p>
+      <Section title="Identité" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <Field label="Raison sociale *" value={form.nom} onChange={e => set('nom', e.target.value)} placeholder="Ex: MediVet SARL" className="md:col-span-2" />
         <Field label="Spécialité" value={form.specialite} onChange={e => set('specialite', e.target.value)} options={SPECIALITES} />
@@ -96,186 +92,191 @@ function FormulaireF({ initial, onSave, onCancel, saving }) {
         <Field label="Site web" value={form.siteWeb} onChange={e => set('siteWeb', e.target.value)} placeholder="www.fournisseur.com" />
         <Field label="Adresse" value={form.adresse} onChange={e => set('adresse', e.target.value)} placeholder="Rue, quartier" />
         <Field label="Ville" value={form.ville} onChange={e => set('ville', e.target.value)} placeholder="Lomé" />
-        <Field label="Pays" value={form.pays} onChange={e => set('pays', e.target.value)} options={['Togo', 'Bénin', 'Ghana', "Côte d'Ivoire", 'Nigeria', 'Sénégal', 'France', 'Autre']} />
+        <Field label="Pays" value={form.pays} onChange={e => set('pays', e.target.value)} options={['Togo','Bénin','Ghana',"Côte d'Ivoire",'Nigeria','Sénégal','France','Autre']} />
       </div>
 
-      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Conditions commerciales</p>
+      <Section title="Conditions commerciales" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Field label="Délai livraison (jours)" value={form.delaiLivraison} onChange={e => set('delaiLivraison', parseInt(e.target.value) || 0)} type="number" placeholder="5" />
-        <Field label="Conditions de paiement" value={form.conditionsPaiement} onChange={e => set('conditionsPaiement', e.target.value)}
-          options={CONDITIONS_PAIEMENT.map(c => c.v)} />
-        <Field label="Remise habituelle (%)" value={form.remise} onChange={e => set('remise', parseFloat(e.target.value) || 0)} type="number" placeholder="0" />
+        <Field label="Délai livraison (jours)" value={form.delaiLivraison} onChange={e => set('delaiLivraison', parseInt(e.target.value)||0)} type="number" placeholder="5" />
+        <Field label="Conditions de paiement" value={form.conditionsPaiement} onChange={e => set('conditionsPaiement', e.target.value)} options={CONDITIONS_PAIEMENT.map(c => c.v)} />
+        <Field label="Remise habituelle (%)" value={form.remise} onChange={e => set('remise', parseFloat(e.target.value)||0)} type="number" placeholder="0" />
         <Field label="Date 1ère collaboration" value={form.dateDebut} onChange={e => set('dateDebut', e.target.value)} type="date" />
       </div>
 
-      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Évaluation & Notes</p>
+      <Section title="Évaluation & Notes" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Note qualité</label>
+          <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 8 }}>Note qualité</label>
           <Stars note={form.noteQualite} onChange={v => set('noteQualite', v)} />
         </div>
         <Field label="RIB / Coordonnées bancaires" value={form.rib} onChange={e => set('rib', e.target.value)} placeholder="TG53 TG009 001 00123..." />
       </div>
       <Field label="Notes internes" value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} placeholder="Observations, conditions particulières…" />
 
-      <div className="flex gap-2 mt-4">
-        <Btn onClick={() => onSave(form)} disabled={saving}>
+      <div className="flex gap-2 mt-5">
+        <Btn color="brand" onClick={() => onSave(form)} disabled={saving}>
           {saving ? '⏳ Enregistrement…' : `✓ ${initial ? 'Enregistrer les modifications' : 'Créer le fournisseur'}`}
         </Btn>
-        <button onClick={onCancel} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors">Annuler</button>
+        <button onClick={onCancel} style={{ padding: '8px 16px', fontSize: 13, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>Annuler</button>
       </div>
     </div>
   );
 }
 
+// ── Fiche modale ─────────────────────────────────────────────────
 function FicheFournisseur({ f, meds, onEdit, onClose }) {
-  const style   = specStyle(f.specialite);
+  const s       = specStyle(f.specialite);
   const medsF   = (meds || []).filter(m => m.fournisseur === f.nom);
   const condLabel = CONDITIONS_PAIEMENT.find(c => c.v === f.conditionsPaiement)?.l || f.conditionsPaiement;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.45)' }}>
+      <div style={{ background: 'white', borderRadius: 24, boxShadow: '0 24px 80px rgba(0,0,0,0.22)', width: '100%', maxWidth: 720, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-        <div className={`bg-${style.color}-50 border-b border-${style.color}-200 p-6 rounded-t-3xl`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-2xl bg-${style.color}-100 border-2 border-${style.color}-300 flex items-center justify-center text-3xl`}>
-                {style.icon}
+        {/* Header */}
+        <div style={{ background: s.bg, borderBottom: `1px solid ${s.border}`, padding: '20px 24px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: s.bg, border: `2px solid ${s.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>
+                {s.icon}
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900">{f.nom}</h2>
-                <p className={`text-sm font-semibold text-${style.color}-700 mt-0.5`}>{f.specialite}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: 0 }}>{f.nom}</h2>
+                <p style={{ fontSize: 13, fontWeight: 600, color: s.text, marginTop: 2 }}>{f.specialite}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                   <Stars note={f.noteQualite} readonly />
-                  <span className="text-xs text-slate-400">{f.noteQualite}/5</span>
-                  <Badge color={f.actif ? 'green' : 'red'}>{f.actif ? '✓ Actif' : '✕ Inactif'}</Badge>
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>{f.noteQualite}/5</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: f.actif ? '#f0fdf4' : '#fef2f2', color: f.actif ? '#16a34a' : '#dc2626', border: `1px solid ${f.actif ? '#bbf7d0' : '#fecaca'}` }}>
+                    {f.actif ? '✓ Actif' : '✕ Inactif'}
+                  </span>
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: 8 }}>
               <Btn onClick={onEdit} color="slate" sm>✏️ Modifier</Btn>
-              <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all">✕</button>
+              <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#94a3b8', cursor: 'pointer' }}>✕</button>
             </div>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Corps scrollable */}
+        <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
+          {/* KPIs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
             {[
-              { l: 'Note qualité',  v: `${f.noteQualite}/5`,          icon: '⭐', c: 'amber'  },
-              { l: 'Produits',      v: medsF.length,                   icon: '💊', c: 'purple' },
-              { l: 'Délai livr.',   v: `${f.delaiLivraison}j`,         icon: '🚚', c: 'blue'   },
-              { l: 'Remise',        v: `${f.remise}%`,                 icon: '🏷️', c: 'green'  },
-            ].map((s, i) => (
-              <div key={i} className={`bg-${s.c}-50 border border-${s.c}-200 rounded-2xl p-3 text-center`}>
-                <div className="text-xl mb-1">{s.icon}</div>
-                <div className={`text-lg font-black text-${s.c}-700 font-mono`}>{s.v}</div>
-                <div className={`text-xs text-${s.c}-600 font-semibold`}>{s.l}</div>
+              { l: 'Note qualité', v: `${f.noteQualite}/5`,    icon: '⭐', bg: '#fffbeb', border: '#fde68a', text: '#d97706' },
+              { l: 'Produits',     v: medsF.length,             icon: '💊', bg: '#faf5ff', border: '#e9d5ff', text: '#9333ea' },
+              { l: 'Délai livr.',  v: `${f.delaiLivraison}j`,  icon: '🚚', bg: '#eff6ff', border: '#bfdbfe', text: '#2563eb' },
+              { l: 'Remise',       v: `${f.remise}%`,           icon: '🏷️', bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
+            ].map((k, i) => (
+              <div key={i} style={{ background: k.bg, border: `1px solid ${k.border}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: k.text, fontVariantNumeric: 'tabular-nums' }}>{k.v}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: k.text, opacity: .7, textTransform: 'uppercase', letterSpacing: '.04em' }}>{k.l}</div>
               </div>
             ))}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-5">
-            <div className="bg-slate-50 rounded-2xl p-4">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Contact</p>
-              <div className="space-y-2">
-                {f.contact && <Row icon="👤" val={f.contact} />}
-                {f.tel     && <Row icon="📞" val={f.tel}     link={`tel:${f.tel}`} />}
-                {f.email   && <Row icon="✉️" val={f.email}   link={`mailto:${f.email}`} />}
-                {f.siteWeb && <Row icon="🌐" val={f.siteWeb} link={`https://${f.siteWeb}`} />}
-                <Row icon="📍" val={[f.adresse, f.ville, f.pays].filter(Boolean).join(', ') || '—'} />
-              </div>
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-4">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Conditions commerciales</p>
-              <div className="space-y-2">
-                <Row icon="💳" val={condLabel} label="Paiement" />
-                <Row icon="🏷️" val={`${f.remise}%`} label="Remise habituelle" />
-                <Row icon="📅" val={`${f.delaiLivraison} jours ouvrés`} label="Délai livraison" />
-                <Row icon="🤝" val={f.dateDebut || '—'} label="Depuis" />
-                {f.rib && <Row icon="🏦" val={f.rib} label="RIB" mono />}
-              </div>
-            </div>
+          {/* Contact + Conditions */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <InfoBox title="Contact">
+              {f.contact && <InfoRow icon="👤" val={f.contact} />}
+              {f.tel     && <InfoRow icon="📞" val={f.tel}   link={`tel:${f.tel}`} />}
+              {f.email   && <InfoRow icon="✉️" val={f.email} link={`mailto:${f.email}`} />}
+              {f.siteWeb && <InfoRow icon="🌐" val={f.siteWeb} link={`https://${f.siteWeb}`} />}
+              <InfoRow icon="📍" val={[f.adresse, f.ville, f.pays].filter(Boolean).join(', ') || '—'} />
+            </InfoBox>
+            <InfoBox title="Conditions commerciales">
+              <InfoRow icon="💳" val={condLabel}                         label="Paiement" />
+              <InfoRow icon="🏷️" val={`${f.remise}%`}                    label="Remise" />
+              <InfoRow icon="🚚" val={`${f.delaiLivraison} jours ouvrés`} label="Délai" />
+              <InfoRow icon="🤝" val={f.dateDebut || '—'}                 label="Partenariat depuis" />
+              {f.rib && <InfoRow icon="🏦" val={f.rib} label="RIB" mono />}
+            </InfoBox>
           </div>
 
           {f.notes && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-              <p className="text-xs font-black text-amber-500 uppercase tracking-widest mb-2">📝 Notes internes</p>
-              <p className="text-sm text-amber-900">{f.notes}</p>
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '12px 16px', marginBottom: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 800, color: '#d97706', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>📝 Notes internes</p>
+              <p style={{ fontSize: 13, color: '#92400e' }}>{f.notes}</p>
             </div>
           )}
 
           {medsF.length > 0 && (
             <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">💊 Médicaments approvisionnés ({medsF.length})</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <p style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>💊 Médicaments approvisionnés ({medsF.length})</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {medsF.map(m => (
-                  <div key={m.id} className="flex items-center justify-between bg-white rounded-xl border border-slate-200 px-3 py-2.5">
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9', padding: '10px 12px' }}>
                     <div>
-                      <p className="font-semibold text-sm text-slate-900">{m.nom}</p>
-                      <p className="text-xs text-slate-400">{m.ref} · {m.categorie}</p>
+                      <p style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{m.nom}</p>
+                      <p style={{ fontSize: 11, color: '#94a3b8' }}>{m.ref} · {m.categorie}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-blue-600">{fmtF(m.prixAchat)}<span className="font-normal text-slate-400">/unité</span></p>
-                      <p className="text-xs text-slate-400">Stock: {m.stock} {m.unite}</p>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>{fmtF(m.prixAchat)}</p>
+                      <p style={{ fontSize: 11, color: '#94a3b8' }}>Stk: {m.stock}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
   );
 }
 
-function Row({ icon, val, label, link, mono }) {
+function InfoBox({ title, children }) {
   return (
-    <div className="flex items-start gap-2">
-      <span className="text-base shrink-0 mt-0.5">{icon}</span>
-      <div className="min-w-0">
-        {label && <p className="text-xs text-slate-400 font-semibold">{label}</p>}
+    <div style={{ background: '#f8fafc', borderRadius: 14, padding: '14px 16px' }}>
+      <p style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>{title}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>{children}</div>
+    </div>
+  );
+}
+
+function InfoRow({ icon, val, label, link, mono }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+      <div style={{ minWidth: 0 }}>
+        {label && <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, marginBottom: 1 }}>{label}</p>}
         {link
-          ? <a href={link} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline truncate block">{val}</a>
-          : <p className={`text-sm text-slate-700 break-words ${mono ? 'font-mono text-xs' : ''}`}>{val}</p>
+          ? <a href={link} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#2563eb', textDecoration: 'none' }}>{val}</a>
+          : <p style={{ fontSize: mono ? 11 : 13, color: '#475569', wordBreak: 'break-word', fontFamily: mono ? 'monospace' : 'inherit' }}>{val}</p>
         }
       </div>
     </div>
   );
 }
 
+// ── Composant principal ──────────────────────────────────────────
 export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds = [], sb, dbInsert, dbUpdate, dbDelete, versements = [], setVersements, achatsHist = [] }) {
-  const [view, setView]             = useState('liste');
-  const [selected, setSelected]     = useState(null);
-  const [editTarget, setEditTarget] = useState(null);
-  const [dups, setDups]             = useState([]);
-  const [pending, setPending]       = useState(null);
-  const [saving, setSaving]         = useState(false);
-  const [activeTab, setActiveTab]   = useState('liste');
-  const [showVForm, setShowVForm]   = useState(false);
-  const [savingV, setSavingV]       = useState(false);
-  const [expV, setExpV]             = useState(null);
-  const [vForm, setVForm]           = useState({ fournisseur: '', montant: '', date: today(), mode: 'Espèces', note: '' });
+  const [view,        setView]        = useState('liste');
+  const [selected,    setSelected]    = useState(null);
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [dups,        setDups]        = useState([]);
+  const [pending,     setPending]     = useState(null);
+  const [saving,      setSaving]      = useState(false);
+  const [activeTab,   setActiveTab]   = useState('liste');
+  const [showVForm,   setShowVForm]   = useState(false);
+  const [savingV,     setSavingV]     = useState(false);
+  const [expV,        setExpV]        = useState(null);
+  const [vForm,       setVForm]       = useState({ fournisseur: '', montant: '', date: today(), mode: 'Espèces', note: '' });
+  const [search,      setSearch]      = useState('');
+  const [fSpec,       setFSpec]       = useState('');
+  const [fActif,      setFActif]      = useState('');
+  const [fNote,       setFNote]       = useState('');
+  const [sortBy,      setSortBy]      = useState('nom');
 
-  const [search, setSearch] = useState('');
-  const [fSpec, setFSpec]   = useState('');
-  const [fActif, setFActif] = useState('');
-  const [fNote, setFNote]   = useState('');
-  const [sortBy, setSortBy] = useState('nom');
-
+  // ── Handlers (inchangés) ──────────────────────────────────────
   const handleSave = async (form, confirmDup = false) => {
     if (!form.nom.trim()) return alert('La raison sociale est requise.');
-
     if (!confirmDup && !editTarget) {
       const d = findDups(form.nom, fournisseurs);
       if (d.length) { setDups(d); setPending(form); return; }
     }
-
     setSaving(true);
     try {
       if (editTarget) {
@@ -289,15 +290,9 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
         const entry = { ...form, id: saved.id || row.id, created_at: saved.created_at || new Date().toISOString() };
         setFournisseurs([entry, ...fournisseurs]);
       }
-      setView('liste');
-      setEditTarget(null);
-      setDups([]);
-      setPending(null);
-    } catch (e) {
-      alert('Erreur : ' + (e?.message || e));
-    } finally {
-      setSaving(false);
-    }
+      setView('liste'); setEditTarget(null); setDups([]); setPending(null);
+    } catch (e) { alert('Erreur : ' + (e?.message || e)); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
@@ -307,9 +302,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
       await dbDelete(sb, 'fournisseurs', id);
       setFournisseurs(fournisseurs.filter(x => x.id !== id));
       if (selected?.id === id) setSelected(null);
-    } catch (e) {
-      alert('Erreur suppression : ' + (e?.message || e));
-    }
+    } catch (e) { alert('Erreur suppression : ' + (e?.message || e)); }
   };
 
   const toggleActif = async (id) => {
@@ -319,423 +312,428 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
     try {
       await dbUpdate(sb, 'fournisseurs', id, { actif });
       setFournisseurs(fournisseurs.map(x => x.id === id ? { ...x, actif } : x));
-    } catch (e) {
-      alert('Erreur : ' + (e?.message || e));
-    }
+    } catch (e) { alert('Erreur : ' + (e?.message || e)); }
   };
 
   const filtered = useMemo(() => {
     let r = [...fournisseurs];
     if (search) {
       const q = search.toLowerCase();
-      r = r.filter(f =>
-        f.nom.toLowerCase().includes(q) ||
-        (f.contact || '').toLowerCase().includes(q) ||
-        (f.ville || '').toLowerCase().includes(q) ||
-        (f.specialite || '').toLowerCase().includes(q)
-      );
+      r = r.filter(f => f.nom.toLowerCase().includes(q) || (f.contact||'').toLowerCase().includes(q) || (f.ville||'').toLowerCase().includes(q) || (f.specialite||'').toLowerCase().includes(q));
     }
-    if (fSpec)            r = r.filter(f => f.specialite === fSpec);
+    if (fSpec)              r = r.filter(f => f.specialite === fSpec);
     if (fActif === 'actif')   r = r.filter(f => f.actif);
     if (fActif === 'inactif') r = r.filter(f => !f.actif);
-    if (fNote)            r = r.filter(f => f.noteQualite >= parseInt(fNote));
-
+    if (fNote)              r = r.filter(f => f.noteQualite >= parseInt(fNote));
     r.sort((a, b) => {
-      if (sortBy === 'note')  return (b.noteQualite || 0) - (a.noteQualite || 0);
-      if (sortBy === 'delai') return (a.delaiLivraison || 99) - (b.delaiLivraison || 99);
+      if (sortBy === 'note')  return (b.noteQualite||0) - (a.noteQualite||0);
+      if (sortBy === 'delai') return (a.delaiLivraison||99) - (b.delaiLivraison||99);
       return a.nom.localeCompare(b.nom);
     });
     return r;
   }, [fournisseurs, search, fSpec, fActif, fNote, sortBy]);
 
   const stats = useMemo(() => {
-    const actifs  = fournisseurs.filter(f => f.actif).length;
-    const noteAvg = fournisseurs.length
-      ? (fournisseurs.reduce((s, f) => s + (f.noteQualite || 0), 0) / fournisseurs.length).toFixed(1)
-      : '—';
-    const delaiMoy = fournisseurs.length
-      ? Math.round(fournisseurs.reduce((s, f) => s + (f.delaiLivraison || 0), 0) / fournisseurs.length)
-      : 0;
+    const actifs   = fournisseurs.filter(f => f.actif).length;
+    const noteAvg  = fournisseurs.length ? (fournisseurs.reduce((s,f) => s+(f.noteQualite||0),0)/fournisseurs.length).toFixed(1) : '—';
+    const delaiMoy = fournisseurs.length ? Math.round(fournisseurs.reduce((s,f) => s+(f.delaiLivraison||0),0)/fournisseurs.length) : 0;
     return { actifs, noteAvg, delaiMoy };
   }, [fournisseurs]);
 
   const activeFilters = [fSpec, fActif, fNote].filter(Boolean).length;
   const resetFilters  = () => { setSearch(''); setFSpec(''); setFActif(''); setFNote(''); };
 
-  const debtData = useMemo(() => {
-    return fournisseurs
-      .map(f => {
-        const recu       = (achatsHist || []).filter(c => c.fournisseur === f.nom && c.statut === 'Reçu')
-        const totalCmd   = recu.reduce((s, c) => s + (c.total || 0), 0)
-        const totalVerse = (versements || []).filter(v => v.fournisseur === f.nom).reduce((s, v) => s + (v.montant || 0), 0)
-        const solde      = totalCmd - totalVerse
-        return { ...f, totalCmd, totalVerse, solde, nbCommandes: recu.length }
-      })
-      .filter(d => d.totalCmd > 0 || d.totalVerse > 0)
-      .sort((a, b) => b.solde - a.solde)
-  }, [fournisseurs, achatsHist, versements])
+  const debtData = useMemo(() => fournisseurs.map(f => {
+    const recu     = (achatsHist||[]).filter(c => c.fournisseur === f.nom && c.statut === 'Reçu');
+    const totalCmd = recu.reduce((s,c) => s+(c.total||0), 0);
+    const totalVerse = (versements||[]).filter(v => v.fournisseur === f.nom).reduce((s,v) => s+(v.montant||0), 0);
+    return { ...f, totalCmd, totalVerse, solde: totalCmd - totalVerse, nbCommandes: recu.length };
+  }).filter(d => d.totalCmd > 0 || d.totalVerse > 0).sort((a,b) => b.solde - a.solde), [fournisseurs, achatsHist, versements]);
 
-  const totalDette = debtData.reduce((s, d) => s + Math.max(0, d.solde), 0)
+  const totalDette  = debtData.reduce((s,d) => s + Math.max(0, d.solde), 0);
+  const totalVerse  = (versements||[]).reduce((s,v) => s+(v.montant||0), 0);
 
   const addVersement = async () => {
-    if (!vForm.fournisseur) return alert('Sélectionnez un fournisseur')
-    const m = parseInt(vForm.montant)
-    if (isNaN(m) || m <= 0) return alert('Montant invalide (doit être > 0)')
-    setSavingV(true)
+    if (!vForm.fournisseur) return alert('Sélectionnez un fournisseur');
+    const m = parseInt(vForm.montant);
+    if (isNaN(m) || m <= 0) return alert('Montant invalide');
+    setSavingV(true);
     try {
-      const row = { id: newId(), fournisseur: vForm.fournisseur, montant: m, date: vForm.date, mode: vForm.mode, note: vForm.note || '' }
-      const saved = await dbInsert(sb, 'versements_fournisseurs', row)
-      setVersements([saved, ...(versements || [])])
-      setVForm({ fournisseur: '', montant: '', date: today(), mode: 'Espèces', note: '' })
-      setShowVForm(false)
-    } catch(e) {
-      alert('Erreur : ' + (e?.message || e))
-    } finally {
-      setSavingV(false)
-    }
-  }
+      const row = { id: newId(), fournisseur: vForm.fournisseur, montant: m, date: vForm.date, mode: vForm.mode, note: vForm.note||'' };
+      const saved = await dbInsert(sb, 'versements_fournisseurs', row);
+      setVersements([saved, ...(versements||[])]);
+      setVForm({ fournisseur:'', montant:'', date: today(), mode:'Espèces', note:'' });
+      setShowVForm(false);
+    } catch(e) { alert('Erreur : ' + (e?.message||e)); }
+    finally { setSavingV(false); }
+  };
 
   const delVersement = async (id) => {
-    if (!confirm('Supprimer ce versement ?')) return
+    if (!confirm('Supprimer ce versement ?')) return;
     try {
-      await dbDelete(sb, 'versements_fournisseurs', id)
-      setVersements((versements || []).filter(v => v.id !== id))
-    } catch(e) {
-      alert('Erreur : ' + (e?.message || e))
-    }
-  }
+      await dbDelete(sb, 'versements_fournisseurs', id);
+      setVersements((versements||[]).filter(v => v.id !== id));
+    } catch(e) { alert('Erreur : ' + (e?.message||e)); }
+  };
 
+  // ── Render ────────────────────────────────────────────────────
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-5">
 
+      {/* Modale fiche */}
       {selected && !editTarget && (
-        <FicheFournisseur
-          f={selected}
-          meds={meds}
+        <FicheFournisseur f={selected} meds={meds}
           onEdit={() => { setEditTarget(selected); setView('form-edit'); }}
-          onClose={() => setSelected(null)}
-        />
+          onClose={() => setSelected(null)} />
       )}
 
-      <div className="flex gap-2">
+      {/* Tabs pill */}
+      <div style={{ display:'flex', gap:4, background:'#f1f5f9', borderRadius:14, padding:4, width:'fit-content' }}>
         {[
-          { k: 'liste',  l: '🏭 Fournisseurs',       c: fournisseurs.length                      },
-          { k: 'dettes', l: '💰 Dettes & Paiements', c: debtData.filter(d => d.solde > 0).length },
+          { k:'liste',  l:'🏭 Fournisseurs',       c: fournisseurs.length },
+          { k:'dettes', l:'💰 Dettes & Paiements', c: debtData.filter(d=>d.solde>0).length },
         ].map(t => (
-          <button key={t.k} onClick={() => setActiveTab(t.k)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${activeTab===t.k?'border-emerald-500 bg-emerald-50 text-emerald-700':'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
-            {t.l} <span className="ml-1 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">{t.c}</span>
+          <button key={t.k} onClick={() => setActiveTab(t.k)} style={{
+            padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700,
+            border: 'none', cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap',
+            background: activeTab===t.k ? 'white' : 'transparent',
+            color:      activeTab===t.k ? '#0d9488' : '#64748b',
+            boxShadow:  activeTab===t.k ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+          }}>
+            {t.l}
+            <span style={{ marginLeft:6, fontSize:10, fontWeight:800, background: activeTab===t.k?'#f0fdfa':'#e2e8f0', color: activeTab===t.k?'#0d9488':'#94a3b8', padding:'1px 6px', borderRadius:99 }}>{t.c}</span>
           </button>
         ))}
       </div>
 
+      {/* ══ ONGLET LISTE ══ */}
       {activeTab === 'liste' && <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { l: 'Fournisseurs actifs', v: stats.actifs,           icon: '🏭', bg: 'bg-green-50 border-green-200',  t: 'text-green-700'  },
-          { l: 'Total fournisseurs',  v: fournisseurs.length,    icon: '📋', bg: 'bg-blue-50 border-blue-200',    t: 'text-blue-700'   },
-          { l: 'Note qualité moy.',   v: `${stats.noteAvg} / 5`, icon: '⭐', bg: 'bg-purple-50 border-purple-200', t: 'text-purple-700' },
-          { l: 'Délai livr. moy.',    v: `${stats.delaiMoy} j`,  icon: '🚚', bg: 'bg-amber-50 border-amber-200',  t: 'text-amber-700'  },
-        ].map((s, i) => (
-          <div key={i} className={`${s.bg} border rounded-2xl p-5`}>
-            <div className="text-2xl mb-2">{s.icon}</div>
-            <p className={`text-xs font-bold uppercase tracking-wide ${s.t} opacity-70 mb-1`}>{s.l}</p>
-            <p className={`text-xl font-black font-mono ${s.t}`}>{s.v}</p>
-          </div>
-        ))}
-      </div>
 
-      {(view === 'form-new' || view === 'form-edit') && (
-        <div className="app-card overflow-hidden">
-          {dups.length > 0 && pending && (
-            <div className="p-5 pb-0">
-              <DupWarning
-                dups={dups}
-                onOk={() => handleSave(pending, true)}
-                onCancel={() => { setDups([]); setPending(null); }}
-              />
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { icon:'🏭', label:'Fournisseurs actifs', value: stats.actifs,           sub: `sur ${fournisseurs.length} total`,   color:'#0d9488' },
+            { icon:'📋', label:'Total fournisseurs',  value: fournisseurs.length,    sub: `${fournisseurs.length - stats.actifs} inactif(s)`, color:'#2563eb' },
+            { icon:'⭐', label:'Note qualité moy.',   value: `${stats.noteAvg}/5`,   sub: 'évaluation moyenne',                 color:'#d97706' },
+            { icon:'🚚', label:'Délai livr. moyen',   value: `${stats.delaiMoy} j`,  sub: 'jours ouvrés',                       color:'#9333ea' },
+          ].map((k,i) => (
+            <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <div style={{ width:34,height:34,borderRadius:10, background:k.color+'18', display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+                <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
+              </div>
+              <div style={{ fontSize:20,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
+              <div style={{ fontSize:11,color:'#94a3b8',marginTop:4 }}>{k.sub}</div>
             </div>
-          )}
-          <FormulaireF
-            initial={editTarget}
-            onSave={handleSave}
-            onCancel={() => { setView('liste'); setEditTarget(null); setDups([]); setPending(null); }}
-            saving={saving}
-          />
-        </div>
-      )}
-
-      <div className="app-card">
-        <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">🏭 Fournisseurs</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {filtered.length} / {fournisseurs.length} fournisseur(s) · {stats.actifs} actif(s)
-            </p>
-          </div>
-          <div className="flex gap-2 items-center">
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              className="border-2 border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 outline-none bg-white">
-              <option value="nom">🔤 Trier par nom</option>
-              <option value="note">⭐ Meilleure note</option>
-              <option value="delai">🚚 Délai livraison</option>
-            </select>
-            {view === 'liste'
-              ? <Btn onClick={() => { setView('form-new'); setEditTarget(null); }}>+ Nouveau fournisseur</Btn>
-              : <button onClick={() => { setView('liste'); setEditTarget(null); }} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">✕ Annuler</button>
-            }
-          </div>
+          ))}
         </div>
 
-        <FilterBar search={search} onSearch={setSearch}
-          placeholder="🔍 Nom, contact, ville, spécialité…"
-          activeCount={activeFilters} onReset={resetFilters}>
-          <FilterSelect
-            label="📂 Spécialité" value={fSpec} onChange={setFSpec}
-            options={SPECIALITES.map(s => ({ v: s, l: specStyle(s).icon + ' ' + s }))}
-          />
-          <FilterBtns
-            options={[{ v: 'actif', l: '✓ Actif' }, { v: 'inactif', l: '✕ Inactif' }]}
-            value={fActif} onChange={setFActif}
-            colorFn={v => v === 'actif' ? 'green' : 'red'}
-          />
-          <FilterSelect
-            label="⭐ Note min." value={fNote} onChange={setFNote}
-            options={[{ v: '3', l: '⭐⭐⭐ et +' }, { v: '4', l: '⭐⭐⭐⭐ et +' }, { v: '5', l: '⭐⭐⭐⭐⭐' }]}
-          />
-        </FilterBar>
-
-        {filtered.length === 0 ? (
-          <EmptyState icon="🏭" title="Aucun fournisseur trouvé" subtitle="Ajoutez vos fournisseurs pour gérer vos approvisionnements." />
-        ) : (
-          <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map(f => {
-              const style     = specStyle(f.specialite);
-              const medsCount = (meds || []).filter(m => m.fournisseur === f.nom).length;
-
-              return (
-                <div key={f.id}
-                  className={`group relative bg-white rounded-2xl border-2 transition-all cursor-pointer overflow-hidden
-                    ${f.actif ? `border-slate-200 hover:border-${style.color}-400 hover:shadow-lg` : 'border-slate-100 opacity-60'}`}
-                  onClick={() => setSelected(f)}>
-
-                  <div className={`h-1.5 bg-${style.color}-500`} />
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl bg-${style.color}-50 border border-${style.color}-200 flex items-center justify-center text-xl shrink-0`}>
-                          {style.icon}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-slate-900 text-sm leading-tight truncate">{f.nom}</h3>
-                          {f.contact && <p className="text-xs text-slate-400 truncate">👤 {f.contact}</p>}
-                        </div>
-                      </div>
-                      <div className="shrink-0">
-                        <Badge color={f.actif ? style.color : 'slate'}>
-                          {f.specialite.split(' ')[0]}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <Stars note={f.noteQualite} readonly />
-                      <span className="text-xs text-slate-400">{f.noteQualite}/5</span>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <div className="bg-slate-50 rounded-xl p-2 text-center">
-                        <p className="text-xs text-slate-400 font-semibold">Produits</p>
-                        <p className="text-base font-black text-slate-700">{medsCount}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-xl p-2 text-center">
-                        <p className="text-xs text-slate-400 font-semibold">Remise</p>
-                        <p className="text-base font-black text-slate-700">{f.remise}%</p>
-                      </div>
-                      <div className={`rounded-xl p-2 text-center ${f.delaiLivraison <= 3 ? 'bg-green-50' : f.delaiLivraison <= 7 ? 'bg-amber-50' : 'bg-red-50'}`}>
-                        <p className="text-xs text-slate-400 font-semibold">Délai</p>
-                        <p className={`text-base font-black ${f.delaiLivraison <= 3 ? 'text-green-700' : f.delaiLivraison <= 7 ? 'text-amber-700' : 'text-red-700'}`}>
-                          {f.delaiLivraison}j
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-400">Paiement</p>
-                        <p className="font-semibold text-slate-700 text-sm">
-                          {CONDITIONS_PAIEMENT.find(c => c.v === f.conditionsPaiement)?.l || f.conditionsPaiement}
-                        </p>
-                      </div>
-                      <p className="text-xs text-slate-300">{f.ville}</p>
-                    </div>
-                  </div>
-
-                  <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all no-print"
-                    onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => { setEditTarget(f); setView('form-edit'); }}
-                      className="w-7 h-7 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-300 transition-all text-xs">
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => toggleActif(f.id)}
-                      className={`w-7 h-7 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-xs transition-all ${f.actif ? 'text-amber-400 hover:text-amber-600' : 'text-green-400 hover:text-green-600'}`}>
-                      {f.actif ? '⏸' : '▶'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(f.id)}
-                      className="w-7 h-7 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:border-red-300 transition-all text-xs">
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Formulaire */}
+        {(view === 'form-new' || view === 'form-edit') && (
+          <div className="app-card overflow-hidden">
+            {dups.length > 0 && pending && (
+              <div className="p-5 pb-0">
+                <DupWarning dups={dups} onOk={() => handleSave(pending, true)} onCancel={() => { setDups([]); setPending(null); }} />
+              </div>
+            )}
+            <FormulaireF initial={editTarget} onSave={handleSave}
+              onCancel={() => { setView('liste'); setEditTarget(null); setDups([]); setPending(null); }}
+              saving={saving} />
           </div>
         )}
-      </div>
+
+        {/* Carte liste */}
+        <div className="app-card">
+          <div style={{ padding:'18px 20px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+            <div>
+              <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>🏭 Fournisseurs</h2>
+              <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>{filtered.length}/{fournisseurs.length} · {stats.actifs} actif(s)</p>
+            </div>
+            <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                style={{ border:'1.5px solid #e2e8f0', borderRadius:10, padding:'7px 10px', fontSize:12, fontWeight:700, color:'#64748b', outline:'none', background:'white' }}>
+                <option value="nom">🔤 Par nom</option>
+                <option value="note">⭐ Meilleure note</option>
+                <option value="delai">🚚 Délai livraison</option>
+              </select>
+              {view === 'liste'
+                ? <Btn color="brand" onClick={() => { setView('form-new'); setEditTarget(null); }}>+ Nouveau</Btn>
+                : <button onClick={() => { setView('liste'); setEditTarget(null); }} style={{ padding:'8px 14px', borderRadius:10, fontSize:13, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#64748b', cursor:'pointer' }}>✕ Annuler</button>
+              }
+            </div>
+          </div>
+
+          {/* Filtres */}
+          <div style={{ padding:'12px 20px', borderBottom:'1px solid #f8fafc', display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Nom, contact, ville…"
+              style={{ flex:'1 1 180px', minWidth:150, padding:'8px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, outline:'none' }} />
+            <select value={fSpec} onChange={e => setFSpec(e.target.value)}
+              style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fSpec?'#0f172a':'#94a3b8', outline:'none' }}>
+              <option value="">Toutes spécialités</option>
+              {SPECIALITES.map(s => <option key={s} value={s}>{specStyle(s).icon} {s}</option>)}
+            </select>
+            <select value={fActif} onChange={e => setFActif(e.target.value)}
+              style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fActif?'#0f172a':'#94a3b8', outline:'none' }}>
+              <option value="">Tous statuts</option>
+              <option value="actif">✓ Actifs</option>
+              <option value="inactif">✕ Inactifs</option>
+            </select>
+            <select value={fNote} onChange={e => setFNote(e.target.value)}
+              style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fNote?'#0f172a':'#94a3b8', outline:'none' }}>
+              <option value="">Toutes notes</option>
+              <option value="3">⭐⭐⭐ et +</option>
+              <option value="4">⭐⭐⭐⭐ et +</option>
+              <option value="5">⭐⭐⭐⭐⭐</option>
+            </select>
+            {activeFilters > 0 && (
+              <button onClick={resetFilters} style={{ padding:'8px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:12, fontWeight:700, background:'white', color:'#64748b', cursor:'pointer' }}>
+                ✕ Effacer ({activeFilters})
+              </button>
+            )}
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState icon="🏭" title="Aucun fournisseur trouvé" subtitle="Ajoutez vos fournisseurs pour gérer vos approvisionnements." />
+          ) : (
+            <div style={{ padding:16, display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
+              {filtered.map(f => {
+                const s         = specStyle(f.specialite);
+                const medsCount = (meds||[]).filter(m => m.fournisseur === f.nom).length;
+                const debt      = debtData.find(d => d.id === f.id);
+                const hasDette  = debt && debt.solde > 0;
+                return (
+                  <div key={f.id} onClick={() => setSelected(f)}
+                    style={{ background:'white', borderRadius:16, border:`1.5px solid ${f.actif?'#f1f5f9':'#f1f5f9'}`, cursor:'pointer', overflow:'hidden', transition:'all .18s', position:'relative', opacity: f.actif?1:.65 }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = s.border; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.09)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#f1f5f9'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none' }}>
+
+                    {/* Bande couleur top */}
+                    <div style={{ height:4, background: `linear-gradient(90deg,${s.text},${s.text}88)` }} />
+
+                    <div style={{ padding:'14px 16px' }}>
+                      {/* Header */}
+                      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:12 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
+                          <div style={{ width:40,height:40,borderRadius:12,background:s.bg,border:`1.5px solid ${s.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0 }}>
+                            {s.icon}
+                          </div>
+                          <div style={{ minWidth:0 }}>
+                            <h3 style={{ fontWeight:800,fontSize:14,color:'#0f172a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:160 }}>{f.nom}</h3>
+                            {f.contact && <p style={{ fontSize:11,color:'#94a3b8',marginTop:1 }}>👤 {f.contact}</p>}
+                          </div>
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0 }}>
+                          <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:f.actif?'#f0fdf4':'#fef2f2',color:f.actif?'#16a34a':'#dc2626',border:`1px solid ${f.actif?'#bbf7d0':'#fecaca'}` }}>
+                            {f.actif?'Actif':'Inactif'}
+                          </span>
+                          {hasDette && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>Dette</span>}
+                        </div>
+                      </div>
+
+                      {/* Note étoiles */}
+                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
+                        <Stars note={f.noteQualite} readonly />
+                        <span style={{ fontSize:11,color:'#94a3b8' }}>{f.noteQualite}/5</span>
+                      </div>
+
+                      {/* Mini stats */}
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6, marginBottom:12 }}>
+                        {[
+                          { l:'Produits', v: medsCount, bg:'#f8fafc', tc:'#475569' },
+                          { l:'Remise',   v: `${f.remise}%`, bg:'#f0fdf4', tc:'#16a34a' },
+                          { l:'Délai',    v: `${f.delaiLivraison}j`,
+                            bg: f.delaiLivraison<=3?'#f0fdf4':f.delaiLivraison<=7?'#fffbeb':'#fef2f2',
+                            tc: f.delaiLivraison<=3?'#16a34a':f.delaiLivraison<=7?'#d97706':'#dc2626' },
+                        ].map((st,i) => (
+                          <div key={i} style={{ background:st.bg,borderRadius:10,padding:'7px 6px',textAlign:'center' }}>
+                            <div style={{ fontSize:14,fontWeight:900,color:st.tc }}>{st.v}</div>
+                            <div style={{ fontSize:10,fontWeight:600,color:'#94a3b8' }}>{st.l}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{ borderTop:'1px solid #f1f5f9', paddingTop:10, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                        <span style={{ fontSize:11,color:'#64748b',fontWeight:600 }}>
+                          {CONDITIONS_PAIEMENT.find(c=>c.v===f.conditionsPaiement)?.l||f.conditionsPaiement}
+                        </span>
+                        <span style={{ fontSize:11,color:'#cbd5e1' }}>{f.ville}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions hover */}
+                    <div className="no-print" onClick={e => e.stopPropagation()}
+                      style={{ position:'absolute',top:12,right:12,display:'flex',gap:4,opacity:0,transition:'opacity .15s' }}
+                      onMouseEnter={e => e.currentTarget.style.opacity=1}
+                      ref={el => { if(el) { const card=el.closest('[data-hover]')||el.parentElement; card.addEventListener('mouseenter',()=>{el.style.opacity=1}); card.addEventListener('mouseleave',()=>{el.style.opacity=0}); } }}>
+                      <button onClick={() => { setEditTarget(f); setView('form-edit'); }}
+                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>✏️</button>
+                      <button onClick={() => toggleActif(f.id)}
+                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>{f.actif?'⏸':'▶'}</button>
+                      <button onClick={() => handleDelete(f.id)}
+                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>🗑️</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </>}
 
+      {/* ══ ONGLET DETTES ══ */}
       {activeTab === 'dettes' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* KPIs dettes */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { l: 'Total dettes',          v: fmtF(totalDette),                                                          icon: '💸', bg: 'bg-red-50 border-red-200',    t: 'text-red-700'    },
-              { l: 'Fournisseurs à régler', v: debtData.filter(d => d.solde > 0).length,                                  icon: '🏭', bg: 'bg-amber-50 border-amber-200', t: 'text-amber-700'  },
-              { l: 'Total versé',           v: fmtF((versements||[]).reduce((s,v)=>s+(v.montant||0),0)),                  icon: '✅', bg: 'bg-green-50 border-green-200', t: 'text-green-700'  },
-            ].map((s, i) => (
-              <div key={i} className={`${s.bg} border rounded-2xl p-5`}>
-                <div className="text-2xl mb-2">{s.icon}</div>
-                <p className={`text-xs font-bold uppercase tracking-wide ${s.t} opacity-70 mb-1`}>{s.l}</p>
-                <p className={`text-xl font-black font-mono ${s.t}`}>{s.v}</p>
+              { icon:'💸', label:'Total dettes',           value: fmtF(totalDette),                                  color:'#dc2626', sub: `${debtData.filter(d=>d.solde>0).length} fournisseur(s) à régler` },
+              { icon:'🏭', label:'Fournisseurs à régler',  value: debtData.filter(d=>d.solde>0).length,              color:'#d97706', sub: 'avec solde positif' },
+              { icon:'✅', label:'Total versé',            value: fmtF(totalVerse),                                  color:'#16a34a', sub: `${(versements||[]).length} versement(s)` },
+            ].map((k,i) => (
+              <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
+                <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
+                  <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+                  <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
+                </div>
+                <div style={{ fontSize:20,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
+                <div style={{ fontSize:11,color:'#94a3b8',marginTop:4 }}>{k.sub}</div>
               </div>
             ))}
           </div>
 
           <div className="app-card">
-            <div className="p-5 border-b flex items-center justify-between">
+            <div style={{ padding:'18px 20px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
               <div>
-                <h2 className="text-lg font-bold flex items-center gap-2">📋 Dettes par fournisseur</h2>
-                <p className="text-xs text-slate-400 mt-0.5">{debtData.length} fournisseur(s) avec transactions</p>
+                <h2 style={{ fontSize:18,fontWeight:900 }}>📋 Dettes par fournisseur</h2>
+                <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>{debtData.length} fournisseur(s) avec transactions</p>
               </div>
-              <Btn onClick={() => setShowVForm(!showVForm)}>{showVForm ? '✕ Annuler' : '+ Enregistrer un paiement'}</Btn>
+              <Btn color="brand" onClick={() => setShowVForm(!showVForm)}>{showVForm?'✕ Annuler':'+ Enregistrer un paiement'}</Btn>
             </div>
 
+            {/* Formulaire versement */}
             {showVForm && (
-              <div className="p-5 bg-emerald-50 border-b border-emerald-200">
+              <div style={{ padding:'18px 20px', background:'linear-gradient(135deg,#f0fdfa,#f5fffe)', borderBottom:'1px solid rgba(13,148,136,0.15)' }}>
+                <h3 style={{ fontWeight:800,color:'#0f766e',fontSize:14,marginBottom:14 }}>💳 Nouveau paiement fournisseur</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Fournisseur *</label>
-                    <select className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none bg-white"
-                      value={vForm.fournisseur} onChange={e => setVForm(f => ({...f, fournisseur: e.target.value}))}>
+                    <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Fournisseur *</label>
+                    <select style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'white' }}
+                      value={vForm.fournisseur} onChange={e => setVForm(f=>({...f,fournisseur:e.target.value}))}>
                       <option value="">— Choisir —</option>
-                      {debtData.map(d => <option key={d.id} value={d.nom}>{d.nom}{d.solde > 0 ? ` (solde: ${fmtF(d.solde)})` : ''}</option>)}
+                      {debtData.map(d => <option key={d.id} value={d.nom}>{d.nom}{d.solde>0?` (${fmtF(d.solde)})`:''}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Montant (F) *</label>
-                    <input type="number" min="1" placeholder="0"
-                      value={vForm.montant} onChange={e => setVForm(f => ({...f, montant: e.target.value}))}
-                      className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none" />
+                    <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Montant (F) *</label>
+                    <input type="number" min="1" placeholder="0" value={vForm.montant} onChange={e => setVForm(f=>({...f,montant:e.target.value}))}
+                      style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none' }} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Date</label>
-                    <input type="date" value={vForm.date} onChange={e => setVForm(f => ({...f, date: e.target.value}))}
-                      className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none" />
+                    <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Date</label>
+                    <input type="date" value={vForm.date} onChange={e => setVForm(f=>({...f,date:e.target.value}))}
+                      style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none' }} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Mode de paiement</label>
-                    <select className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none bg-white"
-                      value={vForm.mode} onChange={e => setVForm(f => ({...f, mode: e.target.value}))}>
+                    <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Mode</label>
+                    <select style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'white' }}
+                      value={vForm.mode} onChange={e => setVForm(f=>({...f,mode:e.target.value}))}>
                       {['Espèces','Mobile Money','Virement','Chèque'].map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Note</label>
-                    <input type="text" placeholder="Référence, objet du paiement…"
-                      value={vForm.note} onChange={e => setVForm(f => ({...f, note: e.target.value}))}
-                      className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-400 outline-none" />
+                    <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Note</label>
+                    <input type="text" placeholder="Référence, objet du paiement…" value={vForm.note} onChange={e => setVForm(f=>({...f,note:e.target.value}))}
+                      style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none' }} />
                   </div>
                 </div>
-                <Btn onClick={addVersement} disabled={savingV}>{savingV ? '⏳ Enregistrement…' : '✓ Enregistrer le paiement'}</Btn>
+                <Btn color="brand" onClick={addVersement} disabled={savingV}>{savingV?'⏳ Enregistrement…':'✓ Enregistrer le paiement'}</Btn>
               </div>
             )}
 
             {!debtData.length ? (
-              <div className="text-center py-12 text-slate-400">
-                <div className="text-4xl mb-2">✅</div>
-                <p className="font-semibold">Aucune transaction avec les fournisseurs</p>
-                <p className="text-sm mt-1">Les commandes reçues (statut Reçu) et les paiements apparaîtront ici</p>
+              <div style={{ textAlign:'center',padding:'48px 24px',color:'#94a3b8' }}>
+                <div style={{ fontSize:40,marginBottom:8 }}>✅</div>
+                <p style={{ fontWeight:700,color:'#475569' }}>Aucune transaction avec les fournisseurs</p>
+                <p style={{ fontSize:13,marginTop:4 }}>Les commandes reçues et paiements apparaîtront ici</p>
               </div>
             ) : (
-              <div className="divide-y">
+              <div style={{ padding:16, display:'flex', flexDirection:'column', gap:8 }}>
                 {debtData.map(d => {
-                  const versFourn = (versements||[]).filter(v => v.fournisseur === d.nom).sort((a,b) => b.date.localeCompare(a.date))
-                  const isExp     = expV === d.id
+                  const versFourn = (versements||[]).filter(v => v.fournisseur === d.nom).sort((a,b)=>b.date.localeCompare(a.date));
+                  const isExp     = expV === d.id;
+                  const pctPaye   = d.totalCmd > 0 ? Math.min(100, Math.round(d.totalVerse / d.totalCmd * 100)) : 100;
+                  const soldeLbl  = d.solde > 0 ? { bg:'#fef2f2',border:'#fecaca',color:'#dc2626',label:'Dette' }
+                                  : d.solde < 0 ? { bg:'#eff6ff',border:'#bfdbfe',color:'#2563eb',label:'Crédit' }
+                                  :               { bg:'#f0fdf4',border:'#bbf7d0',color:'#16a34a',label:'Soldé' };
                   return (
-                    <div key={d.id}>
-                      <div className="p-5 hover:bg-slate-50 cursor-pointer" onClick={() => setExpV(isExp ? null : d.id)}>
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="font-bold text-slate-900">{d.nom}</span>
-                              {d.solde > 0
-                                ? <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">🔴 Dette</span>
-                                : d.solde < 0
-                                  ? <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">🔵 Crédit</span>
-                                  : <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">✅ Soldé</span>}
-                            </div>
-                            <p className="text-xs text-slate-400">{d.nbCommandes} commande(s) reçue(s) · {versFourn.length} versement(s)</p>
+                    <div key={d.id} style={{ borderRadius:14, border:`1px solid ${isExp?'#99f6e4':'#f1f5f9'}`, background: isExp?'#fafffe':'white', overflow:'hidden', transition:'all .15s' }}>
+                      <button type="button" onClick={() => setExpV(isExp?null:d.id)}
+                        style={{ width:'100%',background:'none',border:'none',cursor:'pointer',textAlign:'left',padding:'14px 16px',display:'flex',alignItems:'center',gap:14 }}>
+                        {/* Logo fournisseur */}
+                        <div style={{ width:40,height:40,borderRadius:12,background:specStyle(d.specialite).bg,border:`1.5px solid ${specStyle(d.specialite).border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0 }}>
+                          {specStyle(d.specialite).icon}
+                        </div>
+
+                        {/* Infos */}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap' }}>
+                            <span style={{ fontWeight:800,fontSize:14,color:'#0f172a' }}>{d.nom}</span>
+                            <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:soldeLbl.bg,border:`1px solid ${soldeLbl.border}`,color:soldeLbl.color }}>{soldeLbl.label}</span>
                           </div>
-                          <div className="shrink-0">
-                            <div className="flex gap-6 text-center">
-                              <div>
-                                <p className="text-xs text-slate-400">Commandé</p>
-                                <p className="font-black text-sm font-mono text-slate-700">{fmtF(d.totalCmd)}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-400">Versé</p>
-                                <p className="font-black text-sm font-mono text-green-600">{fmtF(d.totalVerse)}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-slate-400">Solde</p>
-                                <p className={`font-black text-sm font-mono ${d.solde > 0 ? 'text-red-600' : d.solde < 0 ? 'text-blue-600' : 'text-green-600'}`}>
-                                  {d.solde !== 0 ? fmtF(Math.abs(d.solde)) : '0 F'}
-                                </p>
-                              </div>
+                          <p style={{ fontSize:11,color:'#94a3b8',marginBottom:6 }}>{d.nbCommandes} commande(s) · {versFourn.length} versement(s)</p>
+                          {/* Barre de progression */}
+                          <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+                            <div style={{ flex:1,height:6,borderRadius:99,background:'#f1f5f9',overflow:'hidden' }}>
+                              <div style={{ width:`${pctPaye}%`,height:'100%',background: pctPaye>=100?'#22c55e':pctPaye>=50?'#f59e0b':'#ef4444',borderRadius:99,transition:'width .4s' }} />
                             </div>
+                            <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',flexShrink:0 }}>{pctPaye}% payé</span>
                           </div>
                         </div>
-                      </div>
 
+                        {/* Montants */}
+                        <div style={{ display:'flex',gap:16,textAlign:'center',flexShrink:0 }}>
+                          {[
+                            { l:'Commandé', v: fmtF(d.totalCmd),   c:'#475569' },
+                            { l:'Versé',    v: fmtF(d.totalVerse), c:'#16a34a' },
+                            { l:'Solde',    v: d.solde!==0?fmtF(Math.abs(d.solde)):'0 F', c: d.solde>0?'#dc2626':d.solde<0?'#2563eb':'#16a34a' },
+                          ].map((col,i) => (
+                            <div key={i}>
+                              <div style={{ fontSize:10,color:'#94a3b8',marginBottom:2 }}>{col.l}</div>
+                              <div style={{ fontSize:13,fontWeight:900,color:col.c,fontVariantNumeric:'tabular-nums' }}>{col.v}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <span style={{ color:'#cbd5e1',fontSize:12,flexShrink:0 }}>{isExp?'▲':'▼'}</span>
+                      </button>
+
+                      {/* Versements déplié */}
                       {isExp && (
-                        <div className="bg-slate-50 border-t px-5 pb-4">
-                          <div className="flex items-center justify-between pt-3 mb-3">
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Historique des versements</p>
-                            <button onClick={e => { e.stopPropagation(); setVForm(f => ({...f, fournisseur: d.nom})); setShowVForm(true); setExpV(null) }}
-                              className="text-xs text-emerald-600 font-bold hover:underline">+ Ajouter un versement</button>
+                        <div style={{ padding:'0 16px 14px',borderTop:'1px solid #f0fdfa' }}>
+                          <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:12,marginBottom:10 }}>
+                            <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em' }}>Historique des versements</p>
+                            <button onClick={e => { e.stopPropagation(); setVForm(f=>({...f,fournisseur:d.nom})); setShowVForm(true); setExpV(null); }}
+                              style={{ fontSize:12,fontWeight:700,color:'#0d9488',background:'none',border:'none',cursor:'pointer' }}>+ Ajouter</button>
                           </div>
                           {!versFourn.length ? (
-                            <p className="text-sm text-slate-400 py-2">Aucun versement enregistré pour ce fournisseur</p>
+                            <p style={{ fontSize:13,color:'#94a3b8',padding:'8px 0' }}>Aucun versement enregistré</p>
                           ) : versFourn.map(v => (
-                            <div key={v.id} className="flex items-center justify-between bg-white rounded-xl px-4 py-2.5 border border-slate-200 mb-2">
-                              <div className="flex items-center gap-3">
-                                <span className="font-mono text-xs text-slate-400">{v.date}</span>
-                                <span className="text-sm font-semibold text-slate-700">{v.mode}</span>
-                                {v.note && <span className="text-xs text-slate-400">· {v.note}</span>}
+                            <div key={v.id} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',background:'white',borderRadius:10,border:'1px solid #f1f5f9',padding:'10px 12px',marginBottom:6 }}>
+                              <div style={{ display:'flex',alignItems:'center',gap:10 }}>
+                                <span style={{ fontFamily:'monospace',fontSize:11,color:'#94a3b8' }}>{v.date}</span>
+                                <span style={{ fontSize:12,fontWeight:700,color:'#475569' }}>{v.mode}</span>
+                                {v.note && <span style={{ fontSize:11,color:'#94a3b8' }}>· {v.note}</span>}
                               </div>
-                              <div className="flex items-center gap-3">
-                                <span className="font-black text-green-600 font-mono">{fmtF(v.montant)}</span>
-                                <button onClick={() => delVersement(v.id)} className="text-red-400 hover:text-red-600 text-xs no-print">🗑</button>
+                              <div style={{ display:'flex',alignItems:'center',gap:10 }}>
+                                <span style={{ fontSize:14,fontWeight:900,color:'#16a34a',fontVariantNumeric:'tabular-nums' }}>{fmtF(v.montant)}</span>
+                                <button onClick={() => delVersement(v.id)} style={{ fontSize:12,color:'#f87171',background:'none',border:'none',cursor:'pointer' }}>🗑</button>
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  )
+                  );
                 })}
               </div>
             )}
