@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }) {
+function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], rdvs, user, clinique }) {
   const today = () => new Date().toISOString().split('T')[0]
   const fmtF = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
 
@@ -74,6 +74,31 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 4)
   }, [ventesHist])
   const totalRepartition = repartitionMode.reduce((s, [, v]) => s + v, 0)
+
+  // ── Dettes fournisseurs = commandes reçues − versements ──────
+  const totalVerse = useMemo(() =>
+    (versements || []).reduce((s, v) => s + (v.montant || 0), 0),
+    [versements]
+  )
+  const totalCmdsRecues = useMemo(() =>
+    (achatsHist || []).filter(c => c.statut === 'Reçu').reduce((s, c) => s + (c.total || 0), 0),
+    [achatsHist]
+  )
+  const totalDettes = Math.max(0, totalCmdsRecues - totalVerse)
+  const topFournisseursDus = useMemo(() => {
+    const map = {}
+    for (const c of (achatsHist || [])) {
+      if (c.statut !== 'Reçu') continue
+      map[c.fournisseur] = (map[c.fournisseur] || 0) + (c.total || 0)
+    }
+    for (const v of (versements || [])) {
+      const key = v.fournisseur || v.nom
+      if (!key) continue
+      map[key] = (map[key] || 0) - (v.montant || 0)
+    }
+    return Object.entries(map).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 5)
+  }, [achatsHist, versements])
+  const positionNette = totalCreances - totalDettes
   const STATUT_COLOR = { Payé:'#16a34a', 'À crédit':'#d97706', 'Partiellement payé':'#2563eb', 'En attente':'#64748b', Annulé:'#dc2626' }
   const STATUT_BG    = { Payé:'#f0fdf4', 'À crédit':'#fffbeb', 'Partiellement payé':'#eff6ff', 'En attente':'#f8fafc', Annulé:'#fef2f2' }
   const MODE_ICON    = { Espèces:'💵', 'Mobile Money':'📱', Virement:'🏦', Chèque:'📝', '–':'—' }
@@ -130,8 +155,8 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
       label: 'Encaissé ce mois', val: fmtF(totalMoisPaye), icon: '💰',
       grad: 'linear-gradient(135deg,#b45309,#f59e0b)',
       shadow: 'rgba(180,83,9,0.4)', vw: 'caisse',
-      sub: totalCreances > 0 ? `${fmtF(totalCreances)} de créances` : `${nbVentesMois} vente(s)`,
-      subColor: totalCreances > 0 ? '#fde68a' : undefined,
+      sub: totalDettes > 0 ? `${fmtF(totalDettes)} à payer fourn.` : totalCreances > 0 ? `${fmtF(totalCreances)} de créances` : `${nbVentesMois} vente(s)`,
+      subColor: totalDettes > 0 ? '#fca5a5' : totalCreances > 0 ? '#fde68a' : undefined,
       trend: revenuTrend,
     },
   ]
@@ -406,56 +431,99 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
           )}
         </div>
 
-        {/* Créances en cours */}
+        {/* Bilan créances & dettes */}
         <div className="dash-card">
           <div className="dash-card-head">
             <div className="dash-card-title">
-              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)' }}>💳</span>
-              Créances en cours
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#d97706,#dc2626)' }}>⚖️</span>
+              Bilan créances & dettes
             </div>
-            <button type="button" className="dash-link" style={{ color:'#d97706' }} onClick={() => setView('creances')}>Gérer →</button>
+            <button type="button" className="dash-link" style={{ color:'#d97706' }} onClick={() => setView('creances')}>Créances →</button>
           </div>
 
-          {/* Total créances */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background: totalCreances > 0 ? '#fffbeb' : '#f8fafc', borderRadius:10, marginBottom:12, border: totalCreances > 0 ? '1px solid #fde68a' : '1px solid #f1f5f9' }}>
-            <span style={{ fontSize:12, fontWeight:700, color: totalCreances > 0 ? '#92400e' : '#94a3b8' }}>Total impayé</span>
-            <span style={{ fontSize:16, fontWeight:900, fontFamily:"'Space Mono',monospace", color: totalCreances > 0 ? '#d97706' : '#94a3b8' }}>
-              {fmtF(totalCreances)}
-            </span>
+          {/* Position nette en 3 colonnes */}
+          <div style={{ display:'flex', gap:6, marginBottom:14 }}>
+            <div style={{ flex:1, textAlign:'center', background:'#fffbeb', borderRadius:10, padding:'10px 6px', border:'1px solid #fde68a' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#92400e', marginBottom:3, textTransform:'uppercase', letterSpacing:'.04em' }}>À encaisser</div>
+              <div style={{ fontSize:14, fontWeight:900, fontFamily:"'Space Mono',monospace", color: totalCreances > 0 ? '#d97706' : '#94a3b8' }}>
+                {fmtF(totalCreances)}
+              </div>
+            </div>
+            <div style={{ flex:1, textAlign:'center', background:'#fef2f2', borderRadius:10, padding:'10px 6px', border:'1px solid #fecaca' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#991b1b', marginBottom:3, textTransform:'uppercase', letterSpacing:'.04em' }}>À rembourser</div>
+              <div style={{ fontSize:14, fontWeight:900, fontFamily:"'Space Mono',monospace", color: totalDettes > 0 ? '#dc2626' : '#94a3b8' }}>
+                {fmtF(totalDettes)}
+              </div>
+            </div>
+            <div style={{ flex:1, textAlign:'center', background: positionNette >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius:10, padding:'10px 6px', border: `1px solid ${positionNette >= 0 ? '#86efac' : '#fecaca'}` }}>
+              <div style={{ fontSize:10, fontWeight:700, color: positionNette >= 0 ? '#166534' : '#991b1b', marginBottom:3, textTransform:'uppercase', letterSpacing:'.04em' }}>Position nette</div>
+              <div style={{ fontSize:14, fontWeight:900, fontFamily:"'Space Mono',monospace", color: positionNette >= 0 ? '#16a34a' : '#dc2626' }}>
+                {positionNette >= 0 ? '+' : ''}{fmtF(positionNette)}
+              </div>
+            </div>
           </div>
 
-          {creanciers.length === 0 ? (
+          {/* Clients débiteurs */}
+          {creanciers.length > 0 && (
+            <>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--app-muted)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>
+                💳 Clients débiteurs
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:12 }}>
+                {creanciers.slice(0, 3).map(([nom, montant]) => {
+                  const pct = totalCreances > 0 ? Math.round((montant / totalCreances) * 100) : 0
+                  return (
+                    <div key={nom}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:'var(--app-text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>👤 {nom}</span>
+                        <span style={{ fontSize:11, fontWeight:800, color:'#d97706', fontFamily:"'Space Mono',monospace", flexShrink:0, marginLeft:6 }}>{fmtF(montant)}</span>
+                      </div>
+                      <div style={{ height:4, background:'#fef3c7', borderRadius:999, overflow:'hidden' }}>
+                        <div style={{ height:'100%', background:'#f59e0b', borderRadius:999, width:`${pct}%`, transition:'width 0.8s cubic-bezier(.22,1,.36,1)' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Fournisseurs à payer */}
+          {topFournisseursDus.length > 0 && (
+            <>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--app-muted)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>
+                🏭 Fournisseurs à payer
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:12 }}>
+                {topFournisseursDus.map(([nom, montant]) => {
+                  const pct = totalDettes > 0 ? Math.round((montant / totalDettes) * 100) : 0
+                  return (
+                    <div key={nom}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:'var(--app-text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>🏭 {nom}</span>
+                        <span style={{ fontSize:11, fontWeight:800, color:'#dc2626', fontFamily:"'Space Mono',monospace", flexShrink:0, marginLeft:6 }}>{fmtF(montant)}</span>
+                      </div>
+                      <div style={{ height:4, background:'#fecaca', borderRadius:999, overflow:'hidden' }}>
+                        <div style={{ height:'100%', background:'#ef4444', borderRadius:999, width:`${pct}%`, transition:'width 0.8s cubic-bezier(.22,1,.36,1)' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {totalCreances === 0 && totalDettes === 0 && (
             <div style={{ textAlign:'center', padding:'12px 0' }}>
               <div style={{ fontSize:24, marginBottom:4 }}>🎉</div>
-              <p style={{ fontSize:12, color:'var(--app-muted)' }}>Aucune créance en cours</p>
-            </div>
-          ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-              {creanciers.map(([nom, montant], i) => {
-                const pct = totalCreances > 0 ? Math.round((montant / totalCreances) * 100) : 0
-                return (
-                  <div key={nom}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
-                      <span style={{ fontSize:12, fontWeight:600, color:'var(--app-text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
-                        👤 {nom}
-                      </span>
-                      <span style={{ fontSize:12, fontWeight:800, color:'#d97706', fontFamily:"'Space Mono',monospace", flexShrink:0, marginLeft:8 }}>
-                        {fmtF(montant)}
-                      </span>
-                    </div>
-                    <div style={{ height:5, background:'#fef3c7', borderRadius:999, overflow:'hidden' }}>
-                      <div style={{ height:'100%', background:'#f59e0b', borderRadius:999, width:`${pct}%`, transition:'width 0.8s cubic-bezier(.22,1,.36,1)' }} />
-                    </div>
-                  </div>
-                )
-              })}
+              <p style={{ fontSize:12, color:'var(--app-muted)' }}>Aucune créance ni dette en cours</p>
             </div>
           )}
 
           {/* Répartition modes de paiement */}
           {repartitionMode.length > 0 && (
             <>
-              <div style={{ fontSize:11, fontWeight:700, color:'var(--app-muted)', textTransform:'uppercase', letterSpacing:'.06em', marginTop:16, marginBottom:8 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--app-muted)', textTransform:'uppercase', letterSpacing:'.06em', marginTop:12, marginBottom:8 }}>
                 Encaissements par mode
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
