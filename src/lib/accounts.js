@@ -107,7 +107,6 @@ export async function createUserAccount({ nom, email, pw, role, actif = true, pe
     password: pw,
     options: {
       data: { nom, role },
-      emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
     },
   })
 

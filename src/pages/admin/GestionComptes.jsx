@@ -116,13 +116,22 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       })
 
       if (!result.ok) {
-        const detail = result.msg || 'Erreur lors de la création du compte.'
-        const emailUsed = data.email
-        alert(`Erreur création compte\nEmail : ${emailUsed}\n\n${detail}`)
+        const msg = result.msg || ''
+        let detail
+        if (msg.includes('already registered') || msg.includes('already been registered')) {
+          detail = `L'email ${data.email} est déjà utilisé par un autre compte.`
+        } else if (msg.includes('rate limit') || msg.includes('429') || msg.includes('too many')) {
+          detail = `Trop de tentatives — Supabase limite les créations de comptes. Attendez quelques minutes et réessayez.`
+        } else if (msg.includes('Password') || msg.includes('password')) {
+          detail = `Mot de passe trop faible. Utilisez au moins 6 caractères avec lettres et chiffres.`
+        } else {
+          detail = msg || 'Erreur lors de la création du compte.'
+        }
+        setValidationMessages([detail])
         return
       }
 
-      await new Promise(r => setTimeout(r, 800)) // attendre que Supabase propage
+      await new Promise(r => setTimeout(r, 800))
       await refreshComptes()
       setForm({ nom: '', email: '', pw: '', role: 'utilisateur', actif: true })
       setStep(0)
@@ -130,7 +139,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       setValidationMessages([])
     } catch (e) {
       console.error('[GestionComptes] addCompte:', e)
-      alert('Erreur lors de la création. Vérifiez la console.')
+      setValidationMessages(['Erreur réseau lors de la création. Vérifiez votre connexion.'])
     } finally {
       setCreating(false)
     }
@@ -260,6 +269,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
             <p className="text-xs text-green-600">Définissez l'email, le mot de passe et le rôle</p>
           </div>
         </div>
+        <ValidationBanner messages={validationMessages} onDismiss={()=>setValidationMessages([])} />
         <div className="grid grid-cols-1 gap-3">
           <Field label="Email *" value={form.email} onChange={e=>patchForm({email:e.target.value})} error={formErrors.email} type="email" placeholder="ex: kofi@gmail.com"/>
           <Field label="Mot de passe *" value={form.pw} onChange={e=>patchForm({pw:e.target.value})} error={formErrors.pw} type="password" placeholder="Minimum 6 caractères"/>
@@ -402,6 +412,27 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
           </div>
         ))}
       </div>
+    </div>
+
+    {/* Aide configuration Supabase */}
+    <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:16,padding:16}}>
+      <h3 style={{fontWeight:800,color:'#1e40af',marginBottom:10,fontSize:13,display:'flex',alignItems:'center',gap:8}}>🔧 Si la création de compte échoue (erreur 400)</h3>
+      <p style={{fontSize:12,color:'#1e3a8a',marginBottom:8}}>Dans le tableau de bord Supabase, vérifiez les points suivants :</p>
+      <ol style={{listStyle:'none',padding:0,margin:0,display:'flex',flexDirection:'column',gap:6}}>
+        {[
+          ['Authentication → Providers → Email', 'Activez "Enable Email provider" et désactivez "Confirm email" (ou laissez activé si vous voulez que l\'utilisateur confirme son email)'],
+          ['Authentication → URL Configuration → Redirect URLs', `Ajoutez : https://la-barakat.pages.dev et http://localhost:5173`],
+          ['Authentication → Rate Limits', 'Si vous voyez "429 Too Many Requests", attendez quelques minutes avant de réessayer'],
+        ].map(([label, desc], i) => (
+          <li key={i} style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+            <span style={{width:20,height:20,borderRadius:'50%',background:'#2563eb',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,flexShrink:0,marginTop:1}}>{i+1}</span>
+            <div>
+              <p style={{fontSize:12,fontWeight:700,color:'#1e40af',marginBottom:2}}>{label}</p>
+              <p style={{fontSize:11,color:'#3b82f6'}}>{desc}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   </div>;
 }
