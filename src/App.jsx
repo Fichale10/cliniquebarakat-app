@@ -171,6 +171,7 @@ useEffect(() => {
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
+  const [inventaires,setInventaires]=useState(()=>getCache('inventaires')||[]);
   const [achatsHist,setAchatsHist]=useState(()=>getCache('commandes')||[]);
   const [depsHist,setDepsHist]=useState(()=>getCache('depenses')||[]);
   const [fournisseurs,setFournisseurs]=useState(()=>(getCache('fournisseurs')||[]).map(normalizeFour));
@@ -186,7 +187,8 @@ useEffect(() => {
   const setSyncedHospitalisations = syncedSet(setHospitalisations, 'hospitalisations')
   const [taches,setTaches]=useState(()=>getCache('taches')||[]);
   const setSyncedTaches     = syncedSet(setTaches,     'taches')
-  const setSyncedVentesHist = syncedSet(setVentesHist, 'ventes')
+  const setSyncedVentesHist    = syncedSet(setVentesHist,    'ventes')
+  const setSyncedInventaires   = syncedSet(setInventaires,   'inventaires')
   const setSyncedDepsHist   = syncedSet(setDepsHist,   'depenses')
   const setSyncedFactures   = syncedSet(setFactures,   'factures')
   const setSyncedFournisseurs = syncedSet(setFournisseurs, 'fournisseurs')
@@ -225,6 +227,7 @@ useEffect(() => {
         ['hospitalisations', setSyncedHospitalisations],
         ['taches', setSyncedTaches],
         ['ventes', setSyncedVentesHist],
+        ['inventaires', setSyncedInventaires],
         ['depenses', setSyncedDepsHist],
         ['factures', setSyncedFactures],
         ['fournisseurs', (d) => setSyncedFournisseurs(d.map(normalizeFour))],
@@ -543,6 +546,7 @@ useEffect(() => {
     comptes, setComptes:setSyncedComptes,
     otrMode, toggleOTR,
     ventesHist, setVentesHist: setSyncedVentesHist,
+    inventaires, setInventaires: setSyncedInventaires,
     achatsHist, setAchatsHist: setSyncedAchatsHist,
     versements, setVersements: setSyncedVersements,
     depsHist, setDepsHist: setSyncedDepsHist,
