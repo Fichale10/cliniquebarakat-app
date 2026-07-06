@@ -1,218 +1,402 @@
-import { useState } from 'react'
-import { Btn, Badge, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination, EmptyState } from '../../components/ui'
-import { dbInsert, dbDelete, newId } from '../../lib/db'
+import { useState, useMemo } from 'react'
+import { Btn, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination, EmptyState } from '../../components/ui'
+import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateClientForm, clientFormToRow } from '../../lib/validation'
 
+const AVATAR_GRADIENTS = [
+  ['#1d4ed8','#7c3aed'], ['#0d9488','#1d4ed8'], ['#16a34a','#0d9488'],
+  ['#d97706','#dc2626'], ['#7c3aed','#db2777'], ['#0891b2','#1d4ed8'],
+  ['#dc2626','#9333ea'], ['#ea580c','#d97706'], ['#166534','#0891b2'],
+]
+const avatarGradient = (nom) => {
+  const idx = ((nom||'').charCodeAt(0) || 0) % AVATAR_GRADIENTS.length
+  const [a, b] = AVATAR_GRADIENTS[idx]
+  return `linear-gradient(135deg,${a},${b})`
+}
+
 function Clients({ clients, setClients, user, sb, logAction }) {
-  const [search, setSearch]       = useState('')
-  const [showForm, setShowForm]   = useState(false)
-  const [confirmDel, setConfirmDel] = useState(null)
-  const [form, setForm]           = useState({ nom:'', tel:'', email:'', adresse:'' })
-  const [dups, setDups]           = useState([])
-  const [pending, setPending]     = useState(false)
-  const [saving, setSaving]       = useState(false)
-  const [formErrors, setFormErrors] = useState({})
+  const [search,   setSearch]   = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [form,     setForm]     = useState({ nom:'', tel:'', email:'', adresse:'' })
+  const [dups,     setDups]     = useState([])
+  const [pending,  setPending]  = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [formErrors,         setFormErrors]         = useState({})
   const [validationMessages, setValidationMessages] = useState([])
 
+  const [expandedId,   setExpandedId]   = useState(null)
+  const [editId,       setEditId]       = useState(null)
+  const [editForm,     setEditForm]     = useState({})
+  const [savingEdit,   setSavingEdit]   = useState(false)
+  const [confirmDel,   setConfirmDel]   = useState(null)
+
+  const [sortBy,   setSortBy]   = useState('nom')
+  const [filterLetter, setFilterLetter] = useState('')
+  const [filterAnimal, setFilterAnimal] = useState(false)
+
   const patchForm = (patch) => {
-    setForm(prev => ({ ...prev, ...patch }))
-    const keys = Object.keys(patch)
-    setFormErrors(prev => {
-      const next = { ...prev }
-      keys.forEach(k => delete next[k])
-      return next
-    })
+    setForm(prev => ({...prev,...patch}))
+    Object.keys(patch).forEach(k => setFormErrors(prev => { const n={...prev}; delete n[k]; return n }))
     if (validationMessages.length) setValidationMessages([])
   }
+  const patchEdit = (patch) => setEditForm(prev => ({...prev,...patch}))
 
   const findDups = (nom) => {
-    const q = String(nom || '').toLowerCase().trim()
-    return clients.filter(c => String(c.nom || '').toLowerCase().trim() === q)
+    const q = String(nom||'').toLowerCase().trim()
+    return clients.filter(c => String(c.nom||'').toLowerCase().trim()===q)
   }
 
-  // ── Ajout avec Supabase ───────────────────────────────────
+  // ── Ajout ─────────────────────────────────────────────────────
   const doAdd = async () => {
     const checked = validateClientForm(form)
-    if (!checked.ok) {
-      setFormErrors(checked.fieldErrors)
-      setValidationMessages(checked.messages)
-      return
-    }
-
+    if (!checked.ok) { setFormErrors(checked.fieldErrors); setValidationMessages(checked.messages); return }
     setSaving(true)
     try {
       const row = clientFormToRow(checked.data, newId())
       const saved = await dbInsert(sb, 'clients', row)
       setClients([...clients, saved])
-      if (logAction && sb) logAction(sb, user, 'client_added', row.nom)
-      setForm({ nom:'', tel:'', email:'', adresse:'' })
-      setShowForm(false)
-      setDups([])
-      setPending(false)
-      setFormErrors({})
-      setValidationMessages([])
-    } catch (e) {
-      console.error('[Clients] Erreur ajout:', e)
-      alert('Erreur lors de la sauvegarde.')
-    } finally {
-      setSaving(false)
-    }
+      if (logAction&&sb) logAction(sb, user, 'client_added', row.nom)
+      setForm({nom:'',tel:'',email:'',adresse:''}); setShowForm(false); setDups([]); setPending(false); setFormErrors({}); setValidationMessages([])
+    } catch(e) { alert('Erreur lors de la sauvegarde.') }
+    finally { setSaving(false) }
   }
-
   const handleAdd = () => {
     const checked = validateClientForm(form)
-    if (!checked.ok) {
-      setFormErrors(checked.fieldErrors)
-      setValidationMessages(checked.messages)
-      return
-    }
+    if (!checked.ok) { setFormErrors(checked.fieldErrors); setValidationMessages(checked.messages); return }
     const d = findDups(form.nom)
     if (d.length) { setDups(d); setPending(true) } else doAdd()
   }
 
-  // ── Suppression avec Supabase ─────────────────────────────
+  // ── Édition inline ────────────────────────────────────────────
+  const startEdit = (c) => {
+    setEditId(c.id)
+    setEditForm({ nom:c.nom||'', tel:c.tel||'', email:c.email||'', adresse:c.adresse||'' })
+  }
+  const saveEdit = async () => {
+    if (!editForm.nom?.trim()) return
+    setSavingEdit(true)
+    try {
+      await dbUpdate(sb, 'clients', editId, editForm)
+      setClients(clients.map(c => c.id===editId ? {...c,...editForm} : c))
+      if (logAction&&sb) logAction(sb, user, 'client_updated', editForm.nom)
+      setEditId(null)
+    } catch(e) { alert('Erreur lors de la modification.') }
+    finally { setSavingEdit(false) }
+  }
+  const cancelEdit = () => setEditId(null)
+
+  // ── Suppression ───────────────────────────────────────────────
   const doDelete = async (id) => {
-    const c = clients.find((x) => x.id === id)
-    setClients(clients.filter((x) => x.id !== id))
-    setConfirmDel(null)
+    const c = clients.find(x => x.id===id)
+    setClients(clients.filter(x => x.id!==id)); setConfirmDel(null); setExpandedId(null)
     try {
       await dbDelete(sb, 'clients', id)
-      if (logAction && sb) logAction(sb, user, 'client_deleted', c?.nom || id)
-    } catch (e) {
-      console.error('[Clients] Erreur suppression:', e)
-      setClients(prev => c && !prev.some(x => x.id === c.id) ? [...prev, c] : prev)
-      alert(e?.message || 'Suppression impossible — client restauré.')
+      if (logAction&&sb) logAction(sb, user, 'client_deleted', c?.nom||id)
+    } catch(e) {
+      setClients(prev => c&&!prev.some(x=>x.id===c.id)?[...prev,c]:prev)
+      alert(e?.message||'Suppression impossible — client restauré.')
     }
   }
 
-  const filtered = clients.filter(c =>
-    c.nom.toLowerCase().includes(search.toLowerCase()) ||
-    c.tel?.includes(search) ||
-    (c.adresse || '').toLowerCase().includes(search.toLowerCase())
-  )
+  // ── KPIs ─────────────────────────────────────────────────────
+  const kpis = useMemo(() => {
+    const now = new Date()
+    const ceMois = clients.filter(c => {
+      if (!c.created_at) return false
+      const d = new Date(c.created_at)
+      return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear()
+    }).length
+    const avecAnimaux = clients.filter(c => (c.animaux||0) > 0).length
+    const sansTel     = clients.filter(c => !c.tel).length
+    return { total:clients.length, ceMois, avecAnimaux, sansTel }
+  }, [clients])
+
+  // ── Lettres disponibles ───────────────────────────────────────
+  const letters = useMemo(() => {
+    const s = new Set(clients.map(c => (c.nom||'').charAt(0).toUpperCase()).filter(Boolean))
+    return [...s].sort()
+  }, [clients])
+
+  // ── Filtrage + tri ────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    let r = clients.filter(c => {
+      const q = search.toLowerCase()
+      if (q && !String(c.nom||'').toLowerCase().includes(q) && !(c.tel||'').includes(q) && !String(c.adresse||'').toLowerCase().includes(q) && !String(c.email||'').toLowerCase().includes(q)) return false
+      if (filterLetter && (c.nom||'').charAt(0).toUpperCase()!==filterLetter) return false
+      if (filterAnimal && !(c.animaux > 0)) return false
+      return true
+    })
+    return [...r].sort((a,b) => {
+      if (sortBy==='recent') return new Date(b.created_at||0)-new Date(a.created_at||0)
+      if (sortBy==='animaux') return (b.animaux||0)-(a.animaux||0)
+      return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'})
+    })
+  }, [clients, search, filterLetter, filterAnimal, sortBy])
+
+  const activeFilters = [filterLetter, filterAnimal].filter(Boolean).length
+  const resetFilters  = () => { setSearch(''); setFilterLetter(''); setFilterAnimal(false) }
+
   const pagination = usePagination(filtered)
 
   return (
     <div id="clients-print" className="app-page space-y-5">
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { l:'Total clients',      v:clients.length,                              mod:'stat-tile--blue' },
-          { l:'Avec animaux',       v:clients.filter(c => c.animaux > 0).length,   mod:'stat-tile--green' },
-          { l:'Résultat recherche', v:filtered.length,                             mod:'stat-tile--slate' },
-          { l:'Ce mois',            v: clients.filter(c => {
-              if (!c.created_at) return false
-              const d = new Date(c.created_at)
-              const now = new Date()
-              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-            }).length,                                                              mod:'stat-tile--purple' },
-        ].map((s, i) => (
-          <div key={i} className={`stat-tile ${s.mod}`}>
-            <div className="stat-tile__label">{s.l}</div>
-            <div className="stat-tile__value">{s.v}</div>
+          { icon:'👥', label:'Total clients',    value:kpis.total,       sub:'enregistrés',                  color:'#0d9488' },
+          { icon:'🐾', label:'Avec animaux',     value:kpis.avecAnimaux, sub:`${Math.round(kpis.avecAnimaux/Math.max(1,kpis.total)*100)}% de la clientèle`, color:'#16a34a' },
+          { icon:'📅', label:'Nouveaux ce mois', value:kpis.ceMois,      sub:'ce mois-ci',                   color:'#7c3aed' },
+          { icon:'📵', label:'Sans téléphone',   value:kpis.sansTel,     sub:'à compléter',                  color:'#d97706' },
+        ].map((k,i) => (
+          <div key={i} style={{ background:'white',borderRadius:16,padding:'14px 16px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
+            <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
+              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
+            </div>
+            <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
+            <div style={{ fontSize:11,color:'#94a3b8',marginTop:4 }}>{k.sub}</div>
           </div>
         ))}
       </div>
 
       <div className="app-card">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        {/* Header */}
+        <div style={{ padding:'18px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10 }}>
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">👥 Clients</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{clients.length} client(s) enregistré(s)</p>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>👥 Clients</h2>
+            <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>
+              {filtered.length}/{clients.length} client(s)
+            </p>
           </div>
-          <div className="flex gap-2 no-print">
-            <PrintBtn zoneId="clients-print" label="🖨" />
+          <div style={{ display:'flex',gap:8,alignItems:'center',flexWrap:'wrap' }}>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
+              style={{ border:'1.5px solid #e2e8f0',borderRadius:10,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#64748b',outline:'none',background:'white' }}>
+              <option value="nom">🔤 Nom A→Z</option>
+              <option value="recent">🕐 Plus récents</option>
+              <option value="animaux">🐾 Plus d'animaux</option>
+            </select>
+            <PrintBtn zoneId="clients-print" label="🖨️" />
             <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouveau client'}</Btn>
           </div>
         </div>
 
+        {/* Formulaire ajout */}
         {showForm && (
           <FormPanel icon="👥" title="Nouveau client" subtitle="Remplissez les coordonnées du client" color="green" onClose={() => setShowForm(false)}>
             {pending && <DupWarning dups={dups} entity="client" onOk={doAdd} onCancel={() => { setDups([]); setPending(false) }} />}
             <ValidationBanner messages={validationMessages} onDismiss={() => setValidationMessages([])} />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { l:'Nom complet *',    k:'nom',     ph:'Nom et prénom' },
-                { l:'Téléphone',        k:'tel',     ph:'+228 XX XX XX XX' },
-                { l:'Email',            k:'email',   ph:'email@domaine.com' },
-                { l:'Adresse / Ville',  k:'adresse', ph:'Ex: Lomé, Bè' },
+                { l:'Nom complet *',   k:'nom',     ph:'Nom et prénom',       type:'text' },
+                { l:'Téléphone',       k:'tel',     ph:'+228 XX XX XX XX',    type:'tel' },
+                { l:'Email',           k:'email',   ph:'email@domaine.com',   type:'email' },
+                { l:'Adresse / Ville', k:'adresse', ph:'Ex: Lomé, Bè',        type:'text' },
               ].map(fi => (
-                <Field key={fi.k} label={fi.l} value={form[fi.k]}
-                  onChange={e => patchForm({ [fi.k]: e.target.value })}
-                  error={formErrors[fi.k]}
-                  placeholder={fi.ph} />
+                <Field key={fi.k} label={fi.l} value={form[fi.k]} onChange={e => patchForm({[fi.k]:e.target.value})} error={formErrors[fi.k]} placeholder={fi.ph} type={fi.type} />
               ))}
             </div>
-            <div className="mt-4">
-              <Btn onClick={handleAdd} disabled={saving}>
-                {saving ? '⏳ Enregistrement…' : '✓ Enregistrer le client'}
-              </Btn>
+            <div style={{ marginTop:14 }}>
+              <Btn onClick={handleAdd} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Enregistrer le client'}</Btn>
             </div>
           </FormPanel>
         )}
 
-        <div className="p-5">
-          <div className="relative mb-4">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input
-              className="w-full border-2 border-slate-200 rounded-xl pl-9 pr-4 py-2.5 focus:border-green-400 outline-none text-sm"
-              placeholder="Rechercher par nom, téléphone, adresse…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {pagination.pageItems.map(c => (
-              <div key={c.id} className="group relative bg-[var(--app-surface)] border-2 border-[var(--app-border)] hover:border-green-500/50 hover:shadow-md rounded-2xl p-4 transition-all">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-sm shrink-0"
-                    style={{ background:'linear-gradient(135deg,#166534,#1d4ed8)' }}>
-                    {c.nom.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-900">{c.nom}</h3>
-                    <div className="space-y-0.5 mt-1">
-                      <p className="text-sm text-slate-600 flex items-center gap-1.5"><span>📞</span>{c.tel || '–'}</p>
-                      {c.email   && <p className="text-sm text-slate-500 flex items-center gap-1.5 truncate"><span>✉️</span>{c.email}</p>}
-                      {c.adresse && <p className="text-sm text-slate-500 flex items-center gap-1.5"><span>📍</span>{c.adresse}</p>}
-                    </div>
-                  </div>
-                  <div className="shrink-0 flex flex-col items-end gap-2">
-                    <Badge color="blue">{c.animaux} animal(ux)</Badge>
-                    <button
-                      onClick={() => setConfirmDel(c.id)}
-                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-all font-semibold no-print">
-                      🗑 Retirer
-                    </button>
-                  </div>
-                </div>
-
-                {confirmDel === c.id && (
-                  <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-3">
-                    <p className="text-sm text-red-700 font-semibold">⚠️ Supprimer <strong>{c.nom}</strong> ?</p>
-                    <div className="flex gap-2 shrink-0">
-                      <button onClick={() => doDelete(c.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition-all">
-                        Confirmer
-                      </button>
-                      <button onClick={() => setConfirmDel(null)}
-                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs px-3 py-1.5 rounded-lg font-bold transition-all">
-                        Annuler
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+        {/* Chips alphabet */}
+        {letters.length > 0 && (
+          <div style={{ padding:'10px 20px',borderBottom:'1px solid #f8fafc',display:'flex',alignItems:'center',gap:5,flexWrap:'wrap' }}>
+            <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',marginRight:2 }}>A–Z</span>
+            {letters.map(l => (
+              <button key={l} onClick={() => setFilterLetter(filterLetter===l?'':l)}
+                style={{ width:26,height:26,borderRadius:8,fontSize:11,fontWeight:800,border:`1.5px solid ${filterLetter===l?'#0d9488':'#e2e8f0'}`,
+                  background:filterLetter===l?'#f0fdfa':'white',color:filterLetter===l?'#0d9488':'#64748b',cursor:'pointer',transition:'all .1s' }}>
+                {l}
+              </button>
             ))}
-
-            {!filtered.length && (
-              <div className="col-span-2">
-                <EmptyState icon="👥" title="Aucun client trouvé" subtitle="Ajoutez votre premier client ou affinez votre recherche." />
-              </div>
+            {filterLetter && (
+              <button onClick={() => setFilterLetter('')}
+                style={{ fontSize:11,color:'#94a3b8',background:'none',border:'none',cursor:'pointer',fontWeight:700 }}>✕</button>
             )}
           </div>
+        )}
+
+        {/* Barre recherche + filtres */}
+        <div style={{ padding:'12px 20px',borderBottom:'1px solid #f8fafc',display:'flex',flexWrap:'wrap',gap:8,alignItems:'center' }}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Nom, téléphone, adresse, email…"
+            style={{ flex:'1 1 200px',padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:13,outline:'none' }} />
+          <button onClick={() => setFilterAnimal(v=>!v)}
+            style={{ padding:'8px 14px',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .12s',
+              border:`1.5px solid ${filterAnimal?'#16a34a':'#e2e8f0'}`,
+              background:filterAnimal?'#f0fdf4':'white',
+              color:filterAnimal?'#16a34a':'#64748b' }}>
+            🐾 Avec animaux {filterAnimal && `(${kpis.avecAnimaux})`}
+          </button>
+          {(activeFilters > 0 || search) && (
+            <button onClick={resetFilters}
+              style={{ padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:12,fontWeight:700,background:'white',color:'#64748b',cursor:'pointer' }}>
+              ✕ Effacer
+            </button>
+          )}
+          <span style={{ fontSize:11,color:'#94a3b8',marginLeft:'auto' }}>{filtered.length} résultat(s)</span>
         </div>
+
+        {/* Grille clients */}
+        <div style={{ padding:16,display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12 }}>
+          {pagination.pageItems.map(c => {
+            const isExpanded = expandedId===c.id
+            const isEditing  = editId===c.id
+            const initials   = (c.nom||'?').substring(0,2).toUpperCase()
+            const gradient   = avatarGradient(c.nom)
+            return (
+              <div key={c.id}
+                style={{ borderRadius:16,border:`1.5px solid ${isExpanded?'#a7f3d0':'#f1f5f9'}`,background:'white',overflow:'hidden',
+                  boxShadow:isExpanded?'0 4px 20px rgba(13,148,136,0.1)':'0 1px 3px rgba(0,0,0,0.04)',
+                  transition:'all .15s' }}>
+
+                {/* Bande supérieure colorée */}
+                <div style={{ height:5,background:gradient }} />
+
+                <div style={{ padding:'14px 16px' }}>
+                  {/* En-tête carte */}
+                  <div style={{ display:'flex',alignItems:'flex-start',gap:12,cursor:'pointer' }}
+                    onClick={() => { setExpandedId(isExpanded?null:c.id); if(isEditing) setEditId(null) }}>
+                    {/* Avatar */}
+                    <div style={{ width:44,height:44,borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',
+                      fontWeight:900,color:'white',fontSize:15,flexShrink:0,background:gradient }}>
+                      {initials}
+                    </div>
+                    {/* Infos */}
+                    <div style={{ flex:1,minWidth:0 }}>
+                      <p style={{ fontWeight:800,fontSize:14,color:'#0f172a',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{c.nom}</p>
+                      {c.tel && (
+                        <a href={`tel:${c.tel}`} onClick={e=>e.stopPropagation()}
+                          style={{ fontSize:12,color:'#0d9488',fontWeight:600,display:'flex',alignItems:'center',gap:4,textDecoration:'none',marginBottom:2 }}>
+                          📞 {c.tel}
+                        </a>
+                      )}
+                      {!c.tel && <p style={{ fontSize:12,color:'#e2e8f0',fontStyle:'italic' }}>📵 Pas de téléphone</p>}
+                      {c.adresse && <p style={{ fontSize:11,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>📍 {c.adresse}</p>}
+                    </div>
+                    {/* Badges droite */}
+                    <div style={{ flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:5 }}>
+                      {(c.animaux > 0) ? (
+                        <span style={{ fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:99,background:'#f0fdf4',border:'1px solid #bbf7d0',color:'#16a34a' }}>
+                          🐾 {c.animaux}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:99,background:'#f8fafc',border:'1px solid #e2e8f0',color:'#cbd5e1' }}>
+                          0 animal
+                        </span>
+                      )}
+                      <span style={{ fontSize:10,color:'#cbd5e1' }}>{isExpanded?'▲':'▼'}</span>
+                    </div>
+                  </div>
+
+                  {/* Détail expandé */}
+                  {isExpanded && !isEditing && (
+                    <div style={{ marginTop:14,paddingTop:14,borderTop:'1px solid #f1f5f9' }}>
+                      {/* Infos complètes */}
+                      <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14 }}>
+                        {[
+                          { icon:'✉️', label:'Email',        value:c.email   || '—' },
+                          { icon:'📍', label:'Adresse',      value:c.adresse || '—' },
+                          { icon:'🐾', label:'Animaux',      value:c.animaux > 0 ? `${c.animaux} animal(ux)` : 'Aucun' },
+                          { icon:'📅', label:'Inscrit(e) le', value:c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '—' },
+                        ].map((info,i) => (
+                          <div key={i} style={{ background:'#f8fafc',borderRadius:10,padding:'8px 10px' }}>
+                            <p style={{ fontSize:9,fontWeight:700,color:'#94a3b8',marginBottom:3,textTransform:'uppercase' }}>{info.label}</p>
+                            <p style={{ fontSize:12,color:'#475569',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{info.icon} {info.value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                        {c.tel && (
+                          <a href={`tel:${c.tel}`}
+                            style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,
+                              background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488',textDecoration:'none' }}>
+                            📞 Appeler
+                          </a>
+                        )}
+                        {c.email && (
+                          <a href={`mailto:${c.email}`}
+                            style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,
+                              background:'#eff6ff',border:'1px solid #bfdbfe',color:'#2563eb',textDecoration:'none' }}>
+                            ✉️ Email
+                          </a>
+                        )}
+                        <button onClick={()=>startEdit(c)}
+                          style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',
+                            background:'#fffbeb',border:'1px solid #fde68a',color:'#d97706' }}>
+                          ✏️ Modifier
+                        </button>
+                        <button onClick={()=>setConfirmDel(confirmDel===c.id?null:c.id)}
+                          style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',
+                            background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626',marginLeft:'auto' }}>
+                          🗑️ Supprimer
+                        </button>
+                      </div>
+
+                      {/* Confirmation suppression */}
+                      {confirmDel===c.id && (
+                        <div style={{ marginTop:10,padding:'10px 14px',borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10 }}>
+                          <p style={{ fontSize:13,color:'#dc2626',fontWeight:700 }}>⚠️ Supprimer <strong>{c.nom}</strong> ?</p>
+                          <div style={{ display:'flex',gap:6,flexShrink:0 }}>
+                            <button onClick={()=>doDelete(c.id)}
+                              style={{ padding:'6px 12px',background:'#dc2626',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer' }}>Confirmer</button>
+                            <button onClick={()=>setConfirmDel(null)}
+                              style={{ padding:'6px 10px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer' }}>Annuler</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Formulaire d'édition inline */}
+                  {isExpanded && isEditing && (
+                    <div style={{ marginTop:14,paddingTop:14,borderTop:'1px solid #f1f5f9' }}>
+                      <p style={{ fontSize:12,fontWeight:800,color:'#d97706',marginBottom:12,display:'flex',alignItems:'center',gap:6 }}>✏️ Modifier les informations</p>
+                      <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12 }}>
+                        {[
+                          { l:'Nom complet *', k:'nom',     ph:'Nom et prénom',    type:'text' },
+                          { l:'Téléphone',     k:'tel',     ph:'+228 XX XX XX XX', type:'tel' },
+                          { l:'Email',         k:'email',   ph:'email@ex.com',     type:'email' },
+                          { l:'Adresse',       k:'adresse', ph:'Lomé, Bè…',        type:'text' },
+                        ].map(fi => (
+                          <div key={fi.k}>
+                            <label style={{ fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>{fi.l}</label>
+                            <input type={fi.type} value={editForm[fi.k]||''} onChange={e=>patchEdit({[fi.k]:e.target.value})} placeholder={fi.ph}
+                              style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'white',boxSizing:'border-box' }}
+                              onFocus={e=>{e.target.style.borderColor='#d97706';e.target.style.boxShadow='0 0 0 3px rgba(217,119,6,0.1)'}}
+                              onBlur={e=>{e.target.style.borderColor='#e2e8f0';e.target.style.boxShadow='none'}} />
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ display:'flex',gap:8 }}>
+                        <button onClick={saveEdit} disabled={savingEdit||!editForm.nom?.trim()}
+                          style={{ padding:'8px 16px',background:'#d97706',color:'white',border:'none',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',opacity:savingEdit?0.6:1 }}>
+                          {savingEdit?'⏳ Enregistrement…':'✓ Enregistrer'}
+                        </button>
+                        <button onClick={cancelEdit}
+                          style={{ padding:'8px 12px',background:'none',border:'none',color:'#94a3b8',fontSize:12,fontWeight:700,cursor:'pointer' }}>
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {!filtered.length && (
+            <div style={{ gridColumn:'1/-1' }}>
+              <EmptyState icon="👥" title="Aucun client trouvé" subtitle="Ajoutez votre premier client ou affinez votre recherche." />
+            </div>
+          )}
+        </div>
+
         <Pagination {...pagination} />
       </div>
     </div>
