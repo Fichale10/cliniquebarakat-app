@@ -132,6 +132,18 @@ const prepareInsertRow = (table, row) => {
 const formatDbError = (error) =>
   [error.message, error.details, error.hint].filter(Boolean).join(' — ')
 
+/** Garantit qu'une promesse se termine en max `ms` ms — évite les spinners infinis */
+const withTimeout = (promise, ms = 12000) => {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Délai dépassé (${ms / 1000}s) — vérifiez votre connexion`)),
+      ms,
+    )
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 export const dbInsert = async (sb, table, row) => {
   if (DEPRECATED_TABLES.has(table)) {
     console.warn('[dbInsert] Table legacy ignorée:', table)
@@ -139,22 +151,14 @@ export const dbInsert = async (sb, table, row) => {
   }
   const r = prepareInsertRow(table, row)
   if (navigator.onLine && sb) {
-    try {
-      const { data, error } = await sb.from(table).insert(r).select().single()
-      if (error) {
-        console.warn('[dbInsert]', table, formatDbError(error))
-        // 400 = schéma incompatible — ne pas mettre en file offline (boucle infinie)
-        if (error.status === 400 || error.code === 'PGRST204') {
-          throw new Error(formatDbError(error) || 'Données refusées par Supabase')
-        }
-      } else if (data) {
-        markSynced(table)
-        return data
-      }
-    } catch (e) {
-      if (e?.message && (e.message.includes('PGRST') || e.message.includes('column'))) throw e
-      console.warn('dbInsert error', table, e)
+    const { data, error } = await withTimeout(sb.from(table).insert(r).select().single())
+    if (error) {
+      const msg = formatDbError(error)
+      console.warn('[dbInsert]', table, msg)
+      throw new Error(msg || 'Erreur lors de l\'enregistrement')
     }
+    markSynced(table)
+    return data ?? r
   }
   enqueue({ type: 'insert', table, row: r })
   return r
@@ -175,18 +179,10 @@ export const dbUpdate = async (sb, table, id, updates) => {
     return
   }
   if (navigator.onLine && sb) {
-    try {
-      const { error } = await sb.from(table).update(updates).eq('id', id)
-      if (error) {
-        console.warn('[dbUpdate]', table, formatDbError(error))
-        throw new Error(formatDbError(error) || 'Mise à jour refusée par Supabase')
-      }
-      markSynced(table)
-      return
-    } catch (e) {
-      if (e?.message) throw e
-      console.warn('dbUpdate', table, e)
-    }
+    const { error } = await withTimeout(sb.from(table).update(updates).eq('id', id))
+    if (error) throw new Error(formatDbError(error) || 'Mise à jour refusée')
+    markSynced(table)
+    return
   }
   enqueue({ type: 'update', table, id, updates })
 }
@@ -198,11 +194,8 @@ export const dbDelete = async (sb, table, id) => {
     return 'ok'
   }
   if (navigator.onLine && sb) {
-    const { error } = await sb.from(table).delete().eq('id', id)
-    if (error) {
-      console.warn('[dbDelete]', table, formatDbError(error))
-      throw new Error(formatDbError(error) || 'Suppression refusée par Supabase')
-    }
+    const { error } = await withTimeout(sb.from(table).delete().eq('id', id))
+    if (error) throw new Error(formatDbError(error) || 'Suppression refusée')
     patchCacheAfterDelete(table, id)
     markSynced(table)
     return 'ok'

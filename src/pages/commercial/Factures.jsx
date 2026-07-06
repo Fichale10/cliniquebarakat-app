@@ -10,54 +10,73 @@ const MODES   = ['Espèces', 'Mobile Money', 'Virement', 'Chèque', '–']
 const EMPTY_FORM = { date: today(), client: '', description: '', montant: '', statut: 'En attente', mode: 'Espèces' }
 
 function FacPrint({ f }) {
+  const statutColor = f.statut === 'Payé' ? '#15803d' : f.statut === 'Annulé' ? '#dc2626' : '#d97706'
+  const statutBg    = f.statut === 'Payé' ? '#f0fdf4'  : f.statut === 'Annulé' ? '#fef2f2'  : '#fffbeb'
   return (
     <div id={`fp-${f.id}`} className="hidden">
-      <div style={{ fontFamily: 'sans-serif', padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px solid #16a34a', paddingBottom: '20px', marginBottom: '24px' }}>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-              <img src="/logo.png" alt="La Barakat" style={{ width:'52px', height:'52px', borderRadius:'50%', objectFit:'cover' }} />
-              <div>
-                <h1 style={{ margin: 0, fontSize: '22px', color: '#14532d', fontWeight: '900' }}>LA BARAKAT</h1>
-                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '12px' }}>Pharmacie & Clinique Vétérinaire · Lomé, Togo</p>
-              </div>
+      <div style={{ fontFamily: "'Segoe UI',Arial,sans-serif", padding: '44px 48px', maxWidth: '640px', margin: '0 auto', color: '#1e293b' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #16a34a', paddingBottom: '22px', marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f0fdf4', border: '2px solid #86efac', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>🐄</div>
+            <div>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: '#14532d', letterSpacing: '1px' }}>LA BARAKAT</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Pharmacie & Clinique Vétérinaire · Lomé, Togo</div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: '#16a34a' }}>FACTURE</div>
-            <div style={{ color: '#64748b', fontSize: '12px' }}>{f.num} · {f.date}</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#16a34a', letterSpacing: '1px' }}>FACTURE</div>
+            <div style={{ fontFamily: "'Courier New',monospace", fontSize: '13px', fontWeight: '700', color: '#475569', marginTop: '4px' }}>{f.num}</div>
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{f.date}</div>
           </div>
         </div>
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', marginBottom: '4px' }}>FACTURÉ À</div>
-          <div style={{ fontSize: '16px', fontWeight: '700' }}>{f.client}</div>
+
+        {/* Billing info */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '28px' }}>
+          <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>Facturé à</div>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e293b' }}>{f.client}</div>
+          </div>
+          <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>Détails</div>
+            <div style={{ fontSize: '12px', color: '#475569' }}>Mode : <strong style={{ color: '#1e293b' }}>{f.mode}</strong></div>
+            <div style={{ fontSize: '12px', color: '#475569', marginTop: '3px' }}>
+              Statut : <strong style={{ color: statutColor, background: statutBg, padding: '1px 8px', borderRadius: '20px', fontSize: '11px' }}>{f.statut}</strong>
+            </div>
+          </div>
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+
+        {/* Items table */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
           <thead>
             <tr style={{ background: '#f0fdf4' }}>
-              <th style={{ padding: '10px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#16a34a', borderBottom: '2px solid #bbf7d0' }}>Description</th>
-              <th style={{ padding: '10px', textAlign: 'right', fontSize: '12px', fontWeight: '700', color: '#16a34a', borderBottom: '2px solid #bbf7d0' }}>Montant</th>
+              <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '11px', fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #bbf7d0' }}>Description</th>
+              <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: '11px', fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #bbf7d0', whiteSpace: 'nowrap' }}>Montant</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={{ padding: '12px 10px', borderBottom: '1px solid #e2e8f0' }}>{f.description}</td>
-              <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: '700', borderBottom: '1px solid #e2e8f0' }}>{fmtF(f.montant)}</td>
+              <td style={{ padding: '14px 12px', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>{f.description || '—'}</td>
+              <td style={{ padding: '14px 12px', textAlign: 'right', fontWeight: '700', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>{fmtF(f.montant)}</td>
             </tr>
           </tbody>
         </table>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-          <div style={{ background: '#f0fdf4', borderRadius: '8px', padding: '12px 20px', minWidth: '200px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: '900', color: '#16a34a' }}>
-              <span>Total</span><span>{fmtF(f.montant)}</span>
+
+        {/* Total */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '28px' }}>
+          <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px', padding: '14px 22px', minWidth: '220px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#15803d' }}>Total TTC</span>
+              <span style={{ fontSize: '20px', fontWeight: '900', color: '#15803d' }}>{fmtF(f.montant)}</span>
             </div>
           </div>
         </div>
-        <div style={{ background: '#f8fafc', borderRadius: '6px', padding: '10px 14px', fontSize: '12px', color: '#64748b' }}>
-          Mode : <strong>{f.mode}</strong> · Statut : <strong style={{ color: f.statut === 'Payé' ? '#16a34a' : '#d97706' }}>{f.statut}</strong>
-        </div>
-        <div style={{ marginTop: '20px', paddingTop: '12px', borderTop: '1px solid #e2e8f0', fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>
-          Merci de votre confiance · La Barakat · Lomé
+
+        {/* Footer */}
+        <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#94a3b8' }}>Merci de votre confiance · La Barakat · Lomé, Togo</div>
+          <div style={{ fontSize: '9px', color: '#e2e8f0', fontFamily: "'Courier New',monospace", letterSpacing: '2px' }}>ORIGINAL</div>
         </div>
       </div>
     </div>
@@ -68,8 +87,8 @@ function printFac(id) {
   const el = document.getElementById(`fp-${id}`)
   if (!el) return
   el.classList.remove('hidden')
-  const w = window.open('', '_blank', 'width=900,height=700')
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0}</style></head><body>' + el.innerHTML + '</body></html>')
+  const w = window.open('', '_blank', 'width=760,height=680')
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;}body{margin:0;background:#fff;}@media print{body{margin:0;}}</style></head><body>' + el.innerHTML + '</body></html>')
   w.document.close()
   w.focus()
   w.print()

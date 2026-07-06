@@ -18,3 +18,4 @@ CREATE POLICY "versements_four_select" ON public.versements_fournisseurs FOR SEL
 CREATE POLICY "versements_four_insert" ON public.versements_fournisseurs FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "versements_four_update" ON public.versements_fournisseurs FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "versements_four_delete" ON public.versements_fournisseurs FOR DELETE TO authenticated USING (true);
+

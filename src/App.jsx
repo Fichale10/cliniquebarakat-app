@@ -18,7 +18,7 @@ import { Agenda, AgendaCalendrier, Taches } from './pages/agenda'
 import { Medicaments, Commandes, Inventaire } from './pages/pharmacie'
 
 // Pages - Commercial
-import { Clients, Fournisseurs, Factures, Ventes, Devis, Creances, Caisse, Historique } from './pages/commercial'
+import { Clients, Fournisseurs, Factures, Devis, Creances, Caisse, Historique } from './pages/commercial'
 
 // Pages - Finance
 import { Depenses, Finances, RapportsPDF } from './pages/finance'
@@ -325,7 +325,7 @@ useEffect(() => {
     {id:'comptes',         label:'Comptes utilisateurs',  icon:'🔐', cat:'Général',  admin:true},
     {id:'journal',         label:'Journal activite',      icon:'📜', cat:'General',  admin:true},
     {id:'lots',            label:'Lots & Tracabilite',    icon:'🔬', cat:'General',  admin:true},
-    {id:'caisse',          label:'Caisse & Recus',        icon:'🧾', cat:'Commercial'},
+    {id:'caisse',          label:'Caisse & Ventes',       icon:'🧾', cat:'Commercial'},
     {id:'ia',              label:'Assistant IA',          icon:'🤖', cat:'General'},
     {id:'notifications',   label:'Notifications Push',    icon:'🔔', cat:'General',  admin:true},
     {id:'rapports',        label:'Rapports & Analyses',   icon:'📈', cat:'General',  admin:true},
@@ -346,7 +346,6 @@ useEffect(() => {
     {id:'factures',        label:'Factures',              icon:'📄', cat:'Commercial',admin:true},
     {id:'devis',           label:'Devis & Estimations',   icon:'📋', cat:'Commercial'},
     {id:'creances',         label:'Suivi créances',         icon:'💰', cat:'Commercial'},
-    {id:'ventes',          label:'Ventes comptoir',       icon:'🛒', cat:'Commercial'},
     {id:'medicaments',     label:'Médicaments',           icon:'💊', cat:'Pharmacie'},
     {id:'commandes',       label:'Commandes',             icon:'📦', cat:'Pharmacie'},
     {id:'inventaire',      label:'Inventaire',            icon:'📊', cat:'Pharmacie'},
@@ -880,7 +879,7 @@ useEffect(() => {
               {view==='medicaments'&&<Medicaments {...sp}/>}
               {view==='commandes'&&<Commandes {...sp}/>}
               {view==='inventaire'&&<Inventaire {...sp}/>}
-              {view==='ventes'&&<Ventes {...sp}/>}
+
               {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}
               {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setSyncedDepsHist} sb={sb}/>:<Interdit/>)}
               {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}

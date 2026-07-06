@@ -47,6 +47,37 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
     ? Math.round(((totalMois - totalDernierMois) / totalDernierMois) * 100)
     : null
 
+  // ── Ventes : données enrichies ───────────────────────────
+  const totalMoisPaye = ventesMois.filter(v => v.statut === 'Payé').reduce((s, v) => s + (v.total || 0), 0)
+  const totalCreances = (ventesHist || [])
+    .filter(v => ['À crédit', 'Partiellement payé', 'En attente'].includes(v.statut))
+    .reduce((s, v) => s + (v.total || 0), 0)
+  const nbVentesMois  = ventesMois.length
+  const ventesRecentes = useMemo(
+    () => [...(ventesHist || [])].sort((a, b) => (b.date || '') > (a.date || '') ? 1 : -1).slice(0, 6),
+    [ventesHist]
+  )
+  const creanciers = useMemo(() => {
+    const map = {}
+    for (const v of (ventesHist || [])) {
+      if (!['À crédit', 'Partiellement payé', 'En attente'].includes(v.statut)) continue
+      map[v.client] = (map[v.client] || 0) + (v.total || 0)
+    }
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5)
+  }, [ventesHist])
+  const repartitionMode = useMemo(() => {
+    const map = {}
+    for (const v of (ventesHist || [])) {
+      if (v.statut !== 'Payé') continue
+      map[v.mode] = (map[v.mode] || 0) + (v.total || 0)
+    }
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 4)
+  }, [ventesHist])
+  const totalRepartition = repartitionMode.reduce((s, [, v]) => s + v, 0)
+  const STATUT_COLOR = { Payé:'#16a34a', 'À crédit':'#d97706', 'Partiellement payé':'#2563eb', 'En attente':'#64748b', Annulé:'#dc2626' }
+  const STATUT_BG    = { Payé:'#f0fdf4', 'À crédit':'#fffbeb', 'Partiellement payé':'#eff6ff', 'En attente':'#f8fafc', Annulé:'#fef2f2' }
+  const MODE_ICON    = { Espèces:'💵', 'Mobile Money':'📱', Virement:'🏦', Chèque:'📝', '–':'—' }
+
   const especes = patients.reduce((a, p) => {
     a[p.espece] = (a[p.espece] || 0) + 1
     return a
@@ -96,9 +127,11 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
       shadow: 'rgba(220,38,38,0.4)', vw: 'medicaments', sub: 'médicaments en alerte',
     },
     {
-      label: 'Revenus ce mois', val: fmtF(totalMois), icon: '💰',
+      label: 'Encaissé ce mois', val: fmtF(totalMoisPaye), icon: '💰',
       grad: 'linear-gradient(135deg,#b45309,#f59e0b)',
-      shadow: 'rgba(180,83,9,0.4)', vw: 'rapports', sub: 'FCFA encaissés',
+      shadow: 'rgba(180,83,9,0.4)', vw: 'caisse',
+      sub: totalCreances > 0 ? `${fmtF(totalCreances)} de créances` : `${nbVentesMois} vente(s)`,
+      subColor: totalCreances > 0 ? '#fde68a' : undefined,
       trend: revenuTrend,
     },
   ]
@@ -154,11 +187,16 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
             <div className="dash-kpi-foot" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 10, opacity: 0.85 }}>
                 {k.trend != null ? (
-                  <span style={{ color: k.trend >= 0 ? '#4ade80' : '#fca5a5', fontWeight: 800 }}>
-                    {k.trend >= 0 ? '↑' : '↓'} {Math.abs(k.trend)}% vs mois préc.
-                  </span>
+                  <>
+                    <span style={{ color: k.trend >= 0 ? '#4ade80' : '#fca5a5', fontWeight: 800 }}>
+                      {k.trend >= 0 ? '↑' : '↓'} {Math.abs(k.trend)}% vs mois préc.
+                    </span>
+                    {k.subColor && (
+                      <span style={{ color: k.subColor, fontWeight: 700, marginLeft: 6 }}>· {k.sub}</span>
+                    )}
+                  </>
                 ) : (
-                  <span style={{ opacity: 0.7 }}>{k.sub}</span>
+                  <span style={{ opacity: 0.7, color: k.subColor }}>{k.sub}</span>
                 )}
               </span>
               <span>Voir →</span>
@@ -324,7 +362,130 @@ function Dashboard({ patients, meds, setView, ventesHist, rdvs, user, clinique }
         </div>
       </div>
 
-      {/* ── Ligne 3 : Top médicaments + Patients récents ── */}
+      {/* ── Ligne 3 : Ventes récentes + Créances ── */}
+      <div className="dash-grid-2">
+        {/* Ventes récentes */}
+        <div className="dash-card">
+          <div className="dash-card-head">
+            <div className="dash-card-title">
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#0d9488,#16a34a)' }}>🧾</span>
+              Ventes récentes
+            </div>
+            <button type="button" className="dash-link" onClick={() => setView('caisse')}>Voir tout →</button>
+          </div>
+          {ventesRecentes.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'20px 0' }}>
+              <div style={{ fontSize:28, marginBottom:6 }}>🛒</div>
+              <p style={{ fontSize:12, color:'var(--app-muted)' }}>Aucune vente enregistrée</p>
+            </div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              {ventesRecentes.map((v, i) => (
+                <div key={v.id || i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, background:'var(--app-bg)', border:'1px solid var(--app-border)' }}>
+                  <div style={{ width:36, height:36, borderRadius:9, background: STATUT_BG[v.statut] || '#f8fafc', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>
+                    {v.statut === 'Payé' ? '✅' : v.statut === 'Annulé' ? '❌' : '⏳'}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'var(--app-text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {v.client || 'Comptoir'}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--app-muted)' }}>
+                      {(v.lignes || []).length} article(s)
+                      {v.caissier ? ` · ${v.caissier}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right', flexShrink:0 }}>
+                    <div style={{ fontSize:13, fontWeight:800, fontFamily:"'Space Mono',monospace", color: STATUT_COLOR[v.statut] || '#64748b' }}>
+                      {fmtF(v.total)}
+                    </div>
+                    <div style={{ fontSize:10, color:'#94a3b8' }}>{v.date}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Créances en cours */}
+        <div className="dash-card">
+          <div className="dash-card-head">
+            <div className="dash-card-title">
+              <span className="dash-icon-wrap" style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)' }}>💳</span>
+              Créances en cours
+            </div>
+            <button type="button" className="dash-link" style={{ color:'#d97706' }} onClick={() => setView('creances')}>Gérer →</button>
+          </div>
+
+          {/* Total créances */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background: totalCreances > 0 ? '#fffbeb' : '#f8fafc', borderRadius:10, marginBottom:12, border: totalCreances > 0 ? '1px solid #fde68a' : '1px solid #f1f5f9' }}>
+            <span style={{ fontSize:12, fontWeight:700, color: totalCreances > 0 ? '#92400e' : '#94a3b8' }}>Total impayé</span>
+            <span style={{ fontSize:16, fontWeight:900, fontFamily:"'Space Mono',monospace", color: totalCreances > 0 ? '#d97706' : '#94a3b8' }}>
+              {fmtF(totalCreances)}
+            </span>
+          </div>
+
+          {creanciers.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'12px 0' }}>
+              <div style={{ fontSize:24, marginBottom:4 }}>🎉</div>
+              <p style={{ fontSize:12, color:'var(--app-muted)' }}>Aucune créance en cours</p>
+            </div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {creanciers.map(([nom, montant], i) => {
+                const pct = totalCreances > 0 ? Math.round((montant / totalCreances) * 100) : 0
+                return (
+                  <div key={nom}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+                      <span style={{ fontSize:12, fontWeight:600, color:'var(--app-text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
+                        👤 {nom}
+                      </span>
+                      <span style={{ fontSize:12, fontWeight:800, color:'#d97706', fontFamily:"'Space Mono',monospace", flexShrink:0, marginLeft:8 }}>
+                        {fmtF(montant)}
+                      </span>
+                    </div>
+                    <div style={{ height:5, background:'#fef3c7', borderRadius:999, overflow:'hidden' }}>
+                      <div style={{ height:'100%', background:'#f59e0b', borderRadius:999, width:`${pct}%`, transition:'width 0.8s cubic-bezier(.22,1,.36,1)' }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Répartition modes de paiement */}
+          {repartitionMode.length > 0 && (
+            <>
+              <div style={{ fontSize:11, fontWeight:700, color:'var(--app-muted)', textTransform:'uppercase', letterSpacing:'.06em', marginTop:16, marginBottom:8 }}>
+                Encaissements par mode
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                {repartitionMode.map(([mode, montant]) => {
+                  const pct = totalRepartition > 0 ? Math.round((montant / totalRepartition) * 100) : 0
+                  return (
+                    <div key={mode} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontSize:13, flexShrink:0 }}>{MODE_ICON[mode] || '💰'}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600, color:'var(--app-text)', marginBottom:2 }}>
+                          <span>{mode}</span>
+                          <span style={{ color:'#0d9488' }}>{pct}%</span>
+                        </div>
+                        <div style={{ height:4, background:'#f1f5f9', borderRadius:999, overflow:'hidden' }}>
+                          <div style={{ height:'100%', background:'linear-gradient(to right,#0d9488,#14b8a6)', borderRadius:999, width:`${pct}%` }} />
+                        </div>
+                      </div>
+                      <span style={{ fontSize:11, fontFamily:"'Space Mono',monospace", color:'var(--app-muted)', flexShrink:0, minWidth:60, textAlign:'right' }}>
+                        {fmtF(montant)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Ligne 4 : Top médicaments + Patients récents ── */}
       <div className="dash-grid-2">
         {/* Top 5 médicaments vendus */}
         <div className="dash-card">

@@ -211,6 +211,12 @@ export const venteLigneSchema = z.object({
     .trim()
     .optional()
     .transform((s) => s || 'Unité'),
+  mult: z.coerce
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .transform((n) => n ?? 1),
   qte: z.coerce
     .number({ invalid_type_error: 'Quantité invalide' })
     .int('Quantité : entier requis')
