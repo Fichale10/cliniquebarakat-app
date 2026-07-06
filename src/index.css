@@ -1366,3 +1366,281 @@ main > .flex-1 {
 [class*="text-center"][class*="py-12"] {
   border-radius: 14px;
 }
+
+/* ======================================================
+   PREMIUM REDESIGN v2 — La Barakat · Clinique Vétérinaire
+   Lomé, Togo — look professionnel médical haut de gamme
+====================================================== */
+
+/* ── Fond global légèrement teal ── */
+.app-layout, .app-main-scroll { background: #f0f5f4 !important; }
+body.dark-mode .app-layout, body.dark-mode .app-main-scroll { background: #0b0f14 !important; }
+
+/* ── En-tête frosted glass ── */
+.app-header {
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(18px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
+  border-bottom: 1px solid rgba(13,148,136,0.1) !important;
+  box-shadow: 0 1px 0 rgba(13,148,136,0.06), 0 4px 32px rgba(0,0,0,0.04) !important;
+}
+body.dark-mode .app-header {
+  background: rgba(15,20,30,0.92) !important;
+  border-bottom: 1px solid rgba(13,148,136,0.1) !important;
+}
+
+/* ── Sidebar profonde ── */
+.sidebar-bg {
+  background: linear-gradient(170deg, #060e1c 0%, #0b1628 45%, #091220 100%) !important;
+  border-right: 1px solid rgba(13,148,136,0.07) !important;
+  box-shadow: 4px 0 32px rgba(0,0,0,0.25) !important;
+}
+
+/* ── Sidebar item actif teal ── */
+.sidebar-active {
+  background: linear-gradient(90deg, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.07) 100%) !important;
+  border: 1px solid rgba(13,148,136,0.22) !important;
+  border-left: 3px solid #0d9488 !important;
+}
+.sidebar-active .nav-label { color: #5eead4 !important; font-weight: 800 !important; }
+.sidebar-active .nav-icon {
+  background: rgba(13,148,136,0.18) !important;
+  box-shadow: 0 0 0 1.5px rgba(13,148,136,0.3) !important;
+  filter: none !important;
+}
+.sidebar-item:hover:not(.sidebar-active) {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* ── Sidebar badge ── */
+.sidebar-badge {
+  background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+  color: white !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  border-radius: 999px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: auto !important;
+  padding: 0 5px !important;
+}
+.sidebar-badge--warn { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
+
+/* ── Sidebar dot actif lumineux ── */
+.sidebar-active-dot {
+  width: 6px !important; height: 6px !important;
+  border-radius: 50% !important;
+  background: #0d9488 !important;
+  box-shadow: 0 0 8px rgba(13,148,136,0.85) !important;
+  margin-left: auto !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Logo ring doré lumineux ── */
+.sidebar-logo-ring {
+  background: conic-gradient(#fbbf24 0deg, #f59e0b 90deg, #d97706 180deg, #fbbf24 360deg) !important;
+  box-shadow: 0 0 18px rgba(245,158,11,0.4) !important;
+}
+
+/* ── App-card premium ── */
+.app-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(220,230,228,0.8) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 0 0 1px rgba(13,148,136,0.03), 0 1px 3px rgba(0,0,0,0.04), 0 8px 30px rgba(0,0,0,0.055) !important;
+  transition: box-shadow 0.22s cubic-bezier(0.22,1,0.36,1), transform 0.18s !important;
+}
+.app-card:hover {
+  box-shadow: 0 0 0 1px rgba(13,148,136,0.07), 0 2px 6px rgba(0,0,0,0.05), 0 16px 48px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px) !important;
+}
+body.dark-mode .app-card {
+  background: #131720 !important;
+  border-color: rgba(38,44,60,0.9) !important;
+  box-shadow: 0 0 0 1px rgba(13,148,136,0.04), 0 6px 28px rgba(0,0,0,0.4) !important;
+}
+
+/* ── Dashboard cards ── */
+.dash-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(220,230,228,0.75) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 30px rgba(0,0,0,0.055) !important;
+  transition: box-shadow 0.22s, transform 0.18s !important;
+}
+.dash-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 16px 48px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1.5px) !important;
+}
+body.dark-mode .dash-card { background: #131720 !important; border-color: #262c3c !important; }
+
+/* ── KPI cards premium ── */
+.dash-kpi {
+  border-radius: 22px !important;
+  padding: 1.45rem 1.6rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.16) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  transition: transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s !important;
+}
+.dash-kpi:hover {
+  transform: translateY(-5px) scale(1.012) !important;
+  box-shadow: 0 14px 48px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+}
+.dash-kpi-val {
+  font-size: 2.1rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1 !important;
+  margin-bottom: 8px !important;
+}
+.dash-kpi-icon {
+  width: 52px !important; height: 52px !important;
+  border-radius: 14px !important;
+  background: rgba(255,255,255,0.18) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  font-size: 26px !important;
+}
+.dash-kpi-deco  { width: 120px !important; height: 120px !important; right: -30px !important; top: -30px !important; background: rgba(255,255,255,0.07) !important; }
+.dash-kpi-deco2 { width: 90px !important;  height: 90px !important;  background: rgba(255,255,255,0.04) !important; }
+
+/* ── Stat tiles ── */
+.stat-tile {
+  background: #ffffff !important;
+  border: 1px solid rgba(220,230,228,0.8) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 5px 18px rgba(0,0,0,0.05) !important;
+  transition: transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.18s !important;
+}
+.stat-tile:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 14px 40px rgba(0,0,0,0.07) !important; }
+.stat-tile--blue   { background: linear-gradient(145deg,#fff,#f0f7ff) !important; }
+.stat-tile--green  { background: linear-gradient(145deg,#fff,#f0fdf8) !important; }
+.stat-tile--red    { background: linear-gradient(145deg,#fff,#fff5f5) !important; }
+.stat-tile--purple { background: linear-gradient(145deg,#fff,#faf5ff) !important; }
+.stat-tile--yellow { background: linear-gradient(145deg,#fff,#fffdf0) !important; }
+.stat-tile--orange { background: linear-gradient(145deg,#fff,#fff7f2) !important; }
+body.dark-mode .stat-tile          { background: #131720 !important; border-color: #262c3c !important; }
+body.dark-mode .stat-tile--blue    { background: linear-gradient(145deg,#131720,#141e35) !important; }
+body.dark-mode .stat-tile--green   { background: linear-gradient(145deg,#131720,#131f1c) !important; }
+body.dark-mode .stat-tile--red     { background: linear-gradient(145deg,#131720,#1f1414) !important; }
+body.dark-mode .stat-tile--purple  { background: linear-gradient(145deg,#131720,#1b1428) !important; }
+.stat-tile__label { font-size: 10px !important; font-weight: 800 !important; letter-spacing: 0.08em !important; }
+.stat-tile__value { font-size: 1.7rem !important; font-weight: 900 !important; letter-spacing: -0.03em !important; }
+
+/* ── Tables enrichies ── */
+thead th {
+  background: linear-gradient(180deg,#f6fefd 0%,#edfaf7 100%) !important;
+  color: #0f766e !important;
+  font-size: 10.5px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  border-bottom: 2px solid rgba(13,148,136,0.14) !important;
+  padding: 13px 14px !important;
+}
+tbody tr:nth-child(even):not(:hover) { background: rgba(240,253,250,0.45) !important; }
+body.dark-mode tbody tr:nth-child(even):not(:hover) { background: rgba(13,148,136,0.03) !important; }
+tbody tr:hover { background: rgba(13,148,136,0.055) !important; }
+body.dark-mode tbody tr:hover { background: rgba(13,148,136,0.09) !important; }
+tbody td { padding: 12px 14px !important; border-bottom: 1px solid rgba(226,232,240,0.45) !important; }
+body.dark-mode tbody td { border-bottom-color: rgba(38,44,60,0.5) !important; }
+
+/* ── Inputs et selects ── */
+input[type="text"]:not(.login-dark-input),
+input[type="number"]:not(.login-dark-input),
+input[type="date"]:not(.login-dark-input),
+input[type="email"]:not(.login-dark-input),
+input[type="tel"]:not(.login-dark-input),
+select:not([class*="login"]),
+textarea:not([class*="login"]) {
+  border-radius: 10px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+}
+input:focus:not(.login-dark-input),
+select:focus:not([class*="login"]),
+textarea:focus:not([class*="login"]) {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.12) !important;
+  outline: none !important;
+}
+body.dark-mode input:not(.login-dark-input),
+body.dark-mode select:not([class*="login"]),
+body.dark-mode textarea:not([class*="login"]) {
+  background: #1e2130 !important; border-color: #2a2d3a !important;
+}
+body.dark-mode input:focus:not(.login-dark-input),
+body.dark-mode select:focus:not([class*="login"]),
+body.dark-mode textarea:focus:not([class*="login"]) {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.15) !important;
+}
+
+/* ── Bouton principal ── */
+.btn-brand {
+  background: linear-gradient(135deg,#0d9488 0%,#0f766e 60%,#166534 100%) !important;
+  box-shadow: 0 2px 14px rgba(13,148,136,0.38) !important;
+  border-radius: 11px !important;
+  transition: all 0.2s cubic-bezier(0.22,1,0.36,1) !important;
+}
+.btn-brand:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 22px rgba(13,148,136,0.48) !important;
+  filter: brightness(1.06) !important;
+}
+
+/* ── Boutons header ── */
+.header-btn {
+  background: #f8fafc !important; border: 1.5px solid #e2e8f0 !important;
+  border-radius: 10px !important; transition: all 0.15s !important;
+}
+.header-btn:hover {
+  background: #f0fdfa !important; border-color: #0d9488 !important;
+  color: #0d9488 !important; transform: scale(1.04) !important;
+}
+
+/* ── Action tiles dashboard ── */
+.dash-action-tile { border-radius: 14px !important; transition: transform 0.16s cubic-bezier(0.22,1,0.36,1), box-shadow 0.16s !important; }
+.dash-action-tile:hover { transform: translateY(-3px) scale(1.025) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+
+/* ── Scrollbar teal fine ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(13,148,136,0.22); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(13,148,136,0.45); }
+body.dark-mode ::-webkit-scrollbar-thumb { background: rgba(94,234,212,0.18); }
+
+/* ── Animations d'entrée ── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.app-page { animation: pageIn 0.26s cubic-bezier(0.22,1,0.36,1) both !important; }
+.dashboard-page { animation: pageIn 0.28s cubic-bezier(0.22,1,0.36,1) both !important; }
+@keyframes pageOut { to { opacity: 0; transform: translateY(-6px); } }
+.vt-exit { animation: pageOut 0.15s ease-in both; }
+.vt-enter { animation: pageIn 0.22s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Pilule date dashboard ── */
+.dash-welcome-pill {
+  background: rgba(255,255,255,0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(13,148,136,0.12) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+}
+body.dark-mode .dash-welcome-pill { background: rgba(19,23,32,0.85) !important; border-color: rgba(13,148,136,0.15) !important; }
+.dash-page-title { letter-spacing: -0.03em !important; }
+
+/* ── Panneau alertes ── */
+.dash-alert-panel { border-radius: 18px !important; box-shadow: 0 4px 24px rgba(239,68,68,0.07) !important; }
+
+/* ── Séparateurs légers ── */
+.border-b { border-bottom-color: rgba(226,232,240,0.55) !important; }
+.border-t  { border-top-color:    rgba(226,232,240,0.55) !important; }
+body.dark-mode .border-b { border-bottom-color: rgba(38,44,60,0.6) !important; }
+body.dark-mode .border-t { border-top-color:    rgba(38,44,60,0.6) !important; }
+
