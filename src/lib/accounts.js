@@ -99,6 +99,35 @@ export async function fetchAllProfiles() {
 }
 
 export async function createUserAccount({ nom, email, pw, role, actif = true, pending = false }) {
+  // ── 1. Voie serveur (API admin, pas de rate limit) ─────────────
+  // functions/api/create-user.js — nécessite SUPABASE_SERVICE_ROLE_KEY
+  // configurée dans Cloudflare Pages.
+  try {
+    const { data: sess } = await sb.auth.getSession()
+    const token = sess?.session?.access_token
+    if (token) {
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nom, email, pw, role, actif, pending }),
+      })
+      // 404/405 = endpoint absent (dev local) → repli signUp plus bas
+      if (res.status !== 404 && res.status !== 405) {
+        const out = await res.json().catch(() => ({}))
+        if (res.ok && out.ok) {
+          const profile = out.profile || profileFromForm({ userId: out.userId, nom, email, role, actif, pending })
+          const cached = getCache(CACHE_KEY) || []
+          setCache(CACHE_KEY, mergeProfiles(cached, [profile]))
+          return { ok: true, userId: out.userId, profile }
+        }
+        return { ok: false, msg: out.error || 'Erreur lors de la création du compte.' }
+      }
+    }
+  } catch (e) {
+    console.warn('[accounts] endpoint create-user indisponible, repli signUp:', e?.message || e)
+  }
+
+  // ── 2. Repli : signUp public (soumis au rate limit Supabase) ───
   // Utiliser un client temporaire pour que signUp ne vole pas la session admin
   const tempSb = makeTempClient()
 

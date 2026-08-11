@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS public.ventes (
   mode text NOT NULL DEFAULT 'Espèces',
   note text NOT NULL DEFAULT '',
   tva_amt numeric NOT NULL DEFAULT 0,
+  montant_paye numeric NOT NULL DEFAULT 0,
+  type text NOT NULL DEFAULT 'detail',
   caissier text NOT NULL DEFAULT '',
   created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -26,6 +28,8 @@ ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS statut text NOT NULL DEFAULT 
 ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS mode text NOT NULL DEFAULT 'Espèces';
 ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS note text NOT NULL DEFAULT '';
 ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS tva_amt numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS montant_paye numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'detail';
 ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS caissier text NOT NULL DEFAULT '';
 ALTER TABLE public.ventes ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 

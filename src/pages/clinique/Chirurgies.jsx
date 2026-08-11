@@ -78,7 +78,8 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
   const pagination = usePagination(filtered, 10)
 
   // ── Stats ────────────────────────────────────────────────────
-  const totalMontant = chirurgies.reduce((s, c) => s + (c.montant || 0), 0)
+  // Recettes = actes terminés uniquement (cohérent avec Finances)
+  const totalMontant = chirurgies.filter(c => c.statut === 'Terminé').reduce((s, c) => s + (c.montant || 0), 0)
   const ce_mois = chirurgies.filter(c => c.date?.startsWith(new Date().toISOString().slice(0, 7))).length
 
   return (
@@ -89,7 +90,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
           { l: 'Total actes',     v: chirurgies.length,                                                mod: 'stat-tile--blue'   },
           { l: 'Ce mois',         v: ce_mois,                                                           mod: 'stat-tile--green'  },
           { l: 'Planifiés',       v: chirurgies.filter(c => c.statut === 'Planifié').length,           mod: 'stat-tile--yellow' },
-          { l: 'Recettes',        v: fmtF(totalMontant),                                               mod: 'stat-tile--purple' },
+          { l: 'Recettes (terminés)', v: fmtF(totalMontant),                                           mod: 'stat-tile--purple' },
         ].map((s, i) => (
           <div key={i} className={`stat-tile ${s.mod}`}>
             <div className="stat-tile__label">{s.l}</div>

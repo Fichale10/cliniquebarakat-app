@@ -23,15 +23,15 @@ function Rapports({ventesHist,depsHist,otrMode}){
   const ventesP=(ventesHist||[]).filter(v=>v.date&&inP(v.date));
   const depsP  =(depsHist||[]).filter(d=>d.date&&inP(d.date));
 
-  const ca     =ventesP.filter(v=>v.statut==='Payé').reduce((s,v)=>s+(v.total||0),0);
-  const credit =ventesP.filter(v=>v.statut!=='Payé'&&v.statut!=='Annulé').reduce((s,v)=>s+(v.total||0),0);
+  const ca     =ventesP.filter(v=>v.statut==='Payé').reduce((s,v)=>s+(v.total||0)+(v.tva_amt||0),0);
+  const credit =ventesP.filter(v=>v.statut!=='Payé'&&v.statut!=='Annulé').reduce((s,v)=>s+Math.max(0,(v.total||0)+(v.tva_amt||0)-(v.montant_paye||0)),0);
   const totalD =depsP.reduce((s,d)=>s+(d.montant||0),0);
   const benefice=ca-totalD;
   const nbV=ventesP.length;
   const panier=nbV>0?Math.round(ca/nbV):0;
 
   // Série chronologique
-  const caByDate={};   ventesP.filter(v=>v.statut==='Payé').forEach(v=>{caByDate[v.date]=(caByDate[v.date]||0)+(v.total||0);});
+  const caByDate={};   ventesP.filter(v=>v.statut==='Payé').forEach(v=>{caByDate[v.date]=(caByDate[v.date]||0)+(v.total||0)+(v.tva_amt||0);});
   const depByDate={};  depsP.forEach(d=>{depByDate[d.date]=(depByDate[d.date]||0)+(d.montant||0);});
 
   const allDates=[];

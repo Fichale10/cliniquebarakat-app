@@ -2,19 +2,10 @@ import { useState, useMemo } from 'react'
 import { Btn, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
+import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
 
 const today = () => new Date().toISOString().split('T')[0]
-const fmtF  = v => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
-const fmtK  = n => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M F` : n >= 1000 ? `${Math.round(n/1000)}k F` : fmtF(n)
 
-const STATUTS = ['Payé', 'À crédit', 'Partiellement payé', 'En attente', 'Annulé']
-const STATUT_STYLE = {
-  'Payé':               { bg:'#f0fdf4', border:'#bbf7d0', text:'#16a34a' },
-  'À crédit':           { bg:'#fff7ed', border:'#fed7aa', text:'#ea580c' },
-  'Partiellement payé': { bg:'#fffbeb', border:'#fde68a', text:'#d97706' },
-  'En attente':         { bg:'#fefce8', border:'#fef08a', text:'#ca8a04' },
-  'Annulé':             { bg:'#fef2f2', border:'#fecaca', text:'#dc2626' },
-}
 const MODE_ICON = { 'Espèces':'💵', 'Mobile Money':'📱', 'Virement':'🏦', 'Chèque':'🖊️' }
 
 function StatutPill({ statut }) {
@@ -45,34 +36,6 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
   const ventes = ventesHist || []
 
-  // ── Helpers tarifs / gros ─────────────────────────────────────
-  const getPrixGros = (medObj, qte) => {
-    if (!medObj) return 0
-    const base = parseInt(medObj.prixGros ?? medObj.prix_gros ?? 0) || parseInt(medObj.prixVente ?? medObj.prix_vente ?? 0) || 0
-    const paliers = medObj.paliersGros ?? medObj.paliers_gros ?? []
-    if (!paliers.length) return base
-    const q = parseInt(qte) || 1
-    const best = [...paliers].filter(p => q >= (parseInt(p.qte) || 0)).sort((a,b) => parseInt(b.qte)-parseInt(a.qte))[0]
-    return best ? Math.round(base * (1 - (parseFloat(best.remise)||0) / 100)) : base
-  }
-  const getRemiseApplied = (medObj, qte) => {
-    const paliers = medObj?.paliersGros ?? medObj?.paliers_gros ?? []
-    if (!paliers.length) return 0
-    const q = parseInt(qte) || 1
-    const best = [...paliers].filter(p => q >= (parseInt(p.qte)||0)).sort((a,b) => parseInt(b.qte)-parseInt(a.qte))[0]
-    return best ? parseFloat(best.remise)||0 : 0
-  }
-  const getTarifs = (medObj) => {
-    if (!medObj) return []
-    if (medObj.tarifs?.length) return medObj.tarifs
-    const pv = medObj.prixVente || medObj.prix_vente || 0
-    const u  = medObj.unite || ''
-    if (u === 'comprimés') return [{ conditionnement:'Comprimé', prix:pv }, { conditionnement:'Plaquette (10 cp)', prix:pv*10 }, { conditionnement:'Boîte (30 cp)', prix:pv*30 }]
-    if (u === 'flacons')   return [{ conditionnement:'Flacon', prix:pv }]
-    if (u === 'doses')     return [{ conditionnement:'Dose unitaire', prix:pv }, { conditionnement:'Pack 5 doses', prix:pv*5 }]
-    return [{ conditionnement:'Unité', prix:pv }]
-  }
-
   const patchForm = (patch) => {
     setForm(prev => ({...prev,...patch}))
     Object.keys(patch).forEach(k => setFormErrors(prev => { const n={...prev}; delete n[k]; return n }))
@@ -95,12 +58,13 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const ligneError = (i, field) => formErrors[`lignes.${i}.${field}`]
   const total = form.lignes.reduce((s,l) => s + (parseInt(l.qte)||0)*(parseInt(l.pu)||0), 0)
 
-  // ── KPIs ─────────────────────────────────────────────────────
+  // ── KPIs (TTC, restant dû réel) ───────────────────────
   const kpis = useMemo(() => {
     const todayStr = today()
-    const caToday  = ventes.filter(v=>v.date===todayStr&&v.statut==='Payé').reduce((s,v)=>s+(v.total||0),0)
-    const encaisse = ventes.filter(v=>v.statut==='Payé').reduce((s,v)=>s+(v.total||0),0)
-    const credit   = ventes.filter(v=>['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s,v)=>s+(v.total||0),0)
+    const ttc = v => (v.total||0) + (v.tva_amt||0)
+    const caToday  = ventes.filter(v=>v.date===todayStr&&v.statut==='Payé').reduce((s,v)=>s+ttc(v),0)
+    const encaisse = ventes.filter(v=>v.statut==='Payé').reduce((s,v)=>s+ttc(v),0)
+    const credit   = ventes.filter(v=>['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s,v)=>s+Math.max(0,ttc(v)-(v.montant_paye||0)),0)
     const nbGros   = ventes.filter(v=>v.type==='gros').length
     return { caToday, encaisse, credit, nbGros, total:ventes.length }
   }, [ventes])
@@ -137,9 +101,9 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
   const pagination = usePagination(filtered)
 
-  // ── Gestion stock ────────────────────────────────────────────
+  // ── Gestion stock (unifié : qte × mult du conditionnement) ───
   const applyStockDelta = async (lignes, delta) => {
-    const updates = meds.map(m => { const l=lignes.find(x=>x.med===m.nom); if(!l) return null; return { medId:m.id, newStock:Math.max(0,(m.stock||0)+delta*(parseInt(l.qte)||0)) } }).filter(Boolean)
+    const updates = meds.map(m => { const l=lignes.find(x=>x.med===m.nom); if(!l) return null; return { medId:m.id, newStock:Math.max(0,(m.stock||0)+delta*ligneUnites(l)) } }).filter(Boolean)
     if (!updates.length) return
     await Promise.all(updates.map(({medId,newStock}) => dbUpdate(sb,'medicaments',medId,{stock:newStock})))
     const updatedMeds = meds.map(m => { const u=updates.find(x=>x.medId===m.id); return u?{...m,stock:u.newStock}:m })
@@ -158,7 +122,13 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     }
     setSaving(true)
     try {
-      const row = venteFormToRow(validated, newId(), { type:form.type||'detail' })
+      const tvaAmtNew = computeTvaAmt(validated.total, tva)
+      const row = venteFormToRow(validated, newId(), {
+        type: form.type||'detail',
+        tva_amt: tvaAmtNew,
+        montant_paye: validated.statut==='Payé' ? (validated.total + tvaAmtNew) : 0,
+        caissier: user?.name || '',
+      })
       const saved = await dbInsert(sb,'ventes',row)
       setVentesHist([saved,...ventes].slice(0,500))
       if (validated.statut==='Payé') await applyStockDelta(validated.lignes,-1)
@@ -171,10 +141,12 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   }
 
   const handleStatut = async (venteId, newStatut) => {
-    await dbUpdate(sb,'ventes',venteId,{statut:newStatut})
-    const newHist = ventes.map(v => v.id===venteId?{...v,statut:newStatut}:v)
-    setVentesHist(newHist)
     const vente = ventes.find(v=>v.id===venteId)
+    const patch = { statut: newStatut }
+    if (newStatut==='Payé' && vente) patch.montant_paye = venteTTC(vente, tva)
+    await dbUpdate(sb,'ventes',venteId,patch)
+    const newHist = ventes.map(v => v.id===venteId?{...v,...patch}:v)
+    setVentesHist(newHist)
     if (vente?.lignes) {
       if (newStatut==='Payé') await applyStockDelta(vente.lignes,-1)
       else if (newStatut==='Annulé'&&vente.statut==='Payé') await applyStockDelta(vente.lignes,+1)
@@ -190,8 +162,8 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     } catch(e) { alert(e?.message||'Erreur lors de la suppression') }
   }
 
-  const tvaAmt  = v => tva?.active ? Math.round((v.total||0)*(tva.taux||0)/100) : 0
-  const totalTTC = v => (v.total||0)+tvaAmt(v)
+  const tvaAmt  = v => venteTvaAmt(v, tva)
+  const totalTTC = v => venteTTC(v, tva)
   const mask = v => otrMode ? '••••• F' : fmtF(v)
 
   const printRecu = (v) => {
@@ -368,10 +340,10 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                                 className="w-full text-left px-3 py-2 text-sm hover:bg-green-50 flex justify-between items-center"
                                 onMouseDown={() => {
                                   if (form.type==='gros') {
-                                    updL(i,{med:m.nom,medSearch:m.nom,cond:'Gros',pu:getPrixGros(m,parseInt(l.qte)||1),showSugg:false})
+                                    updL(i,{med:m.nom,medSearch:m.nom,cond:'Gros',pu:getPrixGros(m,parseInt(l.qte)||1),mult:1,showSugg:false})
                                   } else {
                                     const t2=getTarifs(m); const first=t2?.[0]
-                                    updL(i,{med:m.nom,medSearch:m.nom,cond:first?.conditionnement||'Unité',pu:first?.prix||m.prixVente||m.prix_vente||'',showSugg:false})
+                                    updL(i,{med:m.nom,medSearch:m.nom,cond:first?.conditionnement||'Unité',pu:first?.prix||m.prixVente||m.prix_vente||'',mult:first?.mult||1,showSugg:false})
                                   }
                                 }}>
                                 <span className="font-medium">{m.nom}</span>
@@ -391,7 +363,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                       ) : (
                         <select className={`w-full border-2 rounded-xl px-3 py-2.5 text-sm outline-none bg-white ${!l.med?'border-slate-100 text-slate-300':'border-slate-200 focus:border-green-400'}`}
                           value={l.cond} disabled={!l.med}
-                          onChange={e=>{const t=tarifs.find(t=>t.conditionnement===e.target.value);updL(i,{cond:e.target.value,pu:t?t.prix:l.pu})}}>
+                          onChange={e=>{const t=tarifs.find(t=>t.conditionnement===e.target.value);updL(i,{cond:e.target.value,pu:t?t.prix:l.pu,mult:t?(t.mult||1):(l.mult||1)})}}>
                           <option value="">{l.med?'— Sélectionner —':'(choisir médicament)'}</option>
                           {tarifs.map(t=><option key={t.conditionnement} value={t.conditionnement}>{t.conditionnement}{t.prix?' — '+fmtF(t.prix):''}</option>)}
                           <option value="__libre__">✏️ Prix libre…</option>

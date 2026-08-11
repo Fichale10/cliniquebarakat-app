@@ -7,54 +7,11 @@ import {
 } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
+import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
 
 const today      = () => new Date().toISOString().split('T')[0]
-const fmtF       = v => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
-const STATUTS     = ['Payé', 'À crédit', 'Partiellement payé', 'En attente', 'Annulé']
 const STATUT_COLOR = { Payé:'green', 'À crédit':'orange', 'Partiellement payé':'amber', 'En attente':'yellow', Annulé:'red' }
-
-const getTarifs = (medObj) => {
-  if (!medObj) return []
-  if (medObj.tarifs?.length) return medObj.tarifs.map(t => ({ ...t, mult: t.mult || 1 }))
-  const pv = medObj.prixVente || medObj.prix_vente || 0
-  const u  = medObj.unite || ''
-  if (u === 'comprimés' || u === 'cp') return [
-    { conditionnement: 'Comprimé',          prix: pv,       mult: 1   },
-    { conditionnement: 'Plaquette (10 cp)', prix: pv * 10,  mult: 10  },
-    { conditionnement: 'Boîte (30 cp)',     prix: pv * 30,  mult: 30  },
-    { conditionnement: 'Boîte (50 cp)',     prix: pv * 50,  mult: 50  },
-    { conditionnement: 'Boîte (100 cp)',    prix: pv * 100, mult: 100 },
-  ]
-  if (u === 'flacons') return [{ conditionnement: 'Flacon', prix: pv, mult: 1 }]
-  if (u === 'doses')   return [
-    { conditionnement: 'Dose',          prix: pv,     mult: 1 },
-    { conditionnement: 'Pack 5 doses',  prix: pv * 5, mult: 5 },
-  ]
-  return [{ conditionnement: 'Unité', prix: pv, mult: 1 }]
-}
-
-const getPrixGros = (medObj, qte) => {
-  if (!medObj) return 0
-  const base = parseInt(medObj.prixGros ?? medObj.prix_gros ?? 0) || parseInt(medObj.prixVente ?? medObj.prix_vente ?? 0) || 0
-  const paliers = medObj.paliersGros ?? medObj.paliers_gros ?? []
-  if (!paliers.length) return base
-  const q = parseInt(qte) || 1
-  const best = [...paliers]
-    .filter(p => q >= (parseInt(p.qte) || 0))
-    .sort((a, b) => parseInt(b.qte) - parseInt(a.qte))[0]
-  return best ? Math.round(base * (1 - (parseFloat(best.remise) || 0) / 100)) : base
-}
-
-const getRemiseApplied = (medObj, qte) => {
-  const paliers = medObj?.paliersGros ?? medObj?.paliers_gros ?? []
-  if (!paliers.length) return 0
-  const q = parseInt(qte) || 1
-  const best = [...paliers]
-    .filter(p => q >= (parseInt(p.qte) || 0))
-    .sort((a, b) => parseInt(b.qte) - parseInt(a.qte))[0]
-  return best ? parseFloat(best.remise) || 0 : 0
-}
 
 function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tva, user, sb, logAction }) {
   const [tab, setTab] = useState('caisse')
@@ -99,8 +56,8 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   // ── Shared helpers ────────────────────────────────────────
   const ventes   = ventesHist || []
   const mask     = v => otrMode ? '••••• F' : fmtF(v)
-  const tvaAmtV  = v => tva?.active ? Math.round((v.total || 0) * (tva.taux || 0) / 100) : 0
-  const totalTTCV = v => (v.total || 0) + tvaAmtV(v)
+  const tvaAmtV  = v => venteTvaAmt(v, tva)
+  const totalTTCV = v => venteTTC(v, tva)
   const nomsClients = (clients || []).map(c => c.nom).filter(Boolean)
 
   // ── Caisse POS helpers ────────────────────────────────────
@@ -161,8 +118,10 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     const row = venteToDbRow({
       id: newId(), date: posDate || today(),
       client: validated.client, lignes: lignesValides,
-      total: totalTTC, statut, mode: validated.mode,
-      note: validated.note, tvaAmt, caissier: user?.name || '—',
+      total, statut, mode: validated.mode,
+      note: validated.note, tvaAmt,
+      montant_paye: statut === 'Payé' ? totalTTC : 0,
+      caissier: user?.name || '—',
     })
 
     setSaving(true)
@@ -287,22 +246,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const venteFormTotal  = venteForm.lignes.reduce((s, l) => s + (parseInt(l.qte)||0) * (parseInt(l.pu)||0), 0)
   const vLigneError     = (i, field) => venteFormErrors[`lignes.${i}.${field}`]
 
-  const getTarifsV = (medObj) => {
-    if (!medObj) return []
-    const pv = medObj.prixVente || medObj.prix_vente || 0
-    const u  = medObj.unite || ''
-    if (u === 'comprimés') return [
-      { conditionnement:'Comprimé', prix: pv },
-      { conditionnement:'Plaquette (10 cp)', prix: pv * 10 },
-      { conditionnement:'Boîte (30 cp)',     prix: pv * 30 },
-    ]
-    if (u === 'flacons') return [{ conditionnement:'Flacon', prix: pv }]
-    if (u === 'doses')   return [
-      { conditionnement:'Dose unitaire', prix: pv },
-      { conditionnement:'Pack 5 doses',  prix: pv * 5 },
-    ]
-    return [{ conditionnement:'Unité', prix: pv }]
-  }
+  const getTarifsV = getTarifs
 
   const addVente = async () => {
     const checked = validateVenteForm(venteForm, meds)
@@ -321,7 +265,13 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
     setSavingVente(true)
     try {
-      const row = venteFormToRow(validated, newId(), { type: venteForm.type || 'detail' })
+      const tvaAmtNew = computeTvaAmt(validated.total, tva)
+      const row = venteFormToRow(validated, newId(), {
+        type: venteForm.type || 'detail',
+        tva_amt: tvaAmtNew,
+        montant_paye: validated.statut === 'Payé' ? (validated.total + tvaAmtNew) : 0,
+        caissier: user?.name || '',
+      })
       const saved = await dbInsert(sb, 'ventes', row)
       setVentesHist([saved, ...ventes].slice(0, 500))
       if (validated.statut === 'Payé') await applyStockDelta(validated.lignes, -1)
@@ -337,10 +287,12 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   }
 
   const handleStatut = async (venteId, newStatut) => {
-    await dbUpdate(sb, 'ventes', venteId, { statut: newStatut })
-    const newHist = ventes.map(v => v.id === venteId ? { ...v, statut: newStatut } : v)
-    setVentesHist(newHist)
     const vente = ventes.find(v => v.id === venteId)
+    const patch = { statut: newStatut }
+    if (newStatut === 'Payé' && vente) patch.montant_paye = venteTTC(vente, tva)
+    await dbUpdate(sb, 'ventes', venteId, patch)
+    const newHist = ventes.map(v => v.id === venteId ? { ...v, ...patch } : v)
+    setVentesHist(newHist)
     if (vente?.lignes) {
       if (newStatut === 'Payé') await applyStockDelta(vente.lignes, -1)
       else if (newStatut === 'Annulé' && vente.statut === 'Payé') await applyStockDelta(vente.lignes, +1)
@@ -378,7 +330,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         <div class="item-detail">${l.cond} &nbsp;·&nbsp; ${l.qte} × ${fmt(l.pu)} F</div>
       </div>`).join('')
     const tvaHtml = tvaVal > 0 ? `
-      <div class="sub-row"><span>Sous-total HT</span><span>${fmt(v.total - tvaVal)} F</span></div>
+      <div class="sub-row"><span>Sous-total HT</span><span>${fmt(v.total)} F</span></div>
       <div class="sub-row"><span>TVA (${tva?.taux || 18}%)</span><span>${fmt(tvaVal)} F</span></div>` : ''
     const noteHtml = v.note ? `<div class="note">📝 ${v.note}</div>` : ''
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reçu ${numRecu}</title>
@@ -433,7 +385,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   ${tvaHtml}
   <div class="total-box">
     <span class="total-label">TOTAL TTC</span>
-    <span class="total-amount">${fmt(v.total)} F</span>
+    <span class="total-amount">${fmt((v.total || 0) + tvaVal)} F</span>
   </div>
   ${noteHtml}
   <div class="footer">
@@ -468,15 +420,15 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   })
   const pagination = usePagination(filtered)
 
-  const totalPaye       = ventes.filter(v => v.statut === 'Payé').reduce((s, v) => s + (v.total||0), 0)
-  const totalCredit     = ventes.filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + (v.total||0), 0)
-  const totalCreditGros = ventes.filter(v => v.type === 'gros' && ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + (v.total||0), 0)
+  const totalPaye       = ventes.filter(v => v.statut === 'Payé').reduce((s, v) => s + totalTTCV(v), 0)
+  const totalCredit     = ventes.filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
+  const totalCreditGros = ventes.filter(v => v.type === 'gros' && ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
 
-  // ── KPI du jour (caisse tab) ──────────────────────────────
+  // ── KPI du jour (caisse tab) ──────────────────────────
   const ventesJour   = ventes.filter(v => v.date === today() && v.statut !== 'Annulé')
-  const caJour       = ventesJour.reduce((s, v) => s + (v.total||0), 0)
+  const caJour       = ventesJour.reduce((s, v) => s + totalTTCV(v), 0)
   const avgJour      = ventesJour.length ? Math.round(caJour / ventesJour.length) : 0
-  const creditJour   = ventesJour.filter(v => v.statut !== 'Payé').reduce((s, v) => s + (v.total||0), 0)
+  const creditJour   = ventesJour.filter(v => v.statut !== 'Payé').reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
 
   // ─────────────────────────────────────────────────────────
   return (
@@ -530,7 +482,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                   <span style={{ fontSize:'28px' }}>✅</span>
                   <div>
                     <div style={{ fontWeight:800, color:'#166534', fontSize:'15px' }}>Vente enregistrée</div>
-                    <div style={{ fontSize:'13px', color:'#16a34a' }}>{recu.client || 'Comptoir'} — {fmtF(recu.total)}</div>
+                    <div style={{ fontSize:'13px', color:'#16a34a' }}>{recu.client || 'Comptoir'} — {fmtF(totalTTCV(recu))}</div>
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
@@ -840,10 +792,10 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                                       className="w-full text-left px-3 py-2 text-sm hover:bg-green-50 flex justify-between items-center"
                                       onMouseDown={() => {
                                         if (venteForm.type === 'gros') {
-                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:'Gros', pu:getPrixGros(m,parseInt(l.qte)||1), showSugg:false })
+                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:'Gros', pu:getPrixGros(m,parseInt(l.qte)||1), mult:1, showSugg:false })
                                         } else {
                                           const t2 = getTarifsV(m)
-                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:t2?.[0]?.conditionnement||'Unité', pu:t2?.[0]?.prix||m.prixVente||m.prix_vente||'', showSugg:false })
+                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:t2?.[0]?.conditionnement||'Unité', pu:t2?.[0]?.prix||m.prixVente||m.prix_vente||'', mult:t2?.[0]?.mult||1, showSugg:false })
                                         }
                                       }}>
                                       <span className="font-medium">{m.nom}</span>
@@ -863,7 +815,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                           ) : (
                             <select className={`w-full border-2 rounded-xl px-3 py-2.5 text-sm outline-none bg-white ${!l.med?'border-slate-100 text-slate-300':'border-slate-200 focus:border-green-400'}`}
                               value={l.cond} disabled={!l.med}
-                              onChange={e => { const t = tarifs.find(t => t.conditionnement===e.target.value); updVL(i, {cond:e.target.value, pu:t?t.prix:l.pu}) }}>
+                              onChange={e => { const t = tarifs.find(t => t.conditionnement===e.target.value); updVL(i, {cond:e.target.value, pu:t?t.prix:l.pu, mult:t?(t.mult||1):(l.mult||1)}) }}>
                               <option value="">{l.med ? '— Sélectionner —' : '(choisir médicament)'}</option>
                               {tarifs.map(t => <option key={t.conditionnement} value={t.conditionnement}>{t.conditionnement}{t.prix?' — '+fmtF(t.prix):''}</option>)}
                               <option value="__libre__">✏️ Prix libre…</option>

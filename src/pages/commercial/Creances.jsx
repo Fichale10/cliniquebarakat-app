@@ -1,18 +1,43 @@
 import { useState } from 'react'
 import { Badge, EmptyState } from '../../components/ui'
 import { dbUpdate } from '../../lib/db'
+import { fmtF, venteTTC, venteRestant } from '../../lib/ventes'
 
-function Creances({ ventesHist, setVentesHist, otrMode, sb }) {
-  const fmtF = v => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
+function Creances({ ventesHist, setVentesHist, otrMode, sb, tva }) {
   const mask  = v => otrMode ? '••••• F' : fmtF(v)
 
   const creances   = (ventesHist || []).filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut))
-  const totalDu    = creances.reduce((s, v) => s + (v.total || 0), 0)
+  const restant    = v => venteRestant(v, tva)
+  const totalDu    = creances.reduce((s, v) => s + restant(v), 0)
 
   const marquerPaye = async (id) => {
+    const vente = (ventesHist || []).find(v => v.id === id)
+    if (!vente) return
     try {
-      await dbUpdate(sb, 'ventes', id, { statut: 'Payé' })
-      setVentesHist((ventesHist || []).map(v => v.id === id ? { ...v, statut: 'Payé' } : v))
+      const patch = { statut: 'Payé', montant_paye: venteTTC(vente, tva) }
+      await dbUpdate(sb, 'ventes', id, patch)
+      setVentesHist((ventesHist || []).map(v => v.id === id ? { ...v, ...patch } : v))
+    } catch (e) {
+      alert('Erreur : ' + (e?.message || e))
+    }
+  }
+
+  const encaisserVersement = async (id) => {
+    const vente = (ventesHist || []).find(v => v.id === id)
+    if (!vente) return
+    const du = restant(vente)
+    const saisie = prompt(`Montant du versement (restant dû : ${fmtF(du)})`)
+    if (saisie == null) return
+    const montant = Math.round(parseFloat(String(saisie).replace(',', '.')) || 0)
+    if (montant <= 0) return alert('Montant invalide')
+    if (montant > du) return alert(`Le versement dépasse le restant dû (${fmtF(du)})`)
+    const nouveauPaye = (vente.montant_paye || 0) + montant
+    const patch = nouveauPaye >= venteTTC(vente, tva)
+      ? { statut: 'Payé', montant_paye: venteTTC(vente, tva) }
+      : { statut: 'Partiellement payé', montant_paye: nouveauPaye }
+    try {
+      await dbUpdate(sb, 'ventes', id, patch)
+      setVentesHist((ventesHist || []).map(v => v.id === id ? { ...v, ...patch } : v))
     } catch (e) {
       alert('Erreur : ' + (e?.message || e))
     }
@@ -21,7 +46,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb }) {
   const parClient = {}
   creances.forEach(v => {
     if (!parClient[v.client]) parClient[v.client] = { client: v.client, total: 0, ventes: [] }
-    parClient[v.client].total += v.total || 0
+    parClient[v.client].total += restant(v)
     parClient[v.client].ventes.push(v)
   })
   const listeClients = Object.values(parClient).sort((a, b) => b.total - a.total)
@@ -90,9 +115,16 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb }) {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="font-black text-orange-600 font-mono">{mask(v.total)}</div>
+                          <div className="font-black text-orange-600 font-mono">{mask(restant(v))}</div>
+                          {(v.montant_paye || 0) > 0 && (
+                            <div className="text-xs text-green-600">déjà payé : {mask(v.montant_paye)}</div>
+                          )}
+                          <button onClick={() => encaisserVersement(v.id)}
+                            className="mt-1 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold block w-full">
+                            💵 Versement
+                          </button>
                           <button onClick={() => marquerPaye(v.id)}
-                            className="mt-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-bold block">
+                            className="mt-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-bold block w-full">
                             ✓ Marquer payé
                           </button>
                         </div>

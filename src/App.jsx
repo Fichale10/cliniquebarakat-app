@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, Component } from 'react'
+import { useState, useEffect, useRef, useMemo, Component, lazy, Suspense } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { sb, getCache, setCache, syncQueue, getQ, purgeDeprecatedQueueOps, dbFetch, dbInsert, dbUpdate, dbDelete, newId, canAccess, ROLES, logAction, DEFAULT_TEAM, NAV_ALL } from './lib/globals'
 import { isValidView, DEFAULT_VIEW } from './lib/routes'
@@ -8,28 +8,57 @@ import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, Filt
 import { ToastContainer } from './components/Toast'
 import { SkPage } from './components/Skeleton'
 
+// ── Pages en lazy loading : chaque page = un chunk séparé, chargé
+//    à la première visite → bundle initial allégé (~3× plus petit)
 // Pages - Clinique
-import { Patients, Consultations, Dossiers, Hospitalisation, Chirurgies, Ordonnances, Calculateur, Consentements } from './pages/clinique'
+const Patients        = lazy(() => import('./pages/clinique/Patients'))
+const Consultations   = lazy(() => import('./pages/clinique/Consultations'))
+const Dossiers        = lazy(() => import('./pages/clinique/Dossiers'))
+const Hospitalisation = lazy(() => import('./pages/clinique/Hospitalisation'))
+const Chirurgies      = lazy(() => import('./pages/clinique/Chirurgies'))
+const Ordonnances     = lazy(() => import('./pages/clinique/Ordonnances'))
+const Calculateur     = lazy(() => import('./pages/clinique/Calculateur'))
+const Consentements   = lazy(() => import('./pages/clinique/Consentements'))
 
 // Pages - Agenda
-import { Agenda, AgendaCalendrier, Taches } from './pages/agenda'
+const Agenda           = lazy(() => import('./pages/agenda/Agenda'))
+const AgendaCalendrier = lazy(() => import('./pages/agenda/AgendaCalendrier'))
+const Taches           = lazy(() => import('./pages/agenda/Taches'))
 
 // Pages - Pharmacie
-import { Medicaments, Commandes, Inventaire } from './pages/pharmacie'
+const Medicaments = lazy(() => import('./pages/pharmacie/Medicaments'))
+const Commandes   = lazy(() => import('./pages/pharmacie/Commandes'))
+const Inventaire  = lazy(() => import('./pages/pharmacie/Inventaire'))
 
 // Pages - Commercial
-import { Clients, Fournisseurs, Factures, Devis, Creances, Caisse, Historique } from './pages/commercial'
+const Clients      = lazy(() => import('./pages/commercial/Clients'))
+const Fournisseurs = lazy(() => import('./pages/commercial/Fournisseurs'))
+const Factures     = lazy(() => import('./pages/commercial/Factures'))
+const Devis        = lazy(() => import('./pages/commercial/Devis'))
+const Creances     = lazy(() => import('./pages/commercial/Creances'))
+const Caisse       = lazy(() => import('./pages/commercial/Caisse'))
+const Historique   = lazy(() => import('./pages/commercial/Historique'))
 
 // Pages - Finance
-import { Depenses, Finances, RapportsPDF } from './pages/finance'
+const Depenses    = lazy(() => import('./pages/finance/Depenses'))
+const Finances    = lazy(() => import('./pages/finance/Finances'))
+const Rapports    = lazy(() => import('./pages/finance/Rapports'))
+const RapportsPDF = lazy(() => import('./pages/finance/RapportsPDF'))
 
 // Pages - Admin
-import { Parametres, MonProfil, GestionComptes, JournalActivite } from './pages/admin'
+const Parametres      = lazy(() => import('./pages/admin/Parametres'))
+const MonProfil       = lazy(() => import('./pages/admin/MonProfil'))
+const GestionComptes  = lazy(() => import('./pages/admin/GestionComptes'))
+const JournalActivite = lazy(() => import('./pages/admin/JournalActivite'))
 
 // Pages - Outils
-import { AssistantIA, GestionNotifications, CarteClients, SuiviTraitements, GestionLots } from './pages/outils'
+const AssistantIA          = lazy(() => import('./pages/outils/AssistantIA'))
+const GestionNotifications = lazy(() => import('./pages/outils/GestionNotifications'))
+const CarteClients         = lazy(() => import('./pages/outils/CarteClients'))
+const SuiviTraitements     = lazy(() => import('./pages/outils/SuiviTraitements'))
+const GestionLots          = lazy(() => import('./pages/outils/GestionLots'))
 
-// Dashboard
+// Dashboard (vue par défaut : chargé immédiatement)
 import Dashboard from './pages/Dashboard'
 
 // ── Transition animée entre les vues ────────────────────────────
@@ -331,7 +360,6 @@ useEffect(() => {
     {id:'caisse',          label:'Caisse & Ventes',       icon:'🧾', cat:'Commercial'},
     {id:'ia',              label:'Assistant IA',          icon:'🤖', cat:'General'},
     {id:'notifications',   label:'Notifications Push',    icon:'🔔', cat:'General',  admin:true},
-    {id:'rapports',        label:'Rapports & Analyses',   icon:'📈', cat:'General',  admin:true},
     {id:'carteclients',    label:'Carte clients',         icon:'🗺️', cat:'Commercial'},
     {id:'traitements',     label:'Suivi traitements',     icon:'💊', cat:'Clinique'},
     {id:'patients',        label:'Patients',              icon:'🐾', cat:'Clinique'},
@@ -355,6 +383,7 @@ useEffect(() => {
     {id:'depenses',        label:'Dépenses',              icon:'💸', cat:'Financier', admin:true},
     {id:'finances',        label:'État financier',        icon:'📈', cat:'Financier', admin:true},
     {id:'rapports',        label:'Rapports & Analyse',    icon:'📊', cat:'Financier', admin:true},
+    {id:'rapportspdf',     label:'Rapport PDF mensuel',   icon:'📄', cat:'Financier', admin:true},
     {id:'historique',      label:'Historique produits',   icon:'🗂️', cat:'Pharmacie'},
   ];
   const isAdmin = user?.role==='admin' || user?.role==='admin2';
@@ -860,7 +889,7 @@ useEffect(() => {
               {/* Skeleton au premier chargement (aucune donnée en cache) */}
               {syncing && patients.length === 0 && meds.length === 0 && clients.length === 0
                 ? <SkPage stats={4} rows={7} />
-                : <>
+                : <Suspense fallback={<SkPage stats={4} rows={7} />}>
               {view==='dashboard'&&<Dashboard {...sp}/>}
               {view==='monprofil'&&<MonProfil user={user}/>}
               {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
@@ -879,7 +908,7 @@ useEffect(() => {
               {view==='fournisseurs'&&(isAdmin?<Fournisseurs {...sp}/>:<Interdit/>)}
               {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}
               {view==='devis'&&<Devis {...sp}/>}
-              {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb}/>}
+              {view==='creances'&&<Creances ventesHist={ventesHist} setVentesHist={setSyncedVentesHist} otrMode={otrMode} sb={sb} tva={tva}/>}
               {view==='medicaments'&&<Medicaments {...sp}/>}
               {view==='commandes'&&<Commandes {...sp}/>}
               {view==='inventaire'&&<Inventaire {...sp}/>}
@@ -892,10 +921,11 @@ useEffect(() => {
               {view==='caisse'&&<Caisse {...sp}/>}
               {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user} sb={sb}/>}
               {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
-              {view==='rapports'&&<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>}
+              {view==='rapports'&&(isAdmin?<Rapports ventesHist={ventesHist} depsHist={depsHist} otrMode={otrMode}/>:<Interdit/>)}
+              {view==='rapportspdf'&&(isAdmin?<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>:<Interdit/>)}
               {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
               {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} user={user}/>}
-              </>}
+              </Suspense>}
             </div>
           </ViewTransition>
         </div>

@@ -22,7 +22,7 @@ function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
     m: label,
     r: ventesHist
       .filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(key))
-      .reduce((s, v) => s + (v.total || 0), 0),
+      .reduce((s, v) => s + (v.total || 0) + (v.tva_amt || 0), 0),
     d: depsHist
       .filter(dep => String(dep.date || '').startsWith(key))
       .reduce((s, dep) => s + (dep.montant || 0), 0),
@@ -49,7 +49,7 @@ function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
   [depsHist, curMonthKey])
 
   const curVentes = ventesHist.filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(curMonthKey))
-  const totalVentesCur = curVentes.reduce((s, v) => s + (v.total || 0), 0)
+  const totalVentesCur = curVentes.reduce((s, v) => s + (v.total || 0) + (v.tva_amt || 0), 0)
   const RP = [{ t: 'Ventes comptoir', m: totalVentesCur, p: 100 }]
 
   const hasData = DATA.some(m => m.r > 0 || m.d > 0)
