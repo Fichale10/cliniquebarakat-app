@@ -1,28 +1,72 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 const VILLES = {
-  'lomé':      { lat:6.1375,  lng:1.2123, nom:'Lomé',      region:'Maritime' },
-  'tsévié':    { lat:6.4333,  lng:1.2167, nom:'Tsévié',    region:'Maritime' },
-  'vogan':     { lat:6.2667,  lng:1.5333, nom:'Vogan',     region:'Maritime' },
-  'aneho':     { lat:6.2333,  lng:1.6000, nom:'Aného',     region:'Maritime' },
-  'aného':     { lat:6.2333,  lng:1.6000, nom:'Aného',     region:'Maritime' },
-  'bè':        { lat:6.1200,  lng:1.2200, nom:'Bè',        region:'Maritime' },
-  'adidogomé': { lat:6.1700,  lng:1.2000, nom:'Adidogomé', region:'Maritime' },
-  'tokoin':    { lat:6.1500,  lng:1.2300, nom:'Tokoin',    region:'Maritime' },
-  'kpalimé':   { lat:6.9000,  lng:0.6333, nom:'Kpalimé',   region:'Plateaux' },
-  'agou':      { lat:6.8333,  lng:0.7500, nom:'Agou',      region:'Plateaux' },
-  'notse':     { lat:6.9500,  lng:1.1667, nom:'Notsé',     region:'Plateaux' },
-  'notsé':     { lat:6.9500,  lng:1.1667, nom:'Notsé',     region:'Plateaux' },
-  'atakpamé':  { lat:7.5333,  lng:1.1333, nom:'Atakpamé',  region:'Plateaux' },
-  'badou':     { lat:7.5833,  lng:0.6000, nom:'Badou',     region:'Plateaux' },
-  'sokodé':    { lat:8.9833,  lng:1.1333, nom:'Sokodé',    region:'Centrale' },
-  'sotouboua': { lat:8.5667,  lng:0.9833, nom:'Sotouboua', region:'Centrale' },
-  'kara':      { lat:9.5500,  lng:1.1833, nom:'Kara',      region:'Kara'     },
-  'bassar':    { lat:9.2500,  lng:0.7833, nom:'Bassar',    region:'Kara'     },
-  'niamtougou':{ lat:9.7667,  lng:1.1000, nom:'Niamtougou',region:'Kara'     },
-  'dapaong':   { lat:10.8667, lng:0.2000, nom:'Dapaong',   region:'Savanes'  },
-  'mango':     { lat:10.3667, lng:0.4667, nom:'Mango',     region:'Savanes'  },
-  'kandé':     { lat:10.1167, lng:1.0667, nom:'Kandé',     region:'Savanes'  },
+  // ── Grand Lomé & Maritime ──
+  'lomé':          { lat:6.1375,  lng:1.2123, nom:'Lomé',          region:'Maritime' },
+  'bè':            { lat:6.1200,  lng:1.2200, nom:'Bè',            region:'Maritime' },
+  'tokoin':        { lat:6.1500,  lng:1.2300, nom:'Tokoin',        region:'Maritime' },
+  'adidogomé':     { lat:6.1700,  lng:1.2000, nom:'Adidogomé',     region:'Maritime' },
+  'agoè':          { lat:6.2300,  lng:1.2100, nom:'Agoè',          region:'Maritime' },
+  'agoe':          { lat:6.2300,  lng:1.2100, nom:'Agoè',          region:'Maritime' },
+  'baguida':       { lat:6.1600,  lng:1.3200, nom:'Baguida',       region:'Maritime' },
+  'adétikopé':     { lat:6.3000,  lng:1.2100, nom:'Adétikopé',     region:'Maritime' },
+  'adetikope':     { lat:6.3000,  lng:1.2100, nom:'Adétikopé',     region:'Maritime' },
+  'sanguéra':      { lat:6.2500,  lng:1.1500, nom:'Sanguéra',      region:'Maritime' },
+  'sanguera':      { lat:6.2500,  lng:1.1500, nom:'Sanguéra',      region:'Maritime' },
+  'kégué':         { lat:6.1900,  lng:1.2200, nom:'Kégué',         region:'Maritime' },
+  'kegue':         { lat:6.1900,  lng:1.2200, nom:'Kégué',         region:'Maritime' },
+  'agbalépédogan': { lat:6.1700,  lng:1.2000, nom:'Agbalépédogan', region:'Maritime' },
+  'djidjolé':      { lat:6.1600,  lng:1.1900, nom:'Djidjolé',      region:'Maritime' },
+  'nyékonakpoè':   { lat:6.1300,  lng:1.2100, nom:'Nyékonakpoè',   region:'Maritime' },
+  'hédzranawoé':   { lat:6.1700,  lng:1.2300, nom:'Hédzranawoé',   region:'Maritime' },
+  'cacavéli':      { lat:6.1900,  lng:1.2000, nom:'Cacavéli',      region:'Maritime' },
+  'amoutivé':      { lat:6.1300,  lng:1.2300, nom:'Amoutivé',      region:'Maritime' },
+  'aflao':         { lat:6.1200,  lng:1.1900, nom:'Aflao',         region:'Maritime' },
+  'zanguéra':      { lat:6.2800,  lng:1.1200, nom:'Zanguéra',      region:'Maritime' },
+  'légbassito':    { lat:6.2700,  lng:1.1800, nom:'Légbassito',    region:'Maritime' },
+  'tsévié':        { lat:6.4333,  lng:1.2167, nom:'Tsévié',        region:'Maritime' },
+  'tsevie':        { lat:6.4333,  lng:1.2167, nom:'Tsévié',        region:'Maritime' },
+  'vogan':         { lat:6.2667,  lng:1.5333, nom:'Vogan',         region:'Maritime' },
+  'aneho':         { lat:6.2333,  lng:1.6000, nom:'Aného',         region:'Maritime' },
+  'aného':         { lat:6.2333,  lng:1.6000, nom:'Aného',         region:'Maritime' },
+  'afagnan':       { lat:6.3200,  lng:1.6000, nom:'Afagnan',       region:'Maritime' },
+  'tabligbo':      { lat:6.5800,  lng:1.5000, nom:'Tabligbo',      region:'Maritime' },
+  'assahoun':      { lat:6.4500,  lng:0.9000, nom:'Assahoun',      region:'Maritime' },
+  'kévé':          { lat:6.4300,  lng:0.9300, nom:'Kévé',          region:'Maritime' },
+  'noépé':         { lat:6.3300,  lng:1.0200, nom:'Noépé',         region:'Maritime' },
+  // ── Plateaux ──
+  'kpalimé':       { lat:6.9000,  lng:0.6333, nom:'Kpalimé',       region:'Plateaux' },
+  'kpalime':       { lat:6.9000,  lng:0.6333, nom:'Kpalimé',       region:'Plateaux' },
+  'agou':          { lat:6.8333,  lng:0.7500, nom:'Agou',          region:'Plateaux' },
+  'notse':         { lat:6.9500,  lng:1.1667, nom:'Notsé',         region:'Plateaux' },
+  'notsé':         { lat:6.9500,  lng:1.1667, nom:'Notsé',         region:'Plateaux' },
+  'atakpamé':      { lat:7.5333,  lng:1.1333, nom:'Atakpamé',      region:'Plateaux' },
+  'atakpame':      { lat:7.5333,  lng:1.1333, nom:'Atakpamé',      region:'Plateaux' },
+  'badou':         { lat:7.5833,  lng:0.6000, nom:'Badou',         region:'Plateaux' },
+  'anié':          { lat:7.7500,  lng:1.2000, nom:'Anié',          region:'Plateaux' },
+  'amlamé':        { lat:7.4700,  lng:0.9000, nom:'Amlamé',        region:'Plateaux' },
+  'danyi':         { lat:7.1500,  lng:0.6200, nom:'Danyi',         region:'Plateaux' },
+  // ── Centrale ──
+  'sokodé':        { lat:8.9833,  lng:1.1333, nom:'Sokodé',        region:'Centrale' },
+  'sokode':        { lat:8.9833,  lng:1.1333, nom:'Sokodé',        region:'Centrale' },
+  'sotouboua':     { lat:8.5667,  lng:0.9833, nom:'Sotouboua',     region:'Centrale' },
+  'tchamba':       { lat:9.0300,  lng:1.4200, nom:'Tchamba',       region:'Centrale' },
+  'blitta':        { lat:8.3200,  lng:0.9800, nom:'Blitta',        region:'Centrale' },
+  // ── Kara ──
+  'kara':          { lat:9.5500,  lng:1.1833, nom:'Kara',          region:'Kara'     },
+  'bassar':        { lat:9.2500,  lng:0.7833, nom:'Bassar',        region:'Kara'     },
+  'niamtougou':    { lat:9.7667,  lng:1.1000, nom:'Niamtougou',    region:'Kara'     },
+  'bafilo':        { lat:9.3500,  lng:1.2700, nom:'Bafilo',        region:'Kara'     },
+  'pagouda':       { lat:9.7500,  lng:1.3300, nom:'Pagouda',       region:'Kara'     },
+  'kabou':         { lat:9.4500,  lng:0.8200, nom:'Kabou',         region:'Kara'     },
+  // ── Savanes ──
+  'dapaong':       { lat:10.8667, lng:0.2000, nom:'Dapaong',       region:'Savanes'  },
+  'mango':         { lat:10.3667, lng:0.4667, nom:'Mango',         region:'Savanes'  },
+  'kandé':         { lat:10.1167, lng:1.0667, nom:'Kandé',         region:'Savanes'  },
+  'tandjouaré':    { lat:10.6500, lng:0.1500, nom:'Tandjouaré',    region:'Savanes'  },
+  'cinkassé':      { lat:11.0600, lng:0.0200, nom:'Cinkassé',      region:'Savanes'  },
 }
 
 const REGION_COLOR = {
@@ -31,18 +75,6 @@ const REGION_COLOR = {
   Centrale: '#8b5cf6',
   Kara:     '#f97316',
   Savanes:  '#d97706',
-}
-
-// Bornes de la carte dans l'image PNG (en % de la taille de l'image)
-const X_LEFT = 15, X_RIGHT = 87
-const Y_TOP  = 2,  Y_BOT   = 96
-const LAT_MAX = 11.15, LAT_MIN = 6.05
-const LNG_MIN = 0.00,  LNG_MAX = 1.85
-
-function toPercent(lat, lng) {
-  const x = X_LEFT + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (X_RIGHT - X_LEFT)
-  const y = Y_TOP  + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (Y_BOT   - Y_TOP)
-  return { x, y }
 }
 
 function getVille(adresse) {
@@ -58,6 +90,9 @@ function CarteClients({ clients = [], patients = [] }) {
   const [search, setSearch]           = useState('')
   const [selected, setSelected]       = useState(null)
   const [activeVille, setActiveVille] = useState(null)
+  const mapDivRef   = useRef(null)
+  const mapRef      = useRef(null)
+  const markersRef  = useRef(null)
 
   const enriched = useMemo(() => clients.map(c => ({
     ...c,
@@ -85,6 +120,44 @@ function CarteClients({ clients = [], patients = [] }) {
 
   const totalAnimaux = geolocated.reduce((s, c) => s + c.animaux.length, 0)
   const villeActive  = parVille.find(v => v.ville.nom === activeVille)
+
+  // ── Initialisation de la carte Leaflet (une seule fois) ───────
+  useEffect(() => {
+    if (!mapDivRef.current || mapRef.current) return
+    const map = L.map(mapDivRef.current, { scrollWheelZoom: true }).setView([8.4, 1.0], 7)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18,
+    }).addTo(map)
+    markersRef.current = L.layerGroup().addTo(map)
+    mapRef.current = map
+    return () => { map.remove(); mapRef.current = null }
+  }, [])
+
+  // ── Marqueurs par ville (mis à jour avec les filtres) ─────────
+  useEffect(() => {
+    const group = markersRef.current
+    if (!group) return
+    group.clearLayers()
+    parVille.forEach(v => {
+      const color = REGION_COLOR[v.ville.region] || '#0d9488'
+      const marker = L.circleMarker([v.ville.lat, v.ville.lng], {
+        radius: 10 + Math.min(v.clients.length * 2, 12),
+        color: 'white', weight: 2.5,
+        fillColor: color, fillOpacity: 0.9,
+      })
+      marker.bindTooltip(`${v.ville.nom} — ${v.clients.length} client(s)`, { direction: 'top', offset: [0, -8] })
+      marker.on('click', () => setActiveVille(prev => prev === v.ville.nom ? null : v.ville.nom))
+      group.addLayer(marker)
+    })
+  }, [parVille])
+
+  // ── Zoom sur la ville sélectionnée ─────────────────────────
+  useEffect(() => {
+    if (mapRef.current && villeActive) {
+      mapRef.current.flyTo([villeActive.ville.lat, villeActive.ville.lng], 12, { duration: 0.8 })
+    }
+  }, [activeVille])
 
   return (
     <div className="app-page space-y-5">
@@ -122,124 +195,56 @@ function CarteClients({ clients = [], patients = [] }) {
             />
           </div>
 
-          <div style={{ padding:'20px 24px', background:'linear-gradient(135deg,#f8fafc,#f0fdf4)' }}>
-            <div style={{ position:'relative', maxWidth:340, margin:'0 auto' }}>
+          <div style={{ padding:'16px 20px' }}>
+            {/* Carte interactive OpenStreetMap */}
+            <div ref={mapDivRef} style={{ height:420, borderRadius:14, overflow:'hidden', border:'1px solid #e2e8f0', zIndex:0 }} />
 
-              {/* Teinture colorée régions — derrière l'image, blending multiply */}
+            {/* Détail ville sélectionnée */}
+            {villeActive && (
               <div style={{
-                position:'absolute', inset:0, pointerEvents:'none', zIndex:1,
-                background:`linear-gradient(to bottom,
-                  rgba(217,119,6,0.20)  0%   23%,
-                  rgba(249,115,22,0.20) 23%  40%,
-                  rgba(139,92,246,0.20) 40%  60%,
-                  rgba(59,130,246,0.20) 60%  81%,
-                  rgba(13,148,136,0.20) 81% 100%
-                )`,
-                mixBlendMode:'multiply',
-              }}/>
-
-              {/* Image de la carte (fond blanc + contours noirs des régions) */}
-              <img
-                src="/togo-regions.png"
-                alt="Carte des régions du Togo"
-                style={{ width:'100%', display:'block', position:'relative', zIndex:2 }}
-                draggable={false}
-              />
-
-              {/* Marqueurs de villes */}
-              {parVille.map(v => {
-                const { x, y } = toPercent(v.ville.lat, v.ville.lng)
-                const color    = REGION_COLOR[v.ville.region] || '#0d9488'
-                const isActive = activeVille === v.ville.nom
-                const size     = 22 + Math.min(v.clients.length * 3, 12)
-                return (
-                  <div
-                    key={v.ville.nom}
-                    onClick={() => setActiveVille(isActive ? null : v.ville.nom)}
-                    style={{
-                      position:'absolute',
-                      left:`${x}%`, top:`${y}%`,
-                      transform:'translate(-50%,-50%)',
-                      cursor:'pointer', zIndex:10,
-                    }}
-                  >
-                    {isActive && (
-                      <div style={{
-                        position:'absolute', inset:-8,
-                        borderRadius:'50%', background:color, opacity:0.22,
-                      }}/>
-                    )}
-                    <div style={{
-                      width:size, height:size, borderRadius:'50%',
-                      background:color,
-                      border:`${isActive ? 3 : 2.5}px solid white`,
-                      boxShadow:`0 2px 8px ${color}99, 0 1px 3px rgba(0,0,0,0.18)`,
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      color:'white', fontSize:size > 30 ? 10 : 8, fontWeight:900,
-                      position:'relative', zIndex:2,
-                      transition:'all .15s',
-                    }}>
-                      {v.clients.length}
-                    </div>
-                    <div style={{
-                      position:'absolute', bottom:'100%', left:'50%',
-                      transform:'translateX(-50%)',
-                      fontSize:8.5, fontWeight:800, color:'#1e293b',
-                      whiteSpace:'nowrap', marginBottom:2,
-                      textShadow:'0 0 4px white, 0 0 4px white, 0 0 4px white',
-                      pointerEvents:'none',
-                    }}>
-                      {v.ville.nom}
-                    </div>
-                  </div>
-                )
-              })}
-
-              {/* Popup ville */}
-              {villeActive && (
-                <div style={{
-                  position:'absolute', top:0, right:-10,
-                  background:'white', borderRadius:14, padding:'14px 16px',
-                  boxShadow:'0 8px 32px rgba(0,0,0,0.15)',
-                  minWidth:185, maxWidth:215,
-                  border:'1px solid #e2e8f0', zIndex:30,
-                }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                    <span style={{ fontWeight:800, fontSize:13, color:'#1e293b' }}>
-                      📍 {villeActive.ville.nom}
-                    </span>
-                    <button
-                      onClick={() => setActiveVille(null)}
-                      style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:18, lineHeight:1, padding:0 }}
-                    >×</button>
-                  </div>
-                  <div style={{ display:'flex', gap:5, marginBottom:10 }}>
-                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999, background:'#dbeafe', color:'#1d4ed8' }}>
+                marginTop:12, background:'white', borderRadius:14, padding:'14px 16px',
+                boxShadow:'0 4px 16px rgba(0,0,0,0.06)', border:'1px solid #e2e8f0',
+              }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8, flexWrap:'wrap', gap:8 }}>
+                  <span style={{ fontWeight:800, fontSize:14, color:'#1e293b' }}>
+                    📍 {villeActive.ville.nom}
+                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999, background:'#dbeafe', color:'#1d4ed8', marginLeft:8 }}>
                       {villeActive.clients.length} client(s)
                     </span>
-                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999, background:'#dcfce7', color:'#166534' }}>
+                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:999, background:'#dcfce7', color:'#166534', marginLeft:5 }}>
                       {villeActive.clients.reduce((s, c) => s + c.animaux.length, 0)} 🐾
                     </span>
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                    {villeActive.clients.map(c => (
-                      <div
-                        key={c.id}
-                        onClick={() => { setSelected(c); setActiveVille(null) }}
-                        style={{ padding:'7px 9px', borderRadius:9, background:'#f8fafc', border:'1px solid #e2e8f0', cursor:'pointer', transition:'all .15s' }}
-                        onMouseEnter={e => e.currentTarget.style.background='#f0fdf4'}
-                        onMouseLeave={e => e.currentTarget.style.background='#f8fafc'}
-                      >
-                        <div style={{ fontWeight:700, fontSize:12, color:'#1e293b' }}>{c.nom}</div>
-                        <div style={{ fontSize:11, color:'#94a3b8', marginTop:1 }}>
-                          {c.animaux.length} animal(aux) · {c.tel || '—'}
-                        </div>
-                      </div>
-                    ))}
+                  </span>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${villeActive.ville.lat},${villeActive.ville.lng}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize:12, fontWeight:700, padding:'5px 12px', borderRadius:9, background:'#f0fdfa', border:'1px solid #99f6e4', color:'#0d9488', textDecoration:'none' }}>
+                      🧭 Itinéraire
+                    </a>
+                    <button
+                      onClick={() => setActiveVille(null)}
+                      style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:9, cursor:'pointer', color:'#94a3b8', fontSize:15, lineHeight:1, padding:'4px 10px' }}
+                    >×</button>
                   </div>
                 </div>
-              )}
-            </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:6 }}>
+                  {villeActive.clients.map(c => (
+                    <div
+                      key={c.id}
+                      onClick={() => setSelected(c)}
+                      style={{ padding:'7px 9px', borderRadius:9, background:'#f8fafc', border:'1px solid #e2e8f0', cursor:'pointer', transition:'all .15s' }}
+                      onMouseEnter={e => e.currentTarget.style.background='#f0fdf4'}
+                      onMouseLeave={e => e.currentTarget.style.background='#f8fafc'}
+                    >
+                      <div style={{ fontWeight:700, fontSize:12, color:'#1e293b' }}>{c.nom}</div>
+                      <div style={{ fontSize:11, color:'#94a3b8', marginTop:1 }}>
+                        {c.animaux.length} animal(aux) · {c.tel || '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Légende régions */}
             <div style={{ display:'flex', flexWrap:'wrap', gap:10, justifyContent:'center', marginTop:14 }}>
