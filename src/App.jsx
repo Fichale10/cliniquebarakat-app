@@ -921,7 +921,7 @@ useEffect(() => {
               {view==='caisse'&&<Caisse {...sp}/>}
               {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user} sb={sb}/>}
               {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
-              {view==='rapports'&&(isAdmin?<Rapports ventesHist={ventesHist} depsHist={depsHist} otrMode={otrMode}/>:<Interdit/>)}
+              {view==='rapports'&&(isAdmin?<Rapports ventesHist={ventesHist} depsHist={depsHist} otrMode={otrMode} meds={meds}/>:<Interdit/>)}
               {view==='rapportspdf'&&(isAdmin?<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>:<Interdit/>)}
               {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
               {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} user={user}/>}

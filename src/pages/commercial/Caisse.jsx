@@ -84,6 +84,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       med: nom, medSearch: nom, showSugg: false,
       pu:   t2[0]?.prix  ?? m2?.prixVente ?? m2?.prix_vente ?? 0,
       mult: t2[0]?.mult  ?? 1,
+      pa:   parseFloat(m2?.prixAchat ?? m2?.prix_achat) || 0,
       cond: t2[0]?.conditionnement || 'Unité',
     })
   }
@@ -800,11 +801,12 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                                     <button key={m.id||m.nom} type="button"
                                       className="w-full text-left px-3 py-2 text-sm hover:bg-green-50 flex justify-between items-center"
                                       onMouseDown={() => {
+                                        const paSnap = parseFloat(m.prixAchat ?? m.prix_achat) || 0
                                         if (venteForm.type === 'gros') {
-                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:'Gros', pu:getPrixGros(m,parseInt(l.qte)||1), mult:1, showSugg:false })
+                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:'Gros', pu:getPrixGros(m,parseInt(l.qte)||1), mult:1, pa:paSnap, showSugg:false })
                                         } else {
                                           const t2 = getTarifsV(m)
-                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:t2?.[0]?.conditionnement||'Unité', pu:t2?.[0]?.prix||m.prixVente||m.prix_vente||'', mult:t2?.[0]?.mult||1, showSugg:false })
+                                          updVL(i, { med:m.nom, medSearch:m.nom, cond:t2?.[0]?.conditionnement||'Unité', pu:t2?.[0]?.prix||m.prixVente||m.prix_vente||'', mult:t2?.[0]?.mult||1, pa:paSnap, showSugg:false })
                                         }
                                       }}>
                                       <span className="font-medium">{m.nom}</span>

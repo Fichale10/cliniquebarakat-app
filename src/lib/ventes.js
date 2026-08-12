@@ -87,3 +87,21 @@ export const venteEncaisse = (v, tva) =>
 // ── Stock ────────────────────────────────────────────────────
 /** Unités réelles décrémentées par une ligne (qte × conditionnement) */
 export const ligneUnites = l => (parseInt(l?.qte) || 0) * (parseInt(l?.mult) || 1)
+
+// ── Marges ─────────────────────────────────────────────────
+/** Coût d'achat d'une ligne : pa figé à la vente, sinon prix d'achat actuel (estimé) */
+export const ligneCoutAchat = (l, meds = []) => {
+  let pa = parseFloat(l?.pa) || 0
+  if (!pa) {
+    const m = meds.find(x => x.nom === l?.med)
+    pa = parseFloat(m?.prixAchat ?? m?.prix_achat) || 0
+  }
+  return pa * ((parseFloat(l?.qte) || 0) * (parseInt(l?.mult) || 1))
+}
+
+/** CA d'une ligne (qte × prix de vente) */
+export const ligneCA = l => (parseFloat(l?.qte) || 0) * (parseFloat(l?.pu) || 0)
+
+/** Marge brute d'une vente = Σ (CA ligne − coût d'achat ligne) */
+export const venteMarge = (v, meds = []) =>
+  (v?.lignes || []).reduce((s, l) => s + ligneCA(l) - ligneCoutAchat(l, meds), 0)

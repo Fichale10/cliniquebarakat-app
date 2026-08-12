@@ -176,7 +176,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
     if (stockErr.length) return alert(stockErr.join('\n'))
     setSaving(true)
     try {
-      const traitements = traitsValides.map(t => ({ med:t.med, qte:parseFloat(t.qte)||0, pu:parseFloat(t.pu)||0, ...(t.rappel ? { rappel:t.rappel } : {}) }))
+      const traitements = traitsValides.map(t => ({ med:t.med, qte:parseFloat(t.qte)||0, pu:parseFloat(t.pu)||0, pa:parseFloat(t.pa)||0, ...(t.rappel ? { rappel:t.rappel } : {}) }))
       const consultId = newId()
       const row = { id:consultId, date:form.date, patient:form.patient, proprio:form.proprio, poids:form.poids, temperature:form.temperature, fc:form.fc, soap_s:form.soap_s, soap_o:form.soap_o, soap_a:form.soap_a, soap_p:form.soap_p, montant:totalGeneral, statut:form.statut, traitements }
       const saved = await dbInsert(sb,'consultations',row)
@@ -184,8 +184,8 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
       // ── Vente liée : le CA consultation entre dans Finances/Créances ──
       if (totalGeneral > 0 && setVentesHist) {
         const lignes = [
-          ...(montantActes > 0 ? [{ med:'🩺 Actes de consultation', cond:'Consultation', qte:1, pu:montantActes, mult:1 }] : []),
-          ...traitements.map(t => ({ med:t.med, cond:'Traitement', qte:t.qte, pu:t.pu, mult:1 })),
+          ...(montantActes > 0 ? [{ med:'🩺 Actes de consultation', cond:'Consultation', qte:1, pu:montantActes, mult:1, pa:0 }] : []),
+          ...traitements.map(t => ({ med:t.med, cond:'Traitement', qte:t.qte, pu:t.pu, pa:t.pa||0, mult:1 })),
         ]
         const venteRow = {
           ...venteToDbRow({
@@ -438,7 +438,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                             {suggestions.map(m => (
                               <button key={m.id||m.nom} type="button"
                                 style={{ display:'flex',justifyContent:'space-between',width:'100%',textAlign:'left',padding:'7px 12px',fontSize:13,background:'none',border:'none',cursor:'pointer' }}
-                                onMouseDown={()=>updT(i,{med:m.nom,medSearch:m.nom,pu:m.prixVente||m.prix_vente||'',rappel:(m.categorie==='Vaccin')?plusUnAn(form.date):'',showSugg:false})}
+                                onMouseDown={()=>updT(i,{med:m.nom,medSearch:m.nom,pu:m.prixVente||m.prix_vente||'',pa:parseFloat(m.prixAchat??m.prix_achat)||0,rappel:(m.categorie==='Vaccin')?plusUnAn(form.date):'',showSugg:false})}
                                 onMouseEnter={e=>e.currentTarget.style.background='#f0fdf4'}
                                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
                                 <span style={{ fontWeight:600 }}>{m.nom}</span>

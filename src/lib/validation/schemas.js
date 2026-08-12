@@ -217,6 +217,12 @@ export const venteLigneSchema = z.object({
     .positive()
     .optional()
     .transform((n) => n ?? 1),
+  /** Prix d'achat unitaire figé au moment de la vente (calcul de marge) */
+  pa: z.coerce
+    .number()
+    .min(0)
+    .optional()
+    .transform((n) => n ?? 0),
   qte: z.coerce
     .number({ invalid_type_error: 'Quantité invalide' })
     .int('Quantité : entier requis')

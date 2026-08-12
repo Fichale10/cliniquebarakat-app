@@ -339,11 +339,12 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                               <button key={m.id||m.nom} type="button"
                                 className="w-full text-left px-3 py-2 text-sm hover:bg-green-50 flex justify-between items-center"
                                 onMouseDown={() => {
+                                  const paSnap = parseFloat(m.prixAchat ?? m.prix_achat) || 0
                                   if (form.type==='gros') {
-                                    updL(i,{med:m.nom,medSearch:m.nom,cond:'Gros',pu:getPrixGros(m,parseInt(l.qte)||1),mult:1,showSugg:false})
+                                    updL(i,{med:m.nom,medSearch:m.nom,cond:'Gros',pu:getPrixGros(m,parseInt(l.qte)||1),mult:1,pa:paSnap,showSugg:false})
                                   } else {
                                     const t2=getTarifs(m); const first=t2?.[0]
-                                    updL(i,{med:m.nom,medSearch:m.nom,cond:first?.conditionnement||'Unité',pu:first?.prix||m.prixVente||m.prix_vente||'',mult:first?.mult||1,showSugg:false})
+                                    updL(i,{med:m.nom,medSearch:m.nom,cond:first?.conditionnement||'Unité',pu:first?.prix||m.prixVente||m.prix_vente||'',mult:first?.mult||1,pa:paSnap,showSugg:false})
                                   }
                                 }}>
                                 <span className="font-medium">{m.nom}</span>

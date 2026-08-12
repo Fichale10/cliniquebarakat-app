@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { fmtF } from "../../lib/utils"
+import { venteMarge, ligneCA, ligneCoutAchat } from "../../lib/ventes"
 
 const today = () => new Date().toISOString().split('T')[0]
 
-function Rapports({ventesHist,depsHist,otrMode}){
+function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   const [periode,setPeriode]=useState('jour');
   const mask=v=>otrMode?'••••• F':fmtF(v);
 
@@ -30,6 +31,26 @@ function Rapports({ventesHist,depsHist,otrMode}){
   const nbV=ventesP.length;
   const panier=nbV>0?Math.round(ca/nbV):0;
 
+  // ── Marge brute (prix vente − prix d'achat, figé à la vente si dispo) ──
+  const ventesPayees = ventesP.filter(v=>v.statut==='Payé');
+  const margeBrute   = ventesPayees.reduce((s,v)=>s+venteMarge(v,meds),0);
+  const margePct     = ca>0?Math.round((margeBrute/ca)*100):0;
+  const hasPaFige    = ventesPayees.some(v=>(v.lignes||[]).some(l=>parseFloat(l.pa)>0));
+
+  // ── CA par jour de la semaine (Lun → Dim) ──
+  const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const caParJourSem = useMemo(()=>{
+    const acc=[0,0,0,0,0,0,0], cnt=[0,0,0,0,0,0,0];
+    ventesPayees.forEach(v=>{
+      if(!v.date)return;
+      const idx=(new Date(v.date+'T00:00:00').getDay()+6)%7; // 0=Lun
+      acc[idx]+=(v.total||0)+(v.tva_amt||0); cnt[idx]++;
+    });
+    return JOURS.map((j,i)=>({jour:j,ca:acc[i],nb:cnt[i]}));
+  },[ventesHist,periode]);
+  const maxJourCA=Math.max(...caParJourSem.map(j=>j.ca),1);
+  const meilleurJour=caParJourSem.reduce((b,j)=>j.ca>b.ca?j:b,caParJourSem[0]);
+
   // Série chronologique
   const caByDate={};   ventesP.filter(v=>v.statut==='Payé').forEach(v=>{caByDate[v.date]=(caByDate[v.date]||0)+(v.total||0)+(v.tva_amt||0);});
   const depByDate={};  depsP.forEach(d=>{depByDate[d.date]=(depByDate[d.date]||0)+(d.montant||0);});
@@ -52,13 +73,14 @@ function Rapports({ventesHist,depsHist,otrMode}){
   }
   const maxV=Math.max(...serie.map(s=>Math.max(s.ca,s.deps)),1);
 
-  // Top produits
+  // Top produits (CA + marge)
   const tp={};
   ventesP.filter(v=>v.statut==='Payé').forEach(v=>(v.lignes||[]).forEach(l=>{
     if(!l.med)return;
-    if(!tp[l.med])tp[l.med]={nom:l.med,qte:0,ca:0};
+    if(!tp[l.med])tp[l.med]={nom:l.med,qte:0,ca:0,marge:0};
     tp[l.med].qte+=parseInt(l.qte)||0;
-    tp[l.med].ca+=(parseInt(l.qte)||0)*(parseInt(l.pu)||0);
+    tp[l.med].ca+=ligneCA(l);
+    tp[l.med].marge+=ligneCA(l)-ligneCoutAchat(l,meds);
   }));
   const topList=Object.values(tp).sort((a,b)=>b.ca-a.ca).slice(0,6);
 
@@ -86,9 +108,10 @@ function Rapports({ventesHist,depsHist,otrMode}){
     </div>
 
     {/* KPIs */}
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {[
         {l:'CA Encaissé',v:mask(ca),c:'green',i:'💰',sub:nbV+' vente(s)'},
+        {l:'Marge brute',v:mask(margeBrute),c:'teal',i:'📈',sub:margePct+'% du CA'+(hasPaFige?'':' (estimée)')},
         {l:'À crédit',v:mask(credit),c:'orange',i:'⏳',sub:'non payé'},
         {l:'Dépenses',v:mask(totalD),c:'red',i:'💸',sub:depsP.length+' op.'},
         {l:benefice>=0?'Bénéfice':'Déficit',v:mask(Math.abs(benefice)),c:benefice>=0?'blue':'red',i:benefice>=0?'📈':'📉',sub:benefice>=0?'Positif ✅':'Attention ⚠️'},
@@ -126,19 +149,43 @@ function Rapports({ventesHist,depsHist,otrMode}){
       }
     </div>
 
+    {/* CA par jour de la semaine */}
+    {ca>0 && (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <h3 className="font-bold text-lg mb-1">📅 CA par jour de la semaine — {labelMap[periode]}</h3>
+        <p className="text-xs text-slate-400 mb-4">Repérez vos jours forts et faibles{!otrMode&&meilleurJour.ca>0?` · meilleur jour : ${meilleurJour.jour} (${fmtF(meilleurJour.ca)})`:''}</p>
+        <div className="grid grid-cols-7 gap-2">
+          {caParJourSem.map((j,i)=>{
+            const pct=Math.round((j.ca/maxJourCA)*100);
+            const isBest=j.jour===meilleurJour.jour&&j.ca>0;
+            return <div key={i} className="flex flex-col items-center">
+              <div className="w-full flex flex-col justify-end" style={{height:90}}>
+                <div className={"w-full rounded-t-lg transition-all "+(isBest?'bg-green-600':j.ca>0?'bg-green-400':'bg-slate-100')} style={{height:Math.max(4,pct*0.9)+'px'}} title={fmtF(j.ca)} />
+              </div>
+              <span className={"text-xs mt-1 "+(isBest?'font-black text-green-700':'font-semibold text-slate-500')}>{j.jour}</span>
+              {!otrMode&&<span className="text-slate-400" style={{fontSize:9}}>{j.ca>0?fmtF(j.ca):'—'}</span>}
+              <span className="text-slate-300" style={{fontSize:9}}>{j.nb>0?j.nb+' v.':''}</span>
+            </div>;
+          })}
+        </div>
+      </div>
+    )}
+
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       {/* Top produits */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <h3 className="font-bold text-lg mb-4">🏆 Top produits vendus</h3>
+        <h3 className="font-bold text-lg mb-1">🏆 Top produits vendus</h3>
+        <p className="text-xs text-slate-400 mb-4">CA et marge brute par produit{hasPaFige?'':' (marge estimée sur prix d\'achat actuels)'}</p>
         {topList.length===0
           ?<div className="text-center text-slate-400 py-8"><div className="text-3xl mb-2">💊</div><p>Aucune vente sur cette période</p></div>
           :<div className="space-y-3">{topList.map((p,i)=>{
             const pct=Math.round((p.ca/(topList[0].ca||1))*100);
+            const mPct=p.ca>0?Math.round((p.marge/p.ca)*100):0;
             return <div key={i}>
               <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center gap-2">
                   <span className={"w-5 h-5 rounded-full flex items-center justify-center text-xs font-black text-white "+(i===0?'bg-yellow-500':i===1?'bg-slate-400':'bg-amber-700')}>{i+1}</span>
-                  <span className="font-semibold text-sm truncate" style={{maxWidth:'140px'}}>{p.nom}</span>
+                  <span className="font-semibold text-sm truncate" style={{maxWidth:'130px'}}>{p.nom}</span>
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-xs text-slate-400">{p.qte} u.</span>
@@ -146,6 +193,9 @@ function Rapports({ventesHist,depsHist,otrMode}){
                 </div>
               </div>
               <div className="bg-slate-100 rounded-full h-2"><div className="bg-green-500 h-2 rounded-full" style={{width:pct+'%'}}/></div>
+              {!otrMode&&<div className="flex justify-end mt-0.5">
+                <span className={"text-xs font-bold "+(p.marge>=0?'text-teal-600':'text-red-500')}>marge : {fmtF(p.marge)} ({mPct}%)</span>
+              </div>}
             </div>;
           })}</div>
         }
@@ -173,16 +223,17 @@ function Rapports({ventesHist,depsHist,otrMode}){
     {/* Bilan */}
     <div className={"rounded-2xl p-5 border-2 "+(benefice>=0?'bg-green-50 border-green-200':'bg-red-50 border-red-200')}>
       <h3 className="font-bold text-xl mb-4">{benefice>=0?'✅':'⚠️'} Bilan — {labelMap[periode]}</h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {l:'Recettes encaissées',v:ca,c:'green'},
+          {l:'Marge brute (produits)',v:margeBrute,c:'teal'},
           {l:'Total dépenses',v:totalD,c:'red'},
           {l:benefice>=0?'Bénéfice net':'Déficit',v:Math.abs(benefice),c:benefice>=0?'blue':'red'},
         ].map((r,i)=>(
           <div key={i} className="bg-white rounded-xl p-4 text-center shadow-sm">
             <p className="text-xs font-bold text-slate-400 uppercase mb-1">{r.l}</p>
             <p className={"text-xl font-black font-mono text-"+r.c+"-600"}>{mask(r.v)}</p>
-            {i===2&&!otrMode&&totalD>0&&<p className={"text-xs font-semibold mt-1 text-"+r.c+"-500"}>Marge : {Math.round((ca/(ca+totalD||1))*100)}%</p>}
+            {i===1&&!otrMode&&ca>0&&<p className="text-xs font-semibold mt-1 text-teal-500">{margePct}% du CA</p>}
           </div>
         ))}
       </div>
