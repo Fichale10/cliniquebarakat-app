@@ -6,7 +6,7 @@ import { Btn, Badge, Field, FormPanel, FormSection, FilterBar, FilterSelect, Fil
 const today = () => new Date().toISOString().split('T')[0]
 const SC = { Reçu: 'green', 'En transit': 'blue', 'En attente': 'yellow', Annulé: 'red' }
 
-const EMPTY_FORM = { date: today(), fournisseur: '', lignes: [{ produit: '', qte: '', pu: '' }] }
+const EMPTY_FORM = { date: today(), fournisseur: '', echeance: '', lignes: [{ produit: '', qte: '', pu: '' }] }
 
 function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHist, sb }) {
   const [showForm, setShowForm] = useState(false)
@@ -50,6 +50,7 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
         total: montantTotal,
         statut: 'En attente',
         date_reception: null,
+        echeance: form.echeance || null,
       }
       const saved = await dbInsert(sb, 'commandes', row)
       setAchatsHist([saved, ...(achatsHist || [])])
@@ -129,7 +130,7 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
         {showForm && (
           <FormPanel icon="📦" title="Nouvelle commande fournisseur" subtitle="Passez une commande auprès d'un fournisseur" color="blue" onClose={() => setShowForm(false)}>
             <FormSection label="Informations" icon="📋" color="blue" noTopMargin>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <Field label="Date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} type="date" />
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '.06em', textTransform: 'uppercase', display: 'block', marginBottom: 6, userSelect: 'none' }}>Fournisseur *</label>
@@ -142,6 +143,10 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                   <datalist id="cmd-fournisseurs">
                     {fournisseurOptions.map(f => <option key={f} value={f} />)}
                   </datalist>
+                </div>
+                <div>
+                  <Field label="Échéance paiement" value={form.echeance} onChange={e => setForm({ ...form, echeance: e.target.value })} type="date" />
+                  <p style={{ fontSize:10, color:'#94a3b8', marginTop:3 }}>Optionnel — alerte Dashboard avant le retard</p>
                 </div>
               </div>
             </FormSection>

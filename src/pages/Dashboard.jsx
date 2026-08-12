@@ -46,6 +46,24 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
     return j >= 0 && j <= 30
   }).sort((a,b) => new Date(a.peremption) - new Date(b.peremption))
 
+  // ── Échéances fournisseurs (J+7 ou dépassées, solde restant dû) ──
+  const echeancesFournisseurs = useMemo(() => {
+    const limite = new Date(Date.now() + 7*86400000).toISOString().split('T')[0]
+    // Solde par fournisseur (commandes reçues − versements)
+    const soldes = {}
+    for (const c of (achatsHist||[])) { if (c.statut !== 'Reçu') continue; soldes[c.fournisseur] = (soldes[c.fournisseur]||0) + (c.total||0) }
+    for (const v of (versements||[])) { const k = v.fournisseur || v.nom; if (!k) continue; soldes[k] = (soldes[k]||0) - (v.montant||0) }
+    return (achatsHist||[])
+      .filter(c => c.statut === 'Reçu' && c.echeance && c.echeance <= limite && (soldes[c.fournisseur]||0) > 0)
+      .map(c => ({
+        fournisseur: c.fournisseur, num: c.num, echeance: c.echeance,
+        total: c.total || 0, solde: soldes[c.fournisseur] || 0,
+        jours: Math.round((new Date(c.echeance) - now) / 86400000),
+      }))
+      .sort((a,b) => a.echeance.localeCompare(b.echeance))
+      .slice(0, 6)
+  }, [achatsHist, versements])
+
   // ── Rappels vaccinaux (à J+14 ou en retard) ──────────────────
   const rappelsVaccins = useMemo(() => {
     const limite = new Date(Date.now() + 14*86400000).toISOString().split('T')[0]
@@ -256,6 +274,33 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ══ ÉCHÉANCES FOURNISSEURS ══════════════════════════════ */}
+      {echeancesFournisseurs.length > 0 && (
+        <div className="dash-alert-panel" style={{ borderColor:'#fde68a', background:'linear-gradient(135deg,#fffbeb,#fefce8)' }}>
+          <div className="dash-alert-head">
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ width:28,height:28,borderRadius:'50%',background:'#d97706',display:'inline-flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14 }}>🏭</span>
+              <span style={{ fontWeight:800,fontSize:15,color:'#92400e' }}>Échéances fournisseurs</span>
+              <span style={{ fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,background:'#d97706',color:'white' }}>
+                {echeancesFournisseurs.length} à payer
+              </span>
+            </div>
+            <button type="button" className="dash-link" style={{ color:'#d97706' }} onClick={() => setView('fournisseurs')}>Gérer les dettes →</button>
+          </div>
+          {echeancesFournisseurs.map((e, i) => (
+            <div key={i} className="dash-alert-row" style={{ gridTemplateColumns:'1.4fr 1fr 1fr' }}>
+              <span style={{ fontWeight:600,fontSize:13 }}>🏭 {e.fournisseur} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {e.num||''}</span></span>
+              <span style={{ textAlign:'center',fontSize:12,color:'#64748b' }}>solde dû : <strong style={{ color:'#d97706' }}>{fmtF(e.solde)}</strong></span>
+              <div style={{ textAlign:'center' }}>
+                {e.jours < 0
+                  ? <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>⚠️ Retard {Math.abs(e.jours)}j</span>
+                  : <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a' }}>⏰ J-{e.jours}</span>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
