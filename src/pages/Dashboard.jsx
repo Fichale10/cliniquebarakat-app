@@ -46,6 +46,29 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
     return j >= 0 && j <= 30
   }).sort((a,b) => new Date(a.peremption) - new Date(b.peremption))
 
+  // ── Rappels vaccinaux (à J+14 ou en retard) ──────────────────
+  const rappelsVaccins = useMemo(() => {
+    const limite = new Date(Date.now() + 14*86400000).toISOString().split('T')[0]
+    // Ne garder que la DERNIÈRE injection de chaque vaccin par patient
+    const dernieres = {}
+    for (const p of (patients||[])) {
+      for (const v of (p.vaccins||[])) {
+        if (!v?.nom) continue
+        const key = `${p.id}|${v.nom}`
+        if (!dernieres[key] || (v.date||'') > (dernieres[key].v.date||'')) dernieres[key] = { p, v }
+      }
+    }
+    return Object.values(dernieres)
+      .filter(({ v }) => v.prochain && v.prochain <= limite)
+      .map(({ p, v }) => ({
+        patient: p.nom, proprio: p.proprio, tel: p.tel,
+        vaccin: v.nom, prochain: v.prochain,
+        jours: Math.round((new Date(v.prochain) - now) / 86400000),
+      }))
+      .sort((a,b) => a.prochain.localeCompare(b.prochain))
+      .slice(0, 8)
+  }, [patients])
+
   // ── Dettes fournisseurs ──────────────────────────────────────
   const totalVerse        = useMemo(() => (versements||[]).reduce((s,v)=>s+(v.montant||0),0), [versements])
   const totalCmdsRecues   = useMemo(() => (achatsHist||[]).filter(c=>c.statut==='Reçu').reduce((s,c)=>s+(c.total||0),0), [achatsHist])
@@ -233,6 +256,33 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ══ RAPPELS VACCINAUX ═══════════════════════════════════ */}
+      {rappelsVaccins.length > 0 && (
+        <div className="dash-alert-panel" style={{ borderColor:'#e9d5ff', background:'linear-gradient(135deg,#faf5ff,#fdf4ff)' }}>
+          <div className="dash-alert-head">
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ width:28,height:28,borderRadius:'50%',background:'#9333ea',display:'inline-flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14 }}>💉</span>
+              <span style={{ fontWeight:800,fontSize:15,color:'#6b21a8' }}>Rappels vaccinaux</span>
+              <span style={{ fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,background:'#9333ea',color:'white' }}>
+                {rappelsVaccins.length} à relancer
+              </span>
+            </div>
+            <button type="button" className="dash-link" style={{ color:'#9333ea' }} onClick={() => setView('patients')}>Voir les patients →</button>
+          </div>
+          {rappelsVaccins.map((r, i) => (
+            <div key={i} className="dash-alert-row" style={{ gridTemplateColumns:'1.4fr 1fr 1fr' }}>
+              <span style={{ fontWeight:600,fontSize:13 }}>🐾 {r.patient} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {r.vaccin}</span></span>
+              <span style={{ textAlign:'center',fontSize:12,color:'#64748b' }}>{r.proprio}{r.tel ? ` · 📞 ${r.tel}` : ''}</span>
+              <div style={{ textAlign:'center' }}>
+                {r.jours < 0
+                  ? <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>⚠️ Retard {Math.abs(r.jours)}j</span>
+                  : <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#faf5ff',color:'#9333ea',border:'1px solid #e9d5ff' }}>💉 J-{r.jours}</span>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

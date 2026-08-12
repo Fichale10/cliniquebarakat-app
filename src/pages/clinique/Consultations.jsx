@@ -30,7 +30,7 @@ function StatutPill({ statut }) {
   return <span style={{ fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:99,background:s.bg,border:`1px solid ${s.border}`,color:s.text }}>{statut}</span>
 }
 
-function Consultations({ patients, setPatients, consultations, setConsultations, user, sb, logAction, meds = [], setMeds, ventesHist, setVentesHist }) {
+function Consultations({ patients, setPatients, consultations, setConsultations, user, sb, logAction, meds = [], setMeds, ventesHist, setVentesHist, rdvs, setRdvs }) {
   const emptyForm = () => ({
     date:today(), patient:'', proprio:'', poids:'',
     temperature:'', fc:'', soap_s:'', soap_o:'',
@@ -85,6 +85,26 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
     const vaccins = [...(patient.vaccins || []), ...nouveaux]
     try { await dbUpdate(sb, 'patients', patient.id, { vaccins }) } catch(e) { console.warn('[vaccins]', e?.message||e) }
     setPatients((patients||[]).map(p => p.id === patient.id ? { ...p, vaccins } : p))
+
+    // ── RDV automatique « Vaccination » dans l'Agenda à la date de rappel ──
+    if (!setRdvs) return
+    const newRdvs = []
+    for (const t of vaccinsAdmin) {
+      if (!t.rappel) continue
+      const dejaLa = (rdvs||[]).some(r => r.patient === form.patient && r.type === 'Vaccination' && r.date === t.rappel)
+      if (dejaLa) continue
+      const rdvRow = {
+        id: newId(), date: t.rappel, heure: '09:00',
+        patient: form.patient, proprio: form.proprio || '',
+        type: 'Vaccination', statut: 'En attente',
+        note: `Rappel vaccinal — ${t.med}`,
+      }
+      try {
+        const savedRdv = await dbInsert(sb, 'rdvs', rdvRow)
+        newRdvs.push(savedRdv)
+      } catch(e) { console.warn('[rdv vaccin]', e?.message||e) }
+    }
+    if (newRdvs.length) setRdvs([...(rdvs||[]), ...newRdvs].sort((a,b) => (a.date+a.heure).localeCompare(b.date+b.heure)))
   }
 
   /** Décrémente/restitue le stock des traitements (delta -1 ou +1) */
