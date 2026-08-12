@@ -1,1 +1,0 @@
-import{j as i}from"./index-Ha4ivBZu.js";import"./vendor-BvZC-oez.js";import{a as r}from"./FilterSelect-UEA_44Ye.js";function m({value:e,onChange:o}){const t=[{v:"",l:"Toutes périodes"},{v:"jour",l:"Aujourd'hui"},{v:"semaine",l:"Cette semaine"},{v:"mois",l:"Ce mois"},{v:"annee",l:"Cette année"}];return i.jsx(r,{label:"📅 Période",value:e,onChange:o,options:t})}export{m as F};
