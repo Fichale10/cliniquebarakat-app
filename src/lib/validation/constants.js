@@ -27,6 +27,7 @@ export const ACCOUNT_ROLES_ADMIN = [
   'utilisateur',
   'veterinaire',
   'pharmacien',
+  'technicien',
   'caissier',
 ]
 
