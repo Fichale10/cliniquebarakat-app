@@ -5,7 +5,13 @@ import { venteToDbRow } from '../../lib/validation'
 import { fmtF, fmtK } from '../../lib/ventes'
 
 const today = () => new Date().toISOString().split('T')[0]
-const EMPTY_TRAIT = { med:'', medSearch:'', qte:1, pu:'', showSugg:false }
+const EMPTY_TRAIT = { med:'', medSearch:'', qte:1, pu:'', rappel:'', showSugg:false }
+/** Date + 1 an (rappel vaccinal par défaut) */
+const plusUnAn = (dateStr) => {
+  const d = new Date(dateStr || Date.now())
+  d.setFullYear(d.getFullYear() + 1)
+  return d.toISOString().split('T')[0]
+}
 
 const SOAP_CONFIG = [
   { key:'soap_s', label:'S – Subjectif',      icon:'💬', bg:'#eff6ff', border:'#bfdbfe', title:'#1d4ed8', focus:'#2563eb', hint:'Motif de consultation, plainte du propriétaire' },
@@ -24,7 +30,7 @@ function StatutPill({ statut }) {
   return <span style={{ fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:99,background:s.bg,border:`1px solid ${s.border}`,color:s.text }}>{statut}</span>
 }
 
-function Consultations({ patients, consultations, setConsultations, user, sb, logAction, meds = [], setMeds, ventesHist, setVentesHist }) {
+function Consultations({ patients, setPatients, consultations, setConsultations, user, sb, logAction, meds = [], setMeds, ventesHist, setVentesHist }) {
   const emptyForm = () => ({
     date:today(), patient:'', proprio:'', poids:'',
     temperature:'', fc:'', soap_s:'', soap_o:'',
@@ -61,6 +67,24 @@ function Consultations({ patients, consultations, setConsultations, user, sb, lo
     const poids  = parseFloat(String(form.poids).replace(',','.')) || 0
     if (!doseKg || !poids) return null
     return `💡 Dose indicative : ${Math.round(doseKg*poids*10)/10} mg (${poids} kg × ${doseKg} mg/kg)`
+  }
+
+  /** Le produit est-il un vaccin ? (catégorie de la fiche médicament) */
+  const isVaccin = (t) => {
+    const m = meds.find(x => x.nom === t.med)
+    return (m?.categorie || '') === 'Vaccin'
+  }
+
+  /** Écrit les vaccinations dans le carnet du patient (patients.vaccins) */
+  const updateCarnetVaccins = async (traitements) => {
+    const vaccinsAdmin = traitements.filter(t => isVaccin(t))
+    if (!vaccinsAdmin.length || !setPatients) return
+    const patient = (patients||[]).find(p => p.nom === form.patient)
+    if (!patient) { console.warn('[vaccins] patient introuvable:', form.patient); return }
+    const nouveaux = vaccinsAdmin.map(t => ({ nom:t.med, date:form.date, prochain:t.rappel || null }))
+    const vaccins = [...(patient.vaccins || []), ...nouveaux]
+    try { await dbUpdate(sb, 'patients', patient.id, { vaccins }) } catch(e) { console.warn('[vaccins]', e?.message||e) }
+    setPatients((patients||[]).map(p => p.id === patient.id ? { ...p, vaccins } : p))
   }
 
   /** Décrémente/restitue le stock des traitements (delta -1 ou +1) */
@@ -132,7 +156,7 @@ function Consultations({ patients, consultations, setConsultations, user, sb, lo
     if (stockErr.length) return alert(stockErr.join('\n'))
     setSaving(true)
     try {
-      const traitements = traitsValides.map(t => ({ med:t.med, qte:parseFloat(t.qte)||0, pu:parseFloat(t.pu)||0 }))
+      const traitements = traitsValides.map(t => ({ med:t.med, qte:parseFloat(t.qte)||0, pu:parseFloat(t.pu)||0, ...(t.rappel ? { rappel:t.rappel } : {}) }))
       const consultId = newId()
       const row = { id:consultId, date:form.date, patient:form.patient, proprio:form.proprio, poids:form.poids, temperature:form.temperature, fc:form.fc, soap_s:form.soap_s, soap_o:form.soap_o, soap_a:form.soap_a, soap_p:form.soap_p, montant:totalGeneral, statut:form.statut, traitements }
       const saved = await dbInsert(sb,'consultations',row)
@@ -161,6 +185,7 @@ function Consultations({ patients, consultations, setConsultations, user, sb, lo
       }
 
       if (form.statut==='Payé' && traitements.length) await applyStockTraits(traitements, -1)
+      await updateCarnetVaccins(traitsValides)
 
       setConsultations([saved,...(consultations||[])])
       if (logAction&&sb) logAction(sb,user,'consultation_added',`${row.patient} — ${row.soap_a} — ${fmtF(totalGeneral)}`)
@@ -393,7 +418,7 @@ function Consultations({ patients, consultations, setConsultations, user, sb, lo
                             {suggestions.map(m => (
                               <button key={m.id||m.nom} type="button"
                                 style={{ display:'flex',justifyContent:'space-between',width:'100%',textAlign:'left',padding:'7px 12px',fontSize:13,background:'none',border:'none',cursor:'pointer' }}
-                                onMouseDown={()=>updT(i,{med:m.nom,medSearch:m.nom,pu:m.prixVente||m.prix_vente||'',showSugg:false})}
+                                onMouseDown={()=>updT(i,{med:m.nom,medSearch:m.nom,pu:m.prixVente||m.prix_vente||'',rappel:(m.categorie==='Vaccin')?plusUnAn(form.date):'',showSugg:false})}
                                 onMouseEnter={e=>e.currentTarget.style.background='#f0fdf4'}
                                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
                                 <span style={{ fontWeight:600 }}>{m.nom}</span>
@@ -413,6 +438,14 @@ function Consultations({ patients, consultations, setConsultations, user, sb, lo
                         style={{ width:26,height:26,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',color:'#ef4444',fontSize:12,cursor:'pointer' }}>✕</button>
                     </div>
                     {hint && <p style={{ fontSize:11,color:'#0d9488',marginTop:3,paddingLeft:2 }}>{hint}</p>}
+                    {isVaccin(t) && (
+                      <div style={{ display:'flex',alignItems:'center',gap:8,marginTop:4,paddingLeft:2 }}>
+                        <span style={{ fontSize:11,fontWeight:700,color:'#9333ea' }}>💉 Rappel vaccinal le</span>
+                        <input type="date" value={t.rappel||''} onChange={e=>updT(i,{rappel:e.target.value})}
+                          style={{ border:'1.5px solid #e9d5ff',borderRadius:8,padding:'4px 8px',fontSize:12,outline:'none',background:'#faf5ff',color:'#6b21a8' }} />
+                        <span style={{ fontSize:10,color:'#94a3b8' }}>inscrit au carnet du patient</span>
+                      </div>
+                    )}
                   </div>
                 )
               })}
