@@ -1,14 +1,35 @@
 import { useState } from 'react'
 import { Badge, EmptyState } from '../../components/ui'
 import { dbUpdate } from '../../lib/db'
-import { fmtF, venteTTC, venteRestant } from '../../lib/ventes'
+import { fmtF, venteTTC, venteRestant, ligneUnites } from '../../lib/ventes'
 
-function Creances({ ventesHist, setVentesHist, otrMode, sb, tva }) {
+function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, setConsultations, meds = [], setMeds }) {
   const mask  = v => otrMode ? '••••• F' : fmtF(v)
 
   const creances   = (ventesHist || []).filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut))
   const restant    = v => venteRestant(v, tva)
   const totalDu    = creances.reduce((s, v) => s + restant(v), 0)
+
+  /** Décrémente le stock à l'encaissement final (comme Ventes/Caisse) */
+  const decrementStock = async (vente) => {
+    if (!setMeds || !vente?.lignes?.length) return
+    const updated = meds.map(m => {
+      const l = vente.lignes.find(x => x.med === m.nom)
+      if (!l) return m
+      const newStock = Math.max(0, (m.stock||0) - ligneUnites(l))
+      if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, { stock: newStock }).catch(e => console.warn('[stock creance]', e))
+      return { ...m, stock: newStock }
+    })
+    setMeds(updated)
+    try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}
+  }
+
+  /** Vente liée à une consultation : refléter le statut côté clinique */
+  const syncConsultation = async (vente, statut) => {
+    if (!vente?.consultation_id || !setConsultations) return
+    try { await dbUpdate(sb, 'consultations', vente.consultation_id, { statut }) } catch(e) { console.warn('[sync consult]', e) }
+    setConsultations((consultations||[]).map(c => c.id === vente.consultation_id ? { ...c, statut } : c))
+  }
 
   const marquerPaye = async (id) => {
     const vente = (ventesHist || []).find(v => v.id === id)
@@ -17,6 +38,8 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva }) {
       const patch = { statut: 'Payé', montant_paye: venteTTC(vente, tva) }
       await dbUpdate(sb, 'ventes', id, patch)
       setVentesHist((ventesHist || []).map(v => v.id === id ? { ...v, ...patch } : v))
+      await decrementStock(vente)
+      await syncConsultation(vente, 'Payé')
     } catch (e) {
       alert('Erreur : ' + (e?.message || e))
     }
@@ -38,6 +61,10 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva }) {
     try {
       await dbUpdate(sb, 'ventes', id, patch)
       setVentesHist((ventesHist || []).map(v => v.id === id ? { ...v, ...patch } : v))
+      if (patch.statut === 'Payé') {
+        await decrementStock(vente)
+        await syncConsultation(vente, 'Payé')
+      }
     } catch (e) {
       alert('Erreur : ' + (e?.message || e))
     }

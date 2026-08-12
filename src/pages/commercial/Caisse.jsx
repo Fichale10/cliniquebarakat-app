@@ -13,7 +13,7 @@ const today      = () => new Date().toISOString().split('T')[0]
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
 const STATUT_COLOR = { Payé:'green', 'À crédit':'orange', 'Partiellement payé':'amber', 'En attente':'yellow', Annulé:'red' }
 
-function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tva, user, sb, logAction }) {
+function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tva, user, sb, logAction, consultations, setConsultations }) {
   const [tab, setTab] = useState('caisse')
 
   // ── Horloge en temps réel ─────────────────────────────────
@@ -293,6 +293,12 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     await dbUpdate(sb, 'ventes', venteId, patch)
     const newHist = ventes.map(v => v.id === venteId ? { ...v, ...patch } : v)
     setVentesHist(newHist)
+    // ── Vente liée à une consultation : synchroniser son statut ──
+    if (vente?.consultation_id && setConsultations) {
+      const cStatut = newStatut === 'Payé' ? 'Payé' : 'En attente'
+      try { await dbUpdate(sb, 'consultations', vente.consultation_id, { statut: cStatut }) } catch(e) { console.warn('[sync consult]', e) }
+      setConsultations((consultations||[]).map(c => c.id === vente.consultation_id ? { ...c, statut: cStatut } : c))
+    }
     if (vente?.lignes) {
       if (newStatut === 'Payé') await applyStockDelta(vente.lignes, -1)
       else if (newStatut === 'Annulé' && vente.statut === 'Payé') await applyStockDelta(vente.lignes, +1)
@@ -300,8 +306,11 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   }
 
   const deleteVente = async (id) => {
-    if (!confirm('Supprimer cette vente définitivement ?')) return
     const vente = ventes.find(v => v.id === id)
+    if (vente?.consultation_id) {
+      return alert('Cette vente est liée à une consultation clinique.\nGérez-la depuis la page Consultations pour éviter une désynchronisation.')
+    }
+    if (!confirm('Supprimer cette vente définitivement ?')) return
     try {
       await dbDelete(sb, 'ventes', id)
       setVentesHist(ventes.filter(v => v.id !== id))
@@ -899,6 +908,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                             <span style={{ width:5, height:5, borderRadius:'50%', background:statColor, flexShrink:0 }} />{v.statut}
                           </span>
                           {v.type === 'gros' && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c' }}>📦 Gros</span>}
+                          {(v.type === 'clinique' || v.consultation_id) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#2563eb' }}>🩺 Consultation</span>}
                           {v.caissier && <span style={{ fontSize:10, color:'#94a3b8' }}>🧾 {v.caissier}</span>}
                         </div>
                         <div style={{ fontSize:11, color:'#64748b' }}>
