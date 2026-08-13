@@ -637,14 +637,21 @@ useEffect(() => {
 
         {/* ── Navigation ── */}
         <nav className="flex-1 px-3 py-3 overflow-y-auto" style={{scrollbarWidth:'thin',scrollbarColor:'#e2e8f0 transparent'}}>
-          {Object.entries(grouped).map(([cat,items])=>(
+          {Object.entries(grouped).map(([cat,items])=>{
+            // Couleur d'accent par catégorie (repérage visuel des sections)
+            const CAT_COLORS={ 'Général':'#0d9488','General':'#0d9488','Clinique':'#2563eb','Commercial':'#ea580c','Pharmacie':'#7c3aed','Financier':'#16a34a' };
+            const catColor=CAT_COLORS[cat]||'#64748b';
+            return (
             <details
               key={cat}
               className="sidebar-group"
               open={cat==='Général'||cat==='Clinique'||cat==='Commercial'}
             >
               {!sidebarCollapsed&&<summary className="sidebar-cat-btn">
-                <span className="sidebar-cat">{cat}</span>
+                <span className="sidebar-cat" style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                  <span style={{width:6,height:6,borderRadius:'50%',background:catColor,display:'inline-block',flexShrink:0}}/>
+                  {cat}
+                </span>
                 <span className="sidebar-cat-caret">›</span>
               </summary>}
               <div className="sidebar-items">
@@ -660,18 +667,19 @@ useEffect(() => {
                       key={item.id}
                       onClick={()=>{setView(item.id);setShowNotifs(false);setSidebarOpen(false);}}
                       className={`sidebar-item w-full flex items-center gap-3 transition-all text-left ${active?'sidebar-active':''}`}
-                      style={{padding:'9px 12px',color:active?'#0f766e':'#64748b'}}
+                      style={{padding:'9px 12px',color:active?catColor:'#64748b'}}
                     >
-                      {/* Icône avec chip teal quand actif */}
+                      {/* Icône teintée à la couleur de la catégorie */}
                       <span className="nav-icon shrink-0" style={{
                         fontSize:'15px',
                         width:'22px',height:'22px',
                         display:'flex',alignItems:'center',justifyContent:'center',
                         borderRadius:'7px',flexShrink:0,
-                        background:active?'rgba(13,148,136,0.14)':'transparent',
-                        boxShadow:active?'0 0 0 1.5px rgba(13,148,136,0.22)':'none',
+                        background:active?`${catColor}22`:`${catColor}0f`,
+                        boxShadow:active?`0 0 0 1.5px ${catColor}44`:'none',
+                        color:catColor,
                         transition:'all .18s',
-                      }}><NavIcon id={item.id} size={15} /></span>
+                      }}><NavIcon id={item.id} size={14} /></span>
                       {!sidebarCollapsed&&<span className="nav-label truncate" style={{fontSize:'13px',fontWeight:active?700:500}}>{item.label}</span>}
                       {/* Partie droite : badge prioritaire, sinon dot ou lock */}
                       {!sidebarCollapsed&&(
@@ -688,7 +696,8 @@ useEffect(() => {
                 })}
               </div>
             </details>
-          ))}
+            );
+          })}
         </nav>
 
         {/* ── Pied sidebar ── */}
