@@ -1,3 +1,4 @@
+import { ScrollText } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
@@ -46,7 +47,7 @@ function JournalActivite({user}){
     <div className="app-card p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">📜 Journal d'activité</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2"><ScrollText size={20} color="#0d9488" strokeWidth={2.3} /> Journal d'activité</h2>
           <p className="text-sm text-slate-500">{filtered.length} entrée(s)</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

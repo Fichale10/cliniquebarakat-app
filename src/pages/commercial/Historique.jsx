@@ -1,3 +1,4 @@
+import { History } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Badge, FilterPeriode, FilterSelect, FilterBar, EmptyState } from '../../components/ui'
@@ -291,7 +292,7 @@ function Historique({ ventesHist = [], achatsHist = [], meds = [] }) {
         <div className="p-5 border-b border-slate-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-xl font-black flex items-center gap-2">🗂️ Historique des produits</h2>
+              <h2 className="text-xl font-black flex items-center gap-2"><History size={20} color="#7c3aed" strokeWidth={2.3} /> Historique des produits</h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 {filtered.length} enregistrement{filtered.length > 1 ? 's' : ''} · {fmtF(totalMontant)}
               </p>

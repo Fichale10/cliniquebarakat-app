@@ -1,3 +1,4 @@
+import { ClipboardList } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
@@ -80,7 +81,7 @@ function TabEtat({ meds, setMeds, sb, dbUpdate }) {
       <div id="inventaire-print" className="app-card">
         <div className="p-5 border-b flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold">📊 État du stock</h2>
+            <h2 className="text-xl font-bold flex items-center gap-2"><ClipboardList size={20} color="#7c3aed" strokeWidth={2.3} /> État du stock</h2>
             <p className="text-xs text-slate-400 mt-0.5">Marge brute potentielle : <strong style={{ color: margeTotal >= 0 ? '#16a34a' : '#dc2626' }}>{fmtF(margeTotal)} ({pctMarge}%)</strong></p>
           </div>
           <PrintBtn zoneId="inventaire-print" label="🖨 Imprimer" />

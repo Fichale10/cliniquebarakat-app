@@ -1,3 +1,4 @@
+import { ListChecks } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -99,7 +100,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
         <div className="p-5 border-b flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">✅ Tâches de l'équipe</h2>
+              <h2 className="text-xl font-bold flex items-center gap-2"><ListChecks size={20} color="#2563eb" strokeWidth={2.3} /> Tâches de l'équipe</h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 {taches.filter(t => t.statut !== 'Terminé').length} en cours · {filtered.length} affichée(s)
               </p>

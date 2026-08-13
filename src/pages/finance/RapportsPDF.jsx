@@ -1,3 +1,4 @@
+import { FileDown } from 'lucide-react'
 import { useState } from 'react'
 
 function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
@@ -118,7 +119,7 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
     <div className="app-card p-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">📈 Rapports & Exports</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2"><FileDown size={20} color="#16a34a" strokeWidth={2.3} /> Rapports & Exports</h2>
           <p className="text-sm text-slate-500">Générez et exportez vos rapports mensuels</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">

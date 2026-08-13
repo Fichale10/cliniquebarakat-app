@@ -1,3 +1,4 @@
+import { Calendar } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import AgendaCalendrier from './AgendaCalendrier'
 import RappelsPanel from './RappelsPanel'
@@ -303,7 +304,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
       <div className="app-card">
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl font-black flex items-center gap-2">📅 Agenda & Rendez-vous</h2>
+            <h2 className="text-xl font-black flex items-center gap-2"><Calendar size={20} color="#2563eb" strokeWidth={2.3} /> Agenda & Rendez-vous</h2>
             <p className="text-xs text-slate-400 mt-0.5">{rdvs.length} RDV enregistré(s)</p>
           </div>
           <Btn onClick={() => showForm ? closeForm() : openNew()} color="brand">

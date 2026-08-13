@@ -1,3 +1,4 @@
+import { Map as MapIcon } from 'lucide-react'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -183,7 +184,7 @@ function CarteClients({ clients = [], patients = [] }) {
         <div className="md:col-span-2 app-card overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h2 className="font-bold text-lg">🗺️ Répartition géographique — Togo</h2>
+              <h2 className="font-bold text-lg flex items-center gap-2"><MapIcon size={19} color="#0d9488" strokeWidth={2.3} /> Répartition géographique — Togo</h2>
               <p className="text-xs text-slate-400 mt-0.5">Cliquez sur un marqueur pour voir les clients</p>
             </div>
             <input

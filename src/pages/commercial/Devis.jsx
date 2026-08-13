@@ -1,3 +1,4 @@
+import { FileSpreadsheet } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -126,7 +127,7 @@ ${d.notes ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-ra
       <div className="app-card">
         <div className="p-5 border-b flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">📋 Devis & Estimations</h2>
+            <h2 className="text-xl font-bold flex items-center gap-2"><FileSpreadsheet size={20} color="#ea580c" strokeWidth={2.3} /> Devis & Estimations</h2>
             <p className="text-xs text-slate-400 mt-0.5">{devis.length} devis · {devis.filter(d => d.statut === 'Accepté').length} accepté(s)</p>
           </div>
           <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouveau devis'}</Btn>

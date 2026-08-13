@@ -1,3 +1,4 @@
+import { Users } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -164,7 +165,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
         {/* Header */}
         <div style={{ padding:'18px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10 }}>
           <div>
-            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>👥 Clients</h2>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><Users size={20} color="#ea580c" strokeWidth={2.3} /> Clients</h2>
             <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>
               {filtered.length}/{clients.length} client(s)
             </p>

@@ -3,6 +3,7 @@ import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterSelect, FilterBtns, us
 import { newId } from '../../lib/db'
 import { fmtF } from '../../lib/utils'
 import { venteToDbRow } from '../../lib/validation'
+import { Scissors } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -173,7 +174,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
         {/* Header */}
         <div className="p-5 border-b flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">🔬 Chirurgies & Actes</h2>
+            <h2 className="text-xl font-bold flex items-center gap-2"><Scissors size={20} color="#2563eb" strokeWidth={2.3} /> Chirurgies & Actes</h2>
             <p className="text-xs text-slate-400 mt-0.5">{chirurgies.length} acte(s) enregistré(s)</p>
           </div>
           <Btn onClick={() => setShowForm(v => !v)}>

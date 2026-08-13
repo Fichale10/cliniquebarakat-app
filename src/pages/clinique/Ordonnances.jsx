@@ -1,3 +1,4 @@
+import { FileText } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, FilterBar, FilterSelect, usePagination, Pagination, EmptyState, AutoSuggest } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -218,7 +219,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
         {/* Header */}
         <div style={{ padding:'18px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10 }}>
           <div>
-            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>📝 Ordonnances</h2>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><FileText size={20} color="#2563eb" strokeWidth={2.3} /> Ordonnances</h2>
             <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>{filtered.length}/{ordonnances.length} ordonnance(s)</p>
           </div>
           <div style={{ display:'flex',gap:8,alignItems:'center',flexWrap:'wrap' }}>

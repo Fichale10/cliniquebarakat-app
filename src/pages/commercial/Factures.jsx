@@ -1,3 +1,4 @@
+import { Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, PrintBtn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -171,7 +172,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
       <div className="app-card">
         <div className="p-5 border-b flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">📄 Factures</h2>
+            <h2 className="text-xl font-bold flex items-center gap-2"><Receipt size={20} color="#ea580c" strokeWidth={2.3} /> Factures</h2>
             <p className="text-xs text-slate-400 mt-0.5">{factures.length} facture(s)</p>
           </div>
           <div className="flex gap-2">

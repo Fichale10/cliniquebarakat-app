@@ -1,3 +1,4 @@
+import { Syringe } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { EmptyState } from '../../components/ui'
 
@@ -69,7 +70,7 @@ function SuiviTraitements({patients, meds, user}){
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">💊 Suivi des traitements</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2"><Syringe size={20} color="#0d9488" strokeWidth={2.3} /> Suivi des traitements</h2>
           <p className="text-sm text-slate-500">{traitements.filter(t=>t.actif).length} actif(s) · {traitements.filter(t=>!t.actif).length} terminé(s)</p>
         </div>
         <div className="flex gap-2 flex-wrap">

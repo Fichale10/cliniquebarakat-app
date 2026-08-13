@@ -1,3 +1,4 @@
+import { ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
@@ -241,7 +242,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
 
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between">
-        <div><h2 className="text-xl font-bold flex items-center gap-2">🔐 Comptes utilisateurs</h2>
+        <div><h2 className="text-xl font-bold flex items-center gap-2"><ShieldCheck size={20} color="#0d9488" strokeWidth={2.3} /> Comptes utilisateurs</h2>
           <p className="text-xs text-slate-400 mt-0.5">{comptes.length} compte(s) · {comptes.filter(c=>c.actif).length} actif(s)</p></div>
         {step===0&&<Btn onClick={()=>setStep(1)}>+ Nouvel utilisateur</Btn>}
       </div>

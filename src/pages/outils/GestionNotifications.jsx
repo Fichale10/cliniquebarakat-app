@@ -1,3 +1,4 @@
+import { Bell } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 
 function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
@@ -83,7 +84,7 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
   return <div className="app-page max-w-3xl space-y-5">
     {/* Statut */}
     <div className="app-card p-5">
-      <h2 className="text-xl font-bold flex items-center gap-2 mb-4">🔔 Notifications Push</h2>
+      <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><Bell size={20} color="#0d9488" strokeWidth={2.3} /> Notifications Push</h2>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'16px',flexWrap:'wrap',padding:'16px',borderRadius:'12px',background:pushEnabled?'#f0fdf4':'#f8fafc',border:`1px solid ${pushEnabled?'#bbf7d0':'#e2e8f0'}`}}>
         <div>
           <div style={{fontWeight:700,color:statusColor[notifStatus]||'#94a3b8',fontSize:'15px'}}>{statusLabel[notifStatus]||statusLabel.idle}</div>

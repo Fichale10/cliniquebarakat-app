@@ -1,3 +1,4 @@
+import { Microscope } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 
 function GestionLots({meds, ventesHist, user}){
@@ -41,7 +42,7 @@ function GestionLots({meds, ventesHist, user}){
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">🔬 Lots & Traçabilité</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2"><Microscope size={20} color="#0d9488" strokeWidth={2.3} /> Lots & Traçabilité</h2>
           <p className="text-sm text-slate-500">{filtered.length} lot(s) · {lots.filter(l=>l.statut==='Expiré').length} expiré(s)</p>
         </div>
         <div className="flex gap-2 flex-wrap">

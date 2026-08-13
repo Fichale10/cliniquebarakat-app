@@ -1,3 +1,4 @@
+import { Calculator } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   Btn,
@@ -52,7 +53,7 @@ function Calculateur({meds,patients}){
   return <div className="app-page max-w-3xl space-y-5">
     <div className="app-card">
       <div className="p-5 border-b">
-        <h2 className="text-xl font-bold flex items-center gap-2">⚖️ Calculateur de doses</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2"><Calculator size={20} color="#2563eb" strokeWidth={2.3} /> Calculateur de doses</h2>
         <p className="text-sm text-slate-500 mt-0.5">Calcul automatique poids × posologie</p>
       </div>
       <div className="p-6 space-y-5">

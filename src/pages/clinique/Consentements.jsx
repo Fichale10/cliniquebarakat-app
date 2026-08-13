@@ -1,3 +1,4 @@
+import { FileSignature } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 const today = () => new Date().toISOString().split('T')[0];
 import {
@@ -31,7 +32,7 @@ function Consentements({patients,equipe=[]}){
 
   return <div className="app-page max-w-4xl space-y-5">
     <div className="app-card">
-      <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2">✍️ Consentements éclairés</h2></div>
+      <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2"><FileSignature size={20} color="#2563eb" strokeWidth={2.3} /> Consentements éclairés</h2></div>
       <div className="p-5">
         <div className="flex gap-2 mb-5 flex-wrap">
           {Object.entries(TEMPLATES).map(([k,v])=><button key={k} onClick={()=>{setType(k);setGenerated(false);}} className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${type===k?'border-blue-500 bg-blue-50 text-blue-700':'border-slate-200 text-slate-600 hover:border-slate-300'}`}>{k==='chirurgie'?'🔬 Chirurgie':k==='euthanasie'?'🕊️ Euthanasie':k==='anesthesie'?'💉 Anesthésie':'🏥 Hospitalisation'}</button>)}

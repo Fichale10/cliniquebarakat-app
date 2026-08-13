@@ -1,3 +1,4 @@
+import { Package } from 'lucide-react'
 import { useState } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -121,7 +122,7 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
       <div className="app-card">
         <div className="p-5 border-b flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">📦 Commandes fournisseurs</h2>
+            <h2 className="text-xl font-bold flex items-center gap-2"><Package size={20} color="#7c3aed" strokeWidth={2.3} /> Commandes fournisseurs</h2>
             <p className="text-xs text-slate-400 mt-0.5">{(achatsHist || []).length} commande(s)</p>
           </div>
           <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle commande'}</Btn>

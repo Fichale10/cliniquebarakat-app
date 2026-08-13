@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { ROLES } from '../../lib/roles'
 
@@ -11,7 +12,7 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva}){
 
   return <div className="app-page max-w-3xl space-y-5">
     <div className="app-card">
-      <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2">⚙️ Paramètres</h2></div>
+      <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2"><Settings size={20} color="#0d9488" strokeWidth={2.3} /> Paramètres</h2></div>
       <div className="flex border-b overflow-x-auto">
         {[{k:'clinique',l:'🏥 Ma clinique'},{k:'equipe',l:'👥 Mon équipe'},{k:'tva',l:'💰 TVA & Taxes'}].map(t=>(
           <button key={t.k} onClick={()=>setTab(t.k)} className={`px-5 py-3 font-semibold text-sm border-b-2 transition-all whitespace-nowrap ${tab===t.k?'border-green-600 text-green-700':'border-transparent text-slate-500 hover:text-slate-700'}`}>{t.l}</button>

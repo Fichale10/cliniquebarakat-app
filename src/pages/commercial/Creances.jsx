@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Badge, EmptyState } from '../../components/ui'
 import { dbUpdate } from '../../lib/db'
 import { fmtF, venteTTC, venteRestant, ligneUnites } from '../../lib/ventes'
+import { Coins } from 'lucide-react'
 
 function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, setConsultations, meds = [], setMeds }) {
   const mask  = v => otrMode ? '••••• F' : fmtF(v)
@@ -98,7 +99,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
 
       <div className="app-card">
         <div className="p-5 border-b">
-          <h2 className="text-xl font-bold flex items-center gap-2">💰 Suivi des créances</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2"><Coins size={20} color="#ea580c" strokeWidth={2.3} /> Suivi des créances</h2>
           <p className="text-xs text-slate-400 mt-0.5">Clients qui n'ont pas encore payé — groupés par client</p>
         </div>
 

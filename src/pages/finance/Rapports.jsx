@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { fmtF } from "../../lib/utils"
 import { venteMarge, ligneCA, ligneCoutAchat } from "../../lib/ventes"
+import { BarChart3 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -94,7 +95,7 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-800">📊 Rapports & Analyse</h2>
+          <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2"><BarChart3 size={22} color="#16a34a" strokeWidth={2.3} /> Rapports & Analyse</h2>
           <p className="text-sm text-slate-400 mt-0.5">Recettes · Dépenses · Bénéfices — {labelMap[periode]}</p>
         </div>
         <div className="flex flex-wrap gap-2">
