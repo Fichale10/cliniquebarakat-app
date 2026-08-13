@@ -120,10 +120,14 @@ const prepareInsertRow = (table, row) => {
       mode: r.mode ?? 'Espèces',
       note: r.note ?? '',
       tva_amt: r.tva_amt ?? r.tvaAmt ?? 0,
+      montant_paye: r.montant_paye ?? r.montantPaye ?? 0,
       caissier: r.caissier ?? '',
       type: r.type ?? 'detail',
       created_at: r.created_at,
     }
+    // Liens optionnels (colonnes présentes si les scripts SQL dédiés ont été exécutés)
+    if (r.consultation_id) payload.consultation_id = r.consultation_id
+    if (r.chirurgie_id) payload.chirurgie_id = r.chirurgie_id
     return payload
   }
   return r
