@@ -3,6 +3,7 @@ import { Btn, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, Filt
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
+import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -200,14 +201,14 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon:'🛒', label:"CA aujourd'hui",    value: otrMode?'•••':fmtK(kpis.caToday),   sub:`${ventes.filter(v=>v.date===today()).length} vente(s) aujourd'hui`, color:'#0d9488' },
-          { icon:'✅', label:'Total encaissé',     value: otrMode?'•••':fmtK(kpis.encaisse),  sub:`sur ${kpis.total} vente(s)`,                                       color:'#16a34a' },
-          { icon:'⏳', label:'À recouvrer',        value: otrMode?'•••':fmtK(kpis.credit),    sub:'À crédit + en attente',                                             color:'#d97706' },
-          { icon:'📦', label:'Ventes en gros',     value: kpis.nbGros,                         sub:`${kpis.total - kpis.nbGros} au détail`,                             color:'#7c3aed' },
+          { icon:ShoppingCart, label:"CA aujourd'hui",    value: otrMode?'•••':fmtK(kpis.caToday),   sub:`${ventes.filter(v=>v.date===today()).length} vente(s) aujourd'hui`, color:'#0d9488' },
+          { icon:CheckCircle2, label:'Total encaissé',     value: otrMode?'•••':fmtK(kpis.encaisse),  sub:`sur ${kpis.total} vente(s)`,                                       color:'#16a34a' },
+          { icon:Hourglass,    label:'À recouvrer',        value: otrMode?'•••':fmtK(kpis.credit),    sub:'À crédit + en attente',                                             color:'#d97706' },
+          { icon:Package,      label:'Ventes en gros',     value: kpis.nbGros,                         sub:`${kpis.total - kpis.nbGros} au détail`,                             color:'#7c3aed' },
         ].map((k,i) => (
           <div key={i} style={{ background:'white',borderRadius:16,padding:'14px 16px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}><k.icon size={17} color={k.color} strokeWidth={2.2} /></div>
               <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
             </div>
             <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -219,7 +220,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       {/* Mini graphe CA 7 jours */}
       {!otrMode && chart7.some(d=>d.ca>0) && (
         <div style={{ background:'white',borderRadius:16,padding:'16px 20px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize:12,fontWeight:800,color:'#64748b',marginBottom:12 }}>📊 CA encaissé — 7 derniers jours</p>
+          <p style={{ fontSize:12,fontWeight:800,color:'#64748b',marginBottom:12,display:'flex',alignItems:'center',gap:6 }}><BarChart3 size={14} color="#0d9488" /> CA encaissé — 7 derniers jours</p>
           <div style={{ display:'flex',alignItems:'flex-end',gap:6,height:48 }}>
             {chart7.map((d,i) => {
               const pct = maxCA7>0 ? d.ca/maxCA7 : 0
@@ -243,7 +244,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         {/* Header */}
         <div style={{ padding:'18px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10 }}>
           <div>
-            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>🛒 Ventes au comptoir</h2>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><ShoppingCart size={20} color="#0d9488" strokeWidth={2.3} /> Ventes au comptoir</h2>
             <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>
               {filtered.length}/{ventes.length} vente(s)
               {filtered.length>0 && !otrMode && (
@@ -257,7 +258,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         {/* Formulaire */}
         {showForm && (
           <FormPanel
-            icon={form.type==='gros'?'📦':'🛒'}
+            icon={form.type==='gros'?<Package size={21} color="#ea580c" />:<ShoppingCart size={21} color="#0d9488" />}
             title={form.type==='gros'?'Vente en gros':'Vente au détail'}
             subtitle="Remplissez les informations de la vente"
             color={form.type==='gros'?'orange':'teal'}
@@ -278,7 +279,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
             <ValidationBanner messages={validationMessages} onDismiss={() => setValidationMessages([])} />
 
-            <FormSection label="Informations générales" icon="📋" color={form.type==='gros'?'orange':'teal'} noTopMargin>
+            <FormSection label="Informations générales" icon={<ClipboardList size={14} />} color={form.type==='gros'?'orange':'teal'} noTopMargin>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Field label="Date" value={form.date} onChange={e=>patchForm({date:e.target.value})} error={formErrors.date} type="date" />
                 <div>
@@ -309,7 +310,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
               </div>
             </FormSection>
 
-            <FormSection label="Produits vendus" icon="💊" color={form.type==='gros'?'orange':'teal'}
+            <FormSection label="Produits vendus" icon={<Pill size={14} />} color={form.type==='gros'?'orange':'teal'}
               action={
                 <button onClick={()=>setForm(p=>({...p,lignes:[...p.lignes,{med:'',medSearch:'',cond:'',qte:1,pu:'',showSugg:false}]}))}
                   className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">

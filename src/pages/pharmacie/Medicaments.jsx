@@ -1,3 +1,4 @@
+import { Pill, AlertTriangle, Clock, Coins, Package, Factory } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import {
   Btn, Field, DupWarning, ValidationBanner,
@@ -213,14 +214,14 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon:'💊', label:'Total médicaments',    value:meds.length,         sub:`${categories.length} catégorie(s)`,                              color:'#0d9488' },
-          { icon:'🚨', label:'Stock critique',        value:kpis.critique,       sub:`${Math.round(kpis.critique/Math.max(1,meds.length)*100)}% du stock`, color:'#dc2626' },
-          { icon:'⏰', label:'Péremption < 30j',      value:kpis.prochains,      sub:`${kpis.expires} déjà expiré(s)`,                                 color:'#d97706' },
-          { icon:'💰', label:'Valeur stock (vente)',  value:fmtK(kpis.valeurStock), sub:'prix vente × quantité',                                       color:'#2563eb' },
+          { icon:Pill,          label:'Total médicaments',    value:meds.length,         sub:`${categories.length} catégorie(s)`,                              color:'#0d9488' },
+          { icon:AlertTriangle, label:'Stock critique',        value:kpis.critique,       sub:`${Math.round(kpis.critique/Math.max(1,meds.length)*100)}% du stock`, color:'#dc2626' },
+          { icon:Clock,         label:'Péremption < 30j',      value:kpis.prochains,      sub:`${kpis.expires} déjà expiré(s)`,                                 color:'#d97706' },
+          { icon:Coins,         label:'Valeur stock (vente)',  value:fmtK(kpis.valeurStock), sub:'prix vente × quantité',                                       color:'#2563eb' },
         ].map((k,i) => (
           <div key={i} style={{ background:'white',borderRadius:16,padding:'14px 16px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}><k.icon size={17} color={k.color} strokeWidth={2.2} /></div>
               <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
             </div>
             <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -233,7 +234,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
         {/* Header */}
         <div style={{ padding:'18px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10 }}>
           <div>
-            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>💊 Médicaments & Stock</h2>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><Pill size={20} color="#7c3aed" strokeWidth={2.3} /> Médicaments & Stock</h2>
             <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>
               {filtered.length}/{meds.length} produit(s) · {kpis.critique} critique(s) · {kpis.expires} expiré(s)
             </p>
@@ -272,7 +273,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
             {pending && <DupWarning dups={dups} entity="médicament" onOk={commitSave} onCancel={handleCloseForm} />}
             <ValidationBanner messages={validationMessages} onDismiss={()=>setValidationMessages([])} />
 
-            <FormSection label="Identification" icon="💊" color="blue" noTopMargin>
+            <FormSection label="Identification" icon={<Pill size={14} />} color="blue" noTopMargin>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <Field label="Nom *"        value={form.nom}       onChange={e=>patchForm({nom:e.target.value})}       error={formErrors.nom}       placeholder="Nom du médicament"  className="md:col-span-2" />
                 <Field label="Catégorie"    value={form.categorie} onChange={e=>patchForm({categorie:e.target.value})} error={formErrors.categorie} options={CATEGORIES} />
@@ -281,7 +282,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
               </div>
             </FormSection>
 
-            <FormSection label="Stock & Tarifs" icon="📦" color="blue">
+            <FormSection label="Stock & Tarifs" icon={<Package size={14} />} color="blue">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Field label="Stock actuel"  value={form.stock}     onChange={e=>patchForm({stock:e.target.value})}    error={formErrors.stock}    type="number" placeholder="0" />
                 <Field label="Seuil alerte"  value={form.seuil}     onChange={e=>patchForm({seuil:e.target.value})}    error={formErrors.seuil}    type="number" placeholder="0" />
@@ -299,7 +300,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
               </div>
             </FormSection>
 
-            <FormSection label="Fournisseur & Traçabilité" icon="🏭" color="blue">
+            <FormSection label="Fournisseur & Traçabilité" icon={<Factory size={14} />} color="blue">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <div style={{ display:'flex',alignItems:'flex-end',gap:6 }}>
@@ -332,7 +333,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
               </div>
             </FormSection>
 
-            <FormSection label="Vente en gros (optionnel)" icon="📦" color="orange">
+            <FormSection label="Vente en gros (optionnel)" icon={<Package size={14} />} color="orange">
               <div style={{ display:'flex',flexWrap:'wrap',gap:12,alignItems:'flex-start' }}>
                 <div style={{ width:160 }}>
                   <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Prix gros (F)</label>

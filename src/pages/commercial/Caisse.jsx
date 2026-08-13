@@ -8,6 +8,7 @@ import {
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
+import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
@@ -468,14 +469,14 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
           {/* KPI du jour */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { icon:'🛒', label:'Ventes aujourd\'hui', value: ventesJour.length,   color:'#0d9488', sub: ventesJour.length === 1 ? '1 transaction' : `${ventesJour.length} transactions` },
-              { icon:'💰', label:'CA du jour',          value: mask(caJour),        color:'#16a34a', sub: `moy. ${mask(avgJour)}` },
-              { icon:'⏳', label:'Crédit du jour',      value: mask(creditJour),    color:'#d97706', sub: creditJour > 0 ? 'à recouvrer' : 'Tout payé ✅' },
-              { icon:'📋', label:'Total ventes',        value: ventes.length,       color:'#7c3aed', sub: `${mask(totalPaye)} encaissé` },
+              { icon:ShoppingCart,  label:'Ventes aujourd\'hui', value: ventesJour.length,   color:'#0d9488', sub: ventesJour.length === 1 ? '1 transaction' : `${ventesJour.length} transactions` },
+              { icon:Coins,         label:'CA du jour',          value: mask(caJour),        color:'#16a34a', sub: `moy. ${mask(avgJour)}` },
+              { icon:Hourglass,     label:'Crédit du jour',      value: mask(creditJour),    color:'#d97706', sub: creditJour > 0 ? 'à recouvrer' : 'Tout payé ✓' },
+              { icon:ClipboardList, label:'Total ventes',        value: ventes.length,       color:'#7c3aed', sub: `${mask(totalPaye)} encaissé` },
             ].map((k, i) => (
               <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                  <div style={{ width:34, height:34, borderRadius:10, background:k.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{k.icon}</div>
+                  <div style={{ width:34, height:34, borderRadius:10, background:k.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}><k.icon size={17} color={k.color} strokeWidth={2.2} /></div>
                   <span style={{ fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.05em' }}>{k.label}</span>
                 </div>
                 <div style={{ fontSize:20, fontWeight:900, color:'#0f172a', lineHeight:1 }}>{k.value}</div>
@@ -528,7 +529,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Formulaire */}
             <div className="app-card p-5 md:col-span-2">
-              <h2 className="text-xl font-bold flex items-center gap-2 mb-4">🧾 Nouvelle vente</h2>
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><Receipt size={20} color="#ea580c" strokeWidth={2.3} /> Nouvelle vente</h2>
               <ValidationBanner messages={validationMessages} onDismiss={() => setValidationMessages([])} />
 
               <div className="grid grid-cols-2 gap-3 mb-4" style={{ gridTemplateColumns:'1fr 1fr 1fr' }}>
@@ -717,7 +718,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
           <div className="app-card">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold">🛒 Ventes & Historique</h2>
+                <h2 className="text-xl font-bold flex items-center gap-2"><ShoppingCart size={20} color="#ea580c" strokeWidth={2.3} /> Ventes & Historique</h2>
                 <p className="text-xs text-slate-400 mt-0.5">{ventes.length} vente(s) au total</p>
               </div>
               <Btn onClick={() => setShowVenteForm(!showVenteForm)}>{showVenteForm ? '✕ Annuler' : '+ Nouvelle vente'}</Btn>
@@ -743,7 +744,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                   ))}
                 </div>
                 <ValidationBanner messages={venteValidMsgs} onDismiss={() => setVenteValidMsgs([])} />
-                <FormSection label="Informations" icon="📋" color={venteForm.type === 'gros' ? 'orange' : 'teal'} noTopMargin>
+                <FormSection label="Informations" icon={<ClipboardList size={14} />} color={venteForm.type === 'gros' ? 'orange' : 'teal'} noTopMargin>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <Field label="Date" value={venteForm.date} onChange={e => patchVenteForm({ date:e.target.value })} error={venteFormErrors.date} type="date" />
                     <div>
@@ -767,7 +768,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                   </div>
                 </FormSection>
 
-                <FormSection label="Produits" icon="💊" color={venteForm.type === 'gros' ? 'orange' : 'teal'}
+                <FormSection label="Produits" icon={<Pill size={14} />} color={venteForm.type === 'gros' ? 'orange' : 'teal'}
                   action={
                     <button onClick={() => setVenteForm(p => ({...p, lignes:[...p.lignes,{med:'',medSearch:'',cond:'',qte:1,pu:'',showSugg:false}]}))}
                       className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold">

@@ -1,3 +1,4 @@
+import { PawPrint, Sparkles, AlertTriangle, BarChart3, Stethoscope } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, DupWarning, ValidationBanner, FormSection, FilterBtns, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbDelete, dbUpdate, newId } from '../../lib/db'
@@ -148,14 +149,14 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
       {/* ── KPIs ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon:'🐾', label:'Total patients',      value: patients.length,    sub:`${kpis.especesCount} espèce(s)`,            color:'#0d9488' },
-          { icon:'🆕', label:'Nouveaux ce mois',    value: kpis.nouveaux,      sub:`espèce principale: ${kpis.top}`,            color:'#2563eb' },
-          { icon:'⚠️', label:'Avec allergies',      value: kpis.allergies,     sub:`${Math.round(kpis.allergies/Math.max(1,patients.length)*100)}% des patients`, color:'#dc2626' },
-          { icon:'📊', label:'Espèces distinctes',  value: kpis.especesCount,  sub:'espèces référencées',                       color:'#9333ea' },
+          { icon:PawPrint,      label:'Total patients',      value: patients.length,    sub:`${kpis.especesCount} espèce(s)`,            color:'#0d9488' },
+          { icon:Sparkles,      label:'Nouveaux ce mois',    value: kpis.nouveaux,      sub:`espèce principale: ${kpis.top}`,            color:'#2563eb' },
+          { icon:AlertTriangle, label:'Avec allergies',      value: kpis.allergies,     sub:`${Math.round(kpis.allergies/Math.max(1,patients.length)*100)}% des patients`, color:'#dc2626' },
+          { icon:BarChart3,     label:'Espèces distinctes',  value: kpis.especesCount,  sub:'espèces référencées',                       color:'#9333ea' },
         ].map((k,i) => (
           <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-              <div style={{ width:34,height:34,borderRadius:10, background:k.color+'18', display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <div style={{ width:34,height:34,borderRadius:10, background:k.color+'18', display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}><k.icon size={17} color={k.color} strokeWidth={2.2} /></div>
               <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
             </div>
             <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -170,7 +171,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
         {/* Header */}
         <div style={{ padding:'18px 20px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
           <div>
-            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>🐾 Patients</h2>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><PawPrint size={20} color="#2563eb" strokeWidth={2.3} /> Patients</h2>
             <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>{filtered.length}/{patients.length} patient(s) affiché(s)</p>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -218,7 +219,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
             {pending && <DupWarning dups={dups} entity="patient" onOk={doAdd} onCancel={() => { setDups([]); setPending(false) }} />}
             <ValidationBanner messages={valMsgs} onDismiss={() => setValMsgs([])} />
 
-            <FormSection label="Informations de l'animal" icon="🐾" color="teal" noTopMargin>
+            <FormSection label="Informations de l'animal" icon={<PawPrint size={14} />} color="teal" noTopMargin>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
                 <Field label="Nom *"   value={form.nom}    onChange={f('nom')}    error={formErrors.nom}    placeholder="Nom de l'animal" />
                 <Field label="Espèce"  value={form.espece} onChange={f('espece')} error={formErrors.espece} options={ESPECES_LIST} />
@@ -261,7 +262,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
               </div>
             </FormSection>
 
-            <FormSection label="Informations médicales" icon="🩺" color="teal">
+            <FormSection label="Informations médicales" icon={<Stethoscope size={14} />} color="teal">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="⚠️ Allergies connues"    value={form.allergies}   onChange={f('allergies')}   error={formErrors.allergies}   placeholder="ex: Pénicilline…" />
                 <Field label="📋 Antécédents médicaux" value={form.antecedents} onChange={f('antecedents')} error={formErrors.antecedents} placeholder="ex: Stérilisation 2024…" />

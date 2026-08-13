@@ -3,6 +3,7 @@ import { Btn, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode, EmptySta
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
 import { venteToDbRow } from '../../lib/validation'
 import { fmtF, fmtK } from '../../lib/ventes'
+import { Stethoscope, CheckCircle2, Hourglass, BarChart3 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 const EMPTY_TRAIT = { med:'', medSearch:'', qte:1, pu:'', rappel:'', showSugg:false }
@@ -302,14 +303,14 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon:'🩺', label:'Total consultations', value:kpis.total,      sub:`${kpis.auj} aujourd'hui`,             color:'#0d9488' },
-          { icon:'✅', label:'CA encaissé',          value:fmtK(kpis.caTotal),  sub:'consultations payées',            color:'#16a34a' },
-          { icon:'⏳', label:'En attente',           value:kpis.enAttente,  sub:fmtK(kpis.caAttente)+' à recouvrer',   color:'#d97706' },
-          { icon:'📊', label:'Diagnostics uniques',  value:topDiags.length, sub:'types de pathologies',                color:'#7c3aed' },
+          { icon:Stethoscope,  label:'Total consultations', value:kpis.total,      sub:`${kpis.auj} aujourd'hui`,             color:'#0d9488' },
+          { icon:CheckCircle2, label:'CA encaissé',          value:fmtK(kpis.caTotal),  sub:'consultations payées',            color:'#16a34a' },
+          { icon:Hourglass,    label:'En attente',           value:kpis.enAttente,  sub:fmtK(kpis.caAttente)+' à recouvrer',   color:'#d97706' },
+          { icon:BarChart3,    label:'Diagnostics uniques',  value:topDiags.length, sub:'types de pathologies',                color:'#7c3aed' },
         ].map((k,i) => (
           <div key={i} style={{ background:'white',borderRadius:16,padding:'14px 16px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}><k.icon size={17} color={k.color} strokeWidth={2.2} /></div>
               <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
             </div>
             <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -321,7 +322,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
       {/* Top diagnostics */}
       {topDiags.length > 0 && (
         <div style={{ background:'white',borderRadius:16,padding:'16px 20px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize:12,fontWeight:800,color:'#64748b',marginBottom:12 }}>🩺 Diagnostics les plus fréquents</p>
+          <p style={{ fontSize:12,fontWeight:800,color:'#64748b',marginBottom:12,display:'flex',alignItems:'center',gap:6 }}><Stethoscope size={14} color="#0d9488" /> Diagnostics les plus fréquents</p>
           <div style={{ display:'flex',flexDirection:'column',gap:6 }}>
             {topDiags.map(([diag, count], i) => {
               const maxCount = topDiags[0][1]
@@ -349,7 +350,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
         {/* Header */}
         <div style={{ padding:'18px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10 }}>
           <div>
-            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}>🩺 Consultations <span style={{ fontSize:13,fontWeight:400,color:'#94a3b8' }}>format SOAP</span></h2>
+            <h2 style={{ fontSize:20,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><Stethoscope size={20} color="#2563eb" strokeWidth={2.3} /> Consultations <span style={{ fontSize:13,fontWeight:400,color:'#94a3b8' }}>format SOAP</span></h2>
             <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>{cFiltered.length}/{(consultations||[]).length} consultation(s)</p>
           </div>
           <div style={{ display:'flex',gap:8,alignItems:'center' }}>
