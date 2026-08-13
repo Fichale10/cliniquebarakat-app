@@ -5,10 +5,10 @@ import {
   Pagination, usePagination, EmptyState,
   FormPanel, FormSection,
 } from '../../components/ui'
-import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
-import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill } from 'lucide-react'
+import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
@@ -441,7 +441,87 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const avgJour      = ventesJour.length ? Math.round(caJour / ventesJour.length) : 0
   const creditJour   = ventesJour.filter(v => v.statut !== 'Payé').reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
 
-  // ─────────────────────────────────────────────────────────
+  // ── Clôture de caisse ───────────────────────────────────
+  const [clotures, setClotures]         = useState(null)   // null = pas encore chargé
+  const [compte, setCompte]             = useState({})     // { mode: montant saisi }
+  const [clotureNote, setClotureNote]   = useState('')
+  const [savingCloture, setSavingCloture] = useState(false)
+
+  useEffect(() => {
+    if (tab !== 'cloture' || clotures !== null || !sb) return
+    dbFetch(sb, 'clotures_caisse').then(rows => setClotures(rows || [])).catch(() => setClotures([]))
+  }, [tab, sb])
+
+  /** Attendu du jour par mode de paiement (ventes payées, TTC) */
+  const attenduParMode = () => {
+    const map = {}
+    ventes.filter(v => v.date === today() && v.statut === 'Payé').forEach(v => {
+      const mode = v.mode && v.mode !== '–' ? v.mode : 'Espèces'
+      map[mode] = (map[mode] || 0) + venteTTC(v, tva)
+    })
+    if (!('Espèces' in map)) map['Espèces'] = 0
+    return map
+  }
+
+  const clotureDuJour = (clotures || []).find(c => c.date === today())
+
+  const enregistrerCloture = async () => {
+    if (clotureDuJour && !confirm('Une clôture existe déjà pour aujourd\'hui. En enregistrer une nouvelle ?')) return
+    const attendu = attenduParMode()
+    const compteNum = {}
+    Object.keys(attendu).forEach(m => { compteNum[m] = parseFloat(compte[m]) || 0 })
+    const totalAttendu = Object.values(attendu).reduce((s,v)=>s+v,0)
+    const totalCompte  = Object.values(compteNum).reduce((s,v)=>s+v,0)
+    const nbVentesJour = ventes.filter(v => v.date === today() && v.statut === 'Payé').length
+    setSavingCloture(true)
+    try {
+      const row = {
+        id: newId(), date: today(), caissier: user?.name || '—',
+        attendu, compte: compteNum,
+        ecart: totalCompte - totalAttendu,
+        nb_ventes: nbVentesJour, note: clotureNote,
+      }
+      const saved = await dbInsert(sb, 'clotures_caisse', row)
+      setClotures([saved, ...(clotures || [])])
+      setCompte({}); setClotureNote('')
+      if (logAction && sb) logAction(sb, user, 'cloture_caisse', `${row.date} — écart ${fmtF(row.ecart)}`)
+      imprimerCloture(saved)
+    } catch (e) {
+      alert('Erreur enregistrement clôture : ' + (e?.message || e))
+    } finally { setSavingCloture(false) }
+  }
+
+  const imprimerCloture = (c) => {
+    const w = window.open('', '_blank', 'width=440,height=700')
+    if (!w) return
+    const fmt = n => new Intl.NumberFormat('fr-FR').format(Math.round(n || 0))
+    const modes = Object.keys(c.attendu || {})
+    const totA = Object.values(c.attendu||{}).reduce((s,v)=>s+v,0)
+    const totC = Object.values(c.compte||{}).reduce((s,v)=>s+v,0)
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Clôture ${c.date}</title>
+<style>body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1e293b;padding:24px;max-width:400px;margin:0 auto}
+h1{font-size:18px;color:#15803d;text-align:center;margin:0 0 4px}
+.sub{text-align:center;color:#64748b;font-size:11px;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;margin-bottom:14px}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-size:12px}
+th:first-child,td:first-child{text-align:left}
+th{background:#f8fafc;font-size:10px;text-transform:uppercase;color:#64748b}
+.tot{font-weight:900}.ecart-ok{color:#16a34a;font-weight:800}.ecart-ko{color:#dc2626;font-weight:800}
+.sig{margin-top:30px;display:flex;justify-content:space-between;font-size:11px;color:#64748b}
+.sig div{border-top:1px solid #94a3b8;padding-top:6px;width:45%;text-align:center}</style></head><body>
+<h1>🔒 CLÔTURE DE CAISSE</h1>
+<div class="sub">La Barakat · ${c.date} · Caissier : ${c.caissier} · ${c.nb_ventes} vente(s)</div>
+<table><thead><tr><th>Mode</th><th>Attendu</th><th>Compté</th><th>Écart</th></tr></thead><tbody>
+${modes.map(m => { const a=c.attendu[m]||0, k=(c.compte||{})[m]||0, e=k-a; return `<tr><td>${m}</td><td>${fmt(a)} F</td><td>${fmt(k)} F</td><td class="${e===0?'':'ecart-ko'}">${e>0?'+':''}${fmt(e)} F</td></tr>` }).join('')}
+<tr class="tot"><td>TOTAL</td><td>${fmt(totA)} F</td><td>${fmt(totC)} F</td><td class="${(totC-totA)===0?'ecart-ok':'ecart-ko'}">${(totC-totA)>0?'+':''}${fmt(totC-totA)} F</td></tr>
+</tbody></table>
+${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-radius:8px">📌 ${c.note}</p>`:''}
+<div class="sig"><div>Caissier</div><div>Responsable</div></div>
+<script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  // ─────────────────────────────────────────────────────
   return (
     <div className="app-page space-y-5">
 
@@ -450,6 +530,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         {[
           { id:'caisse',     label:'💰 Caisse',            desc:'Saisie rapide' },
           { id:'historique', label:'📋 Ventes & Historique', desc:'Gestion complète' },
+          { id:'cloture',    label:'🔒 Clôture',           desc:'Fin de journée' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '8px 18px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 700,
@@ -962,6 +1043,91 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
           </div>
         </>
       )}
+
+      {/* ══════════════ ONGLET CLÔTURE ══════════════ */}
+      {tab === 'cloture' && (() => {
+        const attendu = attenduParMode()
+        const modes = Object.keys(attendu)
+        const totalAttendu = Object.values(attendu).reduce((s,v)=>s+v,0)
+        const totalCompte = modes.reduce((s,m)=>s+(parseFloat(compte[m])||0),0)
+        const ecart = totalCompte - totalAttendu
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Comptage du jour */}
+            <div className="app-card p-5">
+              <h2 className="text-xl font-bold flex items-center gap-2 mb-1"><Lock size={20} color="#ea580c" strokeWidth={2.3} /> Clôture du {new Date().toLocaleDateString('fr-FR')}</h2>
+              <p className="text-xs text-slate-400 mb-4">
+                {ventes.filter(v=>v.date===today()&&v.statut==='Payé').length} vente(s) payée(s) aujourd'hui
+                {clotureDuJour && <span style={{ color:'#d97706', fontWeight:700 }}> · ⚠️ déjà clôturé aujourd'hui</span>}
+              </p>
+
+              <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr 1fr 1fr', gap:8, marginBottom:6 }}>
+                {['Mode de paiement','Attendu','Compté','Écart'].map((h,i)=><span key={i} style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase' }}>{h}</span>)}
+              </div>
+              {modes.map(m => {
+                const c = parseFloat(compte[m]) || 0
+                const e = c - attendu[m]
+                return (
+                  <div key={m} style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr 1fr 1fr', gap:8, alignItems:'center', marginBottom:8 }}>
+                    <span style={{ fontSize:13, fontWeight:700 }}>{m}</span>
+                    <span style={{ fontSize:13, fontFamily:'monospace', fontWeight:700, color:'#64748b' }}>{otrMode?'•••':fmtF(attendu[m])}</span>
+                    <input type="number" min="0" value={compte[m] ?? ''} placeholder="0"
+                      onChange={e2 => setCompte(p => ({ ...p, [m]: e2.target.value }))}
+                      style={{ border:'1.5px solid #e2e8f0', borderRadius:10, padding:'8px 10px', fontSize:13, width:'100%', outline:'none', fontFamily:'monospace', boxSizing:'border-box' }} />
+                    <span style={{ fontSize:13, fontFamily:'monospace', fontWeight:800, color: compte[m]==null||compte[m]==='' ? '#cbd5e1' : e===0 ? '#16a34a' : '#dc2626' }}>
+                      {compte[m]==null||compte[m]==='' ? '—' : (e>0?'+':'')+fmtF(e)}
+                    </span>
+                  </div>
+                )
+              })}
+
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', borderRadius:12, marginTop:10,
+                background: ecart===0 ? '#f0fdf4' : '#fef2f2', border:`1px solid ${ecart===0?'#bbf7d0':'#fecaca'}` }}>
+                <span style={{ fontSize:12, fontWeight:800, color:'#64748b' }}>ÉCART TOTAL</span>
+                <span style={{ fontSize:20, fontWeight:900, fontFamily:'monospace', color: ecart===0 ? '#16a34a' : '#dc2626' }}>
+                  {(ecart>0?'+':'')+fmtF(ecart)}
+                </span>
+              </div>
+
+              <input type="text" value={clotureNote} onChange={e=>setClotureNote(e.target.value)}
+                placeholder="Note (explication d'un écart, remarque…)"
+                style={{ border:'1.5px solid #e2e8f0', borderRadius:10, padding:'9px 12px', fontSize:13, width:'100%', outline:'none', margin:'12px 0', boxSizing:'border-box' }} />
+
+              <Btn color="brand" onClick={enregistrerCloture} disabled={savingCloture}>
+                {savingCloture ? '⏳ Enregistrement…' : '🔒 Clôturer et imprimer'}
+              </Btn>
+            </div>
+
+            {/* Historique des clôtures */}
+            <div className="app-card p-5">
+              <h3 className="font-bold text-base mb-3">📋 Dernières clôtures</h3>
+              {clotures === null && <p className="text-sm text-slate-400">Chargement…</p>}
+              {clotures !== null && !clotures.length && <p className="text-sm text-slate-400 italic">Aucune clôture enregistrée pour le moment.</p>}
+              <div className="space-y-2">
+                {(clotures||[]).slice(0,14).map(c => {
+                  const totA = Object.values(c.attendu||{}).reduce((s,v)=>s+v,0)
+                  return (
+                    <div key={c.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px', borderRadius:12, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                      <div>
+                        <div style={{ fontWeight:700, fontSize:13 }}>{new Date(c.date+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</div>
+                        <div style={{ fontSize:11, color:'#94a3b8' }}>{c.caissier} · {c.nb_ventes} vente(s) · attendu {otrMode?'•••':fmtF(totA)}</div>
+                        {c.note && <div style={{ fontSize:11, color:'#92400e' }}>📌 {c.note}</div>}
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontSize:13, fontWeight:900, fontFamily:'monospace', color: (c.ecart||0)===0 ? '#16a34a' : '#dc2626' }}>
+                          {(c.ecart||0)===0 ? '✓ juste' : ((c.ecart>0?'+':'')+fmtF(c.ecart))}
+                        </span>
+                        <button onClick={()=>imprimerCloture(c)} title="Imprimer"
+                          style={{ width:28, height:28, borderRadius:8, background:'white', border:'1px solid #e2e8f0', cursor:'pointer', fontSize:12 }}>🖨️</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
