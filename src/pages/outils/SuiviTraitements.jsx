@@ -1,34 +1,121 @@
-import { Syringe, Trash2 } from 'lucide-react'
+import { Syringe, Trash2, Coins } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { EmptyState } from '../../components/ui'
+import { dbFetch, dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { fmtF, computeTvaAmt } from '../../lib/ventes'
+import { venteToDbRow } from '../../lib/validation'
 
-function SuiviTraitements({patients, meds, user}){
+function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, setVentesHist}){
   const today=()=>new Date().toISOString().split('T')[0];
-  const [traitements,setTraitements]=useState(()=>{
-    try{return JSON.parse(localStorage.getItem('lb_traitements')||'[]');}catch{return [];}
-  });
+  const [traitements,setTraitements]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [showForm,setShowForm]=useState(false);
-  const [form,setForm]=useState({patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',actif:true});
+  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true};
+  const [form,setForm]=useState(EMPTY);
   const [filter,setFilter]=useState('actifs');
   const f=k=>e=>setForm({...form,[k]:e.target.value});
 
-  const save=(t)=>{localStorage.setItem('lb_traitements',JSON.stringify(t));};
+  // ── Chargement Supabase + migration unique du localStorage ──
+  useEffect(()=>{(async()=>{
+    try{
+      let rows=(await dbFetch(sb,'traitements',{force:true}))||[];
+      if(!localStorage.getItem('lb_traitements_migrated')&&sb){
+        let legacy=[];
+        try{legacy=JSON.parse(localStorage.getItem('lb_traitements')||'[]');}catch(e){}
+        for(const t of legacy){
+          try{
+            const saved=await dbInsert(sb,'traitements',{
+              id:newId(),patient:t.patient||'',medicament:t.medicament||'',
+              posologie:t.posologie||'',frequence:t.frequence||'1x/jour',
+              debut:t.debut||null,fin:t.fin||null,notes:t.notes||'',
+              actif:t.actif!==false,qte:1,pu:0,pa:0,
+            });
+            rows=[saved,...rows];
+          }catch(e){console.warn('[migration traitement]',e?.message||e);}
+        }
+        localStorage.setItem('lb_traitements_migrated','1');
+      }
+      setTraitements(rows);
+    }catch(e){console.warn('[traitements]',e?.message||e);}
+    finally{setLoading(false);}
+  })()},[]);
 
-  const addTraitement=()=>{
+  const totalForm=(parseFloat(form.qte)||0)*(parseFloat(form.pu)||0);
+  const tTotal=t=>(parseFloat(t.qte)||0)*(parseFloat(t.pu)||0);
+  const totalAFacturer=traitements.filter(t=>t.actif&&!t.vente_id).reduce((s,t)=>s+tTotal(t),0);
+
+  const selectMedicament=(e)=>{
+    const nom=e.target.value;
+    const m=meds.find(x=>x.nom===nom);
+    setForm(prev=>({...prev,medicament:nom,pu:String(m?.prixVente??m?.prix_vente??'')}));
+  };
+
+  const addTraitement=async()=>{
     if(!form.patient||!form.medicament){alert('Patient et médicament requis.');return;}
-    const t=[...traitements,{...form,id:Date.now(),created_at:new Date().toISOString()}];
-    setTraitements(t);save(t);
-    setForm({patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',actif:true});
-    setShowForm(false);
+    setSaving(true);
+    try{
+      const m=meds.find(x=>x.nom===form.medicament);
+      const row={
+        id:newId(),patient:form.patient,medicament:form.medicament,
+        posologie:form.posologie,frequence:form.frequence,
+        debut:form.debut||null,fin:form.fin||null,notes:form.notes,
+        actif:true,qte:parseFloat(form.qte)||1,pu:parseFloat(form.pu)||0,
+        pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,
+      };
+      const saved=await dbInsert(sb,'traitements',row);
+      setTraitements([saved,...traitements]);
+      setForm(EMPTY);setShowForm(false);
+    }catch(e){alert('Erreur : '+(e?.message||e));}
+    finally{setSaving(false);}
   };
 
-  const toggleActif=(id)=>{
-    const t=traitements.map(tr=>tr.id===id?{...tr,actif:!tr.actif}:tr);
-    setTraitements(t);save(t);
+  const toggleActif=async(id)=>{
+    const t=traitements.find(x=>x.id===id);if(!t)return;
+    try{
+      await dbUpdate(sb,'traitements',id,{actif:!t.actif});
+      setTraitements(traitements.map(x=>x.id===id?{...x,actif:!x.actif}:x));
+    }catch(e){alert('Erreur : '+(e?.message||e));}
   };
-  const supprimer=(id)=>{
-    const t=traitements.filter(tr=>tr.id!==id);
-    setTraitements(t);save(t);
+  const supprimer=async(id)=>{
+    try{
+      await dbDelete(sb,'traitements',id);
+      setTraitements(traitements.filter(x=>x.id!==id));
+    }catch(e){alert('Erreur suppression : '+(e?.message||e));}
+  };
+
+  // ── Facturation liée (anti double-facturation via vente_id) ──
+  const creerVente=async(t,paye)=>{
+    if(t.vente_id)return;
+    const totalHT=tTotal(t);
+    if(totalHT<=0)return alert('Renseignez quantité et prix avant de facturer.');
+    const p=patients.find(x=>x.nom===t.patient);
+    const m=meds.find(x=>x.nom===t.medicament);
+    const pa=parseFloat(t.pa)||parseFloat(m?.prixAchat??m?.prix_achat)||0;
+    const tvaAmt=computeTvaAmt(totalHT,tva);
+    const ttc=totalHT+tvaAmt;
+    if(!confirm(paye
+      ?`Encaisser ${fmtF(ttc)} (Espèces) pour ${t.patient} ?\nLa vente apparaîtra en Caisse et Finances, le stock sera décompté.`
+      :`Facturer ${fmtF(ttc)} à crédit pour ${t.patient} ?\nLa vente apparaîtra dans les Créances.`))return;
+    try{
+      const row=venteToDbRow({
+        id:newId(),date:today(),client:p?.proprio||t.patient,
+        lignes:[{med:t.medicament,cond:'Traitement',qte:parseFloat(t.qte)||1,pu:parseFloat(t.pu)||0,pa,mult:1}],
+        total:totalHT,statut:paye?'Payé':'En attente',mode:paye?'Espèces':'–',
+        note:`Traitement ${t.patient} — ${t.medicament}`.slice(0,200),
+        tva_amt:tvaAmt,montant_paye:paye?ttc:0,
+        caissier:user?.name||'',type:'clinique',
+      });
+      const saved=await dbInsert(sb,'ventes',row);
+      if(setVentesHist)setVentesHist([saved,...(ventesHist||[])].slice(0,500));
+      await dbUpdate(sb,'traitements',t.id,{vente_id:saved.id});
+      setTraitements(traitements.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
+      if(paye&&m?.id&&setMeds){
+        const newStock=Math.max(0,(m.stock||0)-(parseFloat(t.qte)||0));
+        await dbUpdate(sb,'medicaments',m.id,{stock:newStock}).catch(e=>console.warn('[stock]',e));
+        setMeds(meds.map(x=>x.id===m.id?{...x,stock:newStock}:x));
+      }
+    }catch(e){alert('Erreur facturation : '+(e?.message||e));}
   };
 
   const filtered=traitements.filter(t=>{
@@ -67,6 +154,13 @@ function SuiviTraitements({patients, meds, user}){
       </div>
     </div>}
 
+    {/* À facturer */}
+    {totalAFacturer>0&&<div style={{background:'#f0fdf4',border:'2px solid #bbf7d0',borderRadius:'14px',padding:'12px 18px',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+      <Coins size={18} color="#16a34a" strokeWidth={2.3} />
+      <span style={{fontWeight:800,color:'#166534'}}>À facturer : {fmtF(totalAFacturer)}</span>
+      <span style={{fontSize:12,color:'#16a34a'}}>({traitements.filter(t=>t.actif&&!t.vente_id&&tTotal(t)>0).length} traitement(s) actif(s) non facturé(s))</span>
+    </div>}
+
     <div className="app-card">
       <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -99,7 +193,7 @@ function SuiviTraitements({patients, meds, user}){
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Médicament *</label>
-            <select value={form.medicament} onChange={f('medicament')}
+            <select value={form.medicament} onChange={selectMedicament}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}>
               <option value="">— Choisir —</option>
               {meds.filter(m=>m.stock>0).map(m=><option key={m.id} value={m.nom}>{m.nom}</option>)}
@@ -127,20 +221,38 @@ function SuiviTraitements({patients, meds, user}){
             <input type="date" value={form.fin} onChange={f('fin')}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
+          <div>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité</label>
+            <input type="number" min="1" value={form.qte} onChange={f('qte')}
+              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+          </div>
+          <div>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Prix unitaire (F)</label>
+            <input type="number" min="0" value={form.pu} onChange={f('pu')} placeholder="0 = non facturable"
+              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+          </div>
+          <div style={{display:'flex',alignItems:'flex-end'}}>
+            <div style={{width:'100%',background:'white',border:'1.5px solid #bbf7d0',borderRadius:'9px',padding:'8px 12px',display:'flex',justifyContent:'space-between',fontSize:'13px'}}>
+              <span style={{fontWeight:700,color:'#64748b'}}>Total</span>
+              <span style={{fontWeight:900,color:'#16a34a',fontFamily:'monospace'}}>{fmtF(totalForm)}</span>
+            </div>
+          </div>
           <div className="md:col-span-3">
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Notes</label>
             <input value={form.notes} onChange={f('notes')} placeholder="Instructions particulières, effets à surveiller…"
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
         </div>
-        <button onClick={addTraitement}
-          style={{padding:'9px 20px',borderRadius:'10px',background:'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer'}}>
-          ✓ Enregistrer le traitement
+        <p style={{fontSize:12,color:'#64748b',marginBottom:10}}>💡 Si le traitement vient d'une consultation déjà payée, laissez le prix à 0 pour éviter la double facturation.</p>
+        <button onClick={addTraitement} disabled={saving}
+          style={{padding:'9px 20px',borderRadius:'10px',background:saving?'#94a3b8':'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:saving?'wait':'pointer'}}>
+          {saving?'⏳ Enregistrement…':'✓ Enregistrer le traitement'}
         </button>
       </div>}
 
       <div className="divide-y">
-        {!filtered.length&&<EmptyState icon="💊" title={filter==='actifs'?'Aucun traitement actif':filter==='termines'?'Aucun traitement terminé':'Aucun traitement enregistré'} subtitle="Les traitements en cours de suivi apparaîtront ici." />}
+        {loading&&<div style={{padding:'24px',textAlign:'center',color:'#94a3b8',fontSize:13}}>Chargement…</div>}
+        {!loading&&!filtered.length&&<EmptyState icon="💊" title={filter==='actifs'?'Aucun traitement actif':filter==='termines'?'Aucun traitement terminé':'Aucun traitement enregistré'} subtitle="Les traitements en cours de suivi apparaîtront ici." />}
         {filtered.map(t=>{
           const pat=patients.find(p=>p.nom===t.patient);
           const jRestants=t.fin?Math.round((new Date(t.fin)-new Date())/86400000):null;
@@ -158,6 +270,7 @@ function SuiviTraitements({patients, meds, user}){
                     background:t.actif?'#dcfce7':'#f1f5f9',color:t.actif?'#166534':'#64748b'}}>
                     {t.actif?'🟢 Actif':'⚫ Terminé'}
                   </span>
+                  {t.vente_id&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',background:'#f0fdf4',border:'1px solid #bbf7d0',color:'#16a34a'}}>✓ Facturé</span>}
                   {bientot&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',background:'#fef3c7',color:'#d97706'}}>
                     ⏰ {jRestants===0?'Termine aujourd\'hui':jRestants+'j restants'}
                   </span>}
@@ -167,10 +280,21 @@ function SuiviTraitements({patients, meds, user}){
                   {t.posologie&&<span>📋 {t.posologie}</span>}
                   <span>🔁 {t.frequence}</span>
                   <span>📅 {t.debut}{t.fin?` → ${t.fin}`:''}</span>
+                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{t.qte} × {fmtF(t.pu)} = {fmtF(tTotal(t))}</span>}
                 </div>
                 {t.notes&&<div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px',fontStyle:'italic'}}>📌 {t.notes}</div>}
               </div>
-              <div style={{display:'flex',gap:'6px',flexShrink:0}}>
+              <div style={{display:'flex',gap:'6px',flexShrink:0,flexWrap:'wrap'}}>
+                {!t.vente_id&&tTotal(t)>0&&<>
+                  <button onClick={()=>creerVente(t,true)} title="Encaisser maintenant (Espèces)"
+                    style={{padding:'7px 12px',borderRadius:'8px',background:'#16a34a',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:4}}>
+                    <Coins size={12} strokeWidth={2.4} /> Encaisser
+                  </button>
+                  <button onClick={()=>creerVente(t,false)} title="Facturer à crédit (Créances)"
+                    style={{padding:'7px 12px',borderRadius:'8px',background:'#fff7ed',color:'#ea580c',border:'1px solid #fed7aa',fontWeight:700,fontSize:'12px',cursor:'pointer'}}>
+                    À crédit
+                  </button>
+                </>}
                 <button onClick={()=>envoyerRappelWA(t)} title="Rappel WhatsApp"
                   style={{padding:'7px 12px',borderRadius:'8px',background:'#22c55e',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer'}}>
                   💬
@@ -179,7 +303,7 @@ function SuiviTraitements({patients, meds, user}){
                   style={{padding:'7px 12px',borderRadius:'8px',background:t.actif?'#f1f5f9':'#dcfce7',color:t.actif?'#64748b':'#166534',border:`1px solid ${t.actif?'#e2e8f0':'#bbf7d0'}`,fontWeight:700,fontSize:'12px',cursor:'pointer'}}>
                   {t.actif?'Terminer':'Réactiver'}
                 </button>
-                <button onClick={()=>{if(confirm('Supprimer ce traitement ?'))supprimer(t.id);}}
+                <button onClick={()=>{if(confirm(t.vente_id?'Supprimer ce traitement ? (la vente liée sera conservée)':'Supprimer ce traitement ?'))supprimer(t.id);}}
                   style={{padding:'7px 10px',borderRadius:'8px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'flex',alignItems:'center'}}>
                   <Trash2 size={13} strokeWidth={2.4} />
                 </button>
