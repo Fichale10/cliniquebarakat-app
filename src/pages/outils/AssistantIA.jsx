@@ -29,12 +29,16 @@ function AssistantIA({ patients, meds, user, sb }) {
     setInput('');setLoading(true);
 
     try{
+      // Token de session pour l'endpoint sécurisé
+      let authHeader = {}
+      try {
+        const { data: sess } = await sb.auth.getSession()
+        if (sess?.session?.access_token) authHeader = { Authorization: `Bearer ${sess.session.access_token}` }
+      } catch(e) {}
       const resp=await fetch('/api/chat',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...authHeader},
         body:JSON.stringify({
-          model:'claude-haiku-4-5-20251001',
-          max_tokens:1000,
           system:buildContext(),
           messages:[...messages.filter(m=>m.role!=='assistant'||messages.indexOf(m)>0),userMsg].map(m=>({role:m.role,content:m.content})),
         })
