@@ -11,7 +11,7 @@ const STATUS_COLOR = { Brouillon:'slate', Envoyé:'blue', Accepté:'green', Refu
 
 const EMPTY_FORM = { date: today(), client: '', objet: '', lignes: [{ description: '', qte: 1, pu: '' }], validite: '', notes: '' }
 
-function Devis({ clients = [], meds = [], otrMode, tva, devis = [], setDevis, sb, dbInsert, dbUpdate, dbDelete }) {
+function Devis({ clients = [], meds = [], otrMode, tva, devis = [], setDevis, factures = [], setFactures, setView, isAdmin, sb, dbInsert, dbUpdate, dbDelete }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm]         = useState(EMPTY_FORM)
   const [cliSugg, setCliSugg]   = useState([])
@@ -70,8 +70,27 @@ function Devis({ clients = [], meds = [], otrMode, tva, devis = [], setDevis, sb
 
   // ── Convertir en facture ─────────────────────────────────────
   const convertirFacture = async (d) => {
-    await setStatut(d.id, 'Converti')
-    alert(`Devis ${d.num} marqué comme converti. Créez la facture correspondante dans l'onglet Factures.`)
+    const ta  = tvaAmt(d.total || 0)
+    const ttc = (d.total || 0) + ta
+    if (!confirm(`Convertir le devis ${d.num} en facture de ${fmtF(ttc)}${ta > 0 ? ' TTC' : ''} ?`)) return
+    try {
+      const yr  = new Date().getFullYear()
+      const n   = factures.filter(f => (f.num || '').includes(String(yr))).length + 1
+      const num = `FAC-${yr}-${String(n).padStart(3, '0')}`
+      const row = {
+        id: newId(), num, date: today(), client: d.client,
+        description: `Devis ${d.num} — ${d.objet}`,
+        montant: ttc, statut: 'En attente', mode: '–',
+      }
+      const saved = await dbInsert(sb, 'factures', row)
+      setFactures([saved, ...factures])
+      await dbUpdate(sb, 'devis', d.id, { statut: 'Converti' })
+      setDevis(devis.map(x => x.id === d.id ? { ...x, statut: 'Converti' } : x))
+      if (isAdmin && confirm(`✓ Facture ${num} créée. Ouvrir la page Factures ?`)) setView?.('factures')
+      else if (!isAdmin) alert(`✓ Facture ${num} créée (visible par un administrateur).`)
+    } catch (e) {
+      alert('Erreur conversion : ' + (e?.message || e))
+    }
   }
 
   // ── Impression ───────────────────────────────────────────────
