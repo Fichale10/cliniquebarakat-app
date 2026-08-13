@@ -6,6 +6,7 @@ import { isValidView, DEFAULT_VIEW } from './lib/routes'
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
 import { NavIcon } from './components/ui/AppIcons'
+import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon } from 'lucide-react'
 import { ToastContainer } from './components/Toast'
 import { SkPage } from './components/Skeleton'
 
@@ -775,7 +776,7 @@ useEffect(() => {
             title="Menu"
             style={{fontSize:'15px',width:34,height:34}}
           >
-            ☰
+            <MenuIcon size={17} strokeWidth={2.2} />
           </button>
           <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'linear-gradient(135deg,#0d9488,#14b8a6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'17px',flexShrink:0,boxShadow:'0 2px 10px rgba(13,148,136,0.28)'}}>
             <NavIcon id={view} size={18} color="white" />
@@ -807,7 +808,7 @@ useEffect(() => {
             title="Recherche"
             style={{fontSize:'16px'}}
           >
-            🔎
+            <Search size={17} strokeWidth={2.2} />
           </button>
 <button
   onClick={()=>setUserMenuOpen(p=>!p)}
@@ -875,19 +876,19 @@ useEffect(() => {
           </div>}
           {/* Notifs */}
           <button onClick={()=>setShowNotifs(p=>!p)} className="no-print header-btn" style={{position:'relative'}}>
-            🔔
+            <Bell size={17} strokeWidth={2.2} />
             {notifsNonLues.length>0&&<span style={{position:'absolute',top:'3px',right:'3px',width:'16px',height:'16px',
               background:'#ef4444',borderRadius:'50%',color:'white',fontWeight:800,
               display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',
               border:'2px solid white'}}>{notifsNonLues.length}</span>}
           </button>
-          {online&&<button onClick={()=>loadAll({ force: true })} disabled={syncing} className="no-print header-btn" title="Rafraîchir" style={{fontSize:'18px',fontWeight:300,opacity:syncing?0.5:1}}>↻</button>}
+          {online&&<button onClick={()=>loadAll({ force: true })} disabled={syncing} className="no-print header-btn" title="Rafraîchir" style={{opacity:syncing?0.5:1}}><RotateCw size={16} strokeWidth={2.2} className={syncing?'animate-spin':''} /></button>}
           <button onClick={()=>{document.body.classList.toggle('dark-mode');localStorage.setItem('lb_dark',document.body.classList.contains('dark-mode')?'1':'0');}}
             className="no-print header-btn" title="Mode sombre"
             style={{fontSize:'16px'}}>
-            {document.body.classList.contains('dark-mode')?'☀️':'🌙'}
+            {document.body.classList.contains('dark-mode')?<Sun size={17} strokeWidth={2.2} />:<Moon size={17} strokeWidth={2.2} />}
           </button>
-          {isAdmin&&<button onClick={()=>setView('parametres')} className="no-print header-btn" title="Paramètres">⚙️</button>}
+          {isAdmin&&<button onClick={()=>setView('parametres')} className="no-print header-btn" title="Paramètres"><SettingsIcon size={17} strokeWidth={2.2} /></button>}
         </div>
       </header>
 
@@ -948,7 +949,7 @@ useEffect(() => {
       <div className="notif-panel z-50">
         <div className="flex items-center justify-between p-4 border-b" style={{background:'linear-gradient(135deg,#166534,#1e3a8a)'}}>
           <div className="flex items-center gap-2">
-            <span className="text-xl">🔔</span>
+            <Bell size={18} color="white" strokeWidth={2.2} />
             <h3 className="font-bold text-white">Notifications</h3>
             {notifsNonLues.length>0&&<span className="bg-red-500 text-white font-black px-2 py-0.5 rounded-full" style={{fontSize:'11px'}}>{notifsNonLues.length} nouvelles</span>}
           </div>
