@@ -1,4 +1,4 @@
-import { Map as MapIcon } from 'lucide-react'
+import { Map as MapIcon, ClipboardList } from 'lucide-react'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -270,7 +270,7 @@ function CarteClients({ clients = [], patients = [] }) {
         {/* ── Liste villes ── */}
         <div className="app-card overflow-hidden flex flex-col">
           <div className="p-4 border-b border-slate-100">
-            <h2 className="font-bold text-base">📋 Clients par ville</h2>
+            <h2 className="font-bold text-base flex items-center gap-2"><ClipboardList size={16} color="#0d9488" /> Clients par ville</h2>
             <p className="text-xs text-slate-400 mt-0.5">{parVille.length} ville(s) couvertes</p>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight:520 }}>

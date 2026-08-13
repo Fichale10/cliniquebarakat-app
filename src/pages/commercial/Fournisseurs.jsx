@@ -1,4 +1,4 @@
-import { Factory } from 'lucide-react'
+import { Factory, Coins } from 'lucide-react'
 import { useState, useMemo } from 'react';
 import { today, fmtF, findDups } from '../../lib/utils';
 import { newId } from '../../lib/db';
@@ -606,7 +606,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
           <div className="app-card">
             <div style={{ padding:'18px 20px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
               <div>
-                <h2 style={{ fontSize:18,fontWeight:900 }}>📋 Dettes par fournisseur</h2>
+                <h2 style={{ fontSize:18,fontWeight:900,display:'flex',alignItems:'center',gap:8 }}><Coins size={18} color="#ea580c" /> Dettes par fournisseur</h2>
                 <p style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>{debtData.length} fournisseur(s) avec transactions</p>
               </div>
               <Btn color="brand" onClick={() => setShowVForm(!showVForm)}>{showVForm?'✕ Annuler':'+ Enregistrer un paiement'}</Btn>

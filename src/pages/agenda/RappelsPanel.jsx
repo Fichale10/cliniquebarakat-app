@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Smartphone } from 'lucide-react'
 
 function RappelsPanel({ rdvs }) {
   const [waSent, setWaSent] = useState(() => {
@@ -154,7 +155,7 @@ function RappelsPanel({ rdvs }) {
     <div className="app-card">
       <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg font-black flex items-center gap-2">📲 Rappels patients</h2>
+          <h2 className="text-lg font-black flex items-center gap-2"><Smartphone size={18} color="#2563eb" /> Rappels patients</h2>
           <p className="text-xs text-slate-400 mt-0.5">
             {upcoming.length} RDV dans les 3 prochains jours
             {countUnsent > 0 && ` · ${countUnsent} rappel(s) WA à envoyer`}

@@ -285,7 +285,7 @@ function TabJournalier({ meds, setMeds, ventesHist, inventaires = [], setInventa
       <div className="app-card p-5">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 style={{ fontWeight: 900, fontSize: 18, color: '#1e293b' }}>📋 {fmtDate(today)}</h2>
+            <h2 style={{ fontWeight: 900, fontSize: 18, color: '#1e293b', display:'flex', alignItems:'center', gap:8 }}><ClipboardList size={18} color="#7c3aed" /> {fmtDate(today)}</h2>
             <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
               Saisissez le stock physiquement compté. Les écarts seront calculés et les corrections appliquées à la clôture.
             </p>
