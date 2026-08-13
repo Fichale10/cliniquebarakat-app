@@ -22,11 +22,23 @@ CREATE TABLE IF NOT EXISTS public.fournisseurs (
 );
 
 ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS contact             text NOT NULL DEFAULT '';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS tel                 text NOT NULL DEFAULT '';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS email               text NOT NULL DEFAULT '';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS adresse             text NOT NULL DEFAULT '';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS ville               text NOT NULL DEFAULT 'Lomé';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS pays                text NOT NULL DEFAULT 'Togo';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS specialite          text NOT NULL DEFAULT 'Médicaments vétérinaires';
 ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS delai_livraison     integer NOT NULL DEFAULT 5;
 ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS conditions_paiement text NOT NULL DEFAULT '30j';
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS remise              numeric NOT NULL DEFAULT 0;
 ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS note_qualite        integer NOT NULL DEFAULT 3;
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS actif               boolean NOT NULL DEFAULT true;
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS notes               text NOT NULL DEFAULT '';
 ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS date_debut          date;
+ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS rib                 text NOT NULL DEFAULT '';
 ALTER TABLE public.fournisseurs ADD COLUMN IF NOT EXISTS site_web            text NOT NULL DEFAULT '';
+
+NOTIFY pgrst, 'reload schema';
 
 CREATE INDEX IF NOT EXISTS fournisseurs_nom_idx ON public.fournisseurs (nom);
 
