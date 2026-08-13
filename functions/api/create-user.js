@@ -87,7 +87,18 @@ export async function onRequestPost(context) {
     },
     body: JSON.stringify(fields),
   })
-  const profile = upRes.ok ? (await upRes.json())?.[0] : fields
+
+  if (!upRes.ok) {
+    // Le compte Auth existe mais le profil n'a pas pu être écrit :
+    // remonter l'erreur pour ne pas laisser un compte orphelin silencieux.
+    const detail = await upRes.text().catch(() => '')
+    return json({
+      error: `Compte créé mais profil non enregistré (${upRes.status}). Détail : ${detail.slice(0, 200)}`,
+      userId,
+    }, 500)
+  }
+
+  const profile = (await upRes.json())?.[0] || fields
 
   return json({ ok: true, userId, profile: profile || fields })
 }
