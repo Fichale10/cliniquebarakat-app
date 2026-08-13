@@ -2,6 +2,7 @@ import { Package } from 'lucide-react'
 import { useState } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { validateCommandeForm } from '../../lib/validation'
 import { Btn, Badge, Field, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode, EmptyState } from '../../components/ui'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -39,19 +40,19 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
   }
 
   const addCommande = async () => {
-    const lignesValides = form.lignes.filter(l => l.produit && parseInt(l.qte) > 0)
-    if (!form.fournisseur) return alert('Fournisseur requis')
-    if (!lignesValides.length) return alert('Ajoutez au moins un produit avec une quantité')
+    const check = validateCommandeForm(form)
+    if (!check.ok) return alert(check.messages.join('\n'))
+    const d = check.data
     setSaving(true)
     try {
       const row = {
-        id: newId(), num: genNum(), date: form.date,
-        fournisseur: form.fournisseur,
-        lignes: lignesValides,
-        total: montantTotal,
+        id: newId(), num: genNum(), date: d.date,
+        fournisseur: d.fournisseur,
+        lignes: d.lignes,
+        total: d.lignes.reduce((s, l) => s + l.qte * l.pu, 0),
         statut: 'En attente',
         date_reception: null,
-        echeance: form.echeance || null,
+        echeance: d.echeance,
       }
       const saved = await dbInsert(sb, 'commandes', row)
       setAchatsHist([saved, ...(achatsHist || [])])

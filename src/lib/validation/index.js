@@ -9,6 +9,10 @@ import {
   clientFormSchema,
   venteFormSchema,
   caisseFormSchema,
+  factureFormSchema,
+  commandeFormSchema,
+  chirurgieFormSchema,
+  consultationFormSchema,
 } from './schemas'
 import { ACCOUNT_ROLES_ADMIN } from './constants'
 import { z } from 'zod'
@@ -22,6 +26,10 @@ export {
   clientFormSchema,
   venteFormSchema,
   caisseFormSchema,
+  factureFormSchema,
+  commandeFormSchema,
+  chirurgieFormSchema,
+  consultationFormSchema,
 } from './schemas'
 export * from './constants'
 
@@ -248,5 +256,30 @@ export function validateCaisseForm(payload, meds = []) {
   if (!result.success) return issuesToResult(result.error)
   const stockErr = checkStock(result.data.lignes, meds)
   if (stockErr) return stockErr
+  return { ok: true, data: result.data }
+}
+
+export function validateFactureForm(form) {
+  const result = factureFormSchema.safeParse(form)
+  if (!result.success) return issuesToResult(result.error)
+  return { ok: true, data: result.data }
+}
+
+export function validateCommandeForm(form) {
+  const lignes = (form.lignes || []).filter((l) => String(l.produit || '').trim())
+  const result = commandeFormSchema.safeParse({ ...form, lignes })
+  if (!result.success) return issuesToResult(result.error)
+  return { ok: true, data: result.data }
+}
+
+export function validateChirurgieForm(form) {
+  const result = chirurgieFormSchema.safeParse(form)
+  if (!result.success) return issuesToResult(result.error)
+  return { ok: true, data: result.data }
+}
+
+export function validateConsultationForm(form) {
+  const result = consultationFormSchema.safeParse(form)
+  if (!result.success) return issuesToResult(result.error)
   return { ok: true, data: result.data }
 }

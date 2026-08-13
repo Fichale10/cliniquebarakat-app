@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Btn, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode, EmptyState, Pagination, usePagination } from '../../components/ui'
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
-import { venteToDbRow } from '../../lib/validation'
+import { venteToDbRow, validateConsultationForm } from '../../lib/validation'
 import { fmtF, fmtK } from '../../lib/ventes'
 import { Stethoscope, CheckCircle2, Hourglass, BarChart3 } from 'lucide-react'
 
@@ -171,7 +171,8 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
 
   // ── Ajout ─────────────────────────────────────────────────────
   const handleAdd = async () => {
-    if (!form.patient || !form.soap_a) return alert('Patient et diagnostic (SOAP-A) requis')
+    const check = validateConsultationForm(form)
+    if (!check.ok) return alert(check.messages.join('\n'))
     // Stock suffisant ?
     const stockErr = traitsValides.map(t => { const m=meds.find(x=>x.nom===t.med); return (m && (parseFloat(t.qte)||0) > (m.stock||0)) ? `${t.med} : stock insuffisant (${m.stock||0} dispo)` : null }).filter(Boolean)
     if (stockErr.length) return alert(stockErr.join('\n'))

@@ -2,6 +2,7 @@ import { Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, PrintBtn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
+import { validateFactureForm } from '../../lib/validation'
 
 const today  = () => new Date().toISOString().split('T')[0]
 const fmtF   = v => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
@@ -113,10 +114,12 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
 
   // ── Créer ────────────────────────────────────────────────────
   const addFacture = async () => {
-    if (!form.client || !form.montant) return alert('Client et montant requis')
+    const check = validateFactureForm(form)
+    if (!check.ok) return alert(check.messages.join('\n'))
     setSaving(true)
     try {
-      const row = { id: newId(), num: genNum(), date: form.date, client: form.client, description: form.description, montant: parseInt(form.montant), statut: form.statut, mode: form.mode }
+      const d   = check.data
+      const row = { id: newId(), num: genNum(), date: d.date, client: d.client, description: d.description, montant: d.montant, statut: d.statut, mode: d.mode }
       const saved = await dbInsert(sb, 'factures', row)
       setFactures([saved, ...factures])
       setForm(EMPTY_FORM)

@@ -259,3 +259,95 @@ export const caisseFormSchema = z.object({
   note: optionalTrimmed(500, 'Note'),
   lignes: z.array(venteLigneSchema).min(1, 'Au moins un médicament est requis'),
 })
+
+const optionalIsoDate = z.preprocess(
+  (v) => (v === '' || v === null || v === undefined ? null : v),
+  isoDate.nullable(),
+)
+
+const montantPositif = (label) =>
+  z.coerce
+    .number({ invalid_type_error: `${label} : nombre invalide` })
+    .min(0, `${label} ne peut pas être négatif`)
+    .max(999_999_999, `${label} trop élevé`)
+
+/** Facture */
+export const factureFormSchema = z.object({
+  date: isoDate,
+  client: z.string().trim().min(2, 'Client requis (2 caractères min)').max(120, 'Nom client trop long'),
+  description: optionalTrimmed(300, 'Description'),
+  montant: montantPositif('Le montant').refine((n) => n > 0, { message: 'Le montant doit être > 0' }),
+  statut: z.enum(['En attente', 'Payé', 'Annulé'], { message: 'Statut invalide' }),
+  mode: z.enum(['Espèces', 'Mobile Money', 'Virement', 'Chèque', '–'], { message: 'Mode de paiement invalide' }),
+})
+
+/** Ligne de commande fournisseur */
+const commandeLigneSchema = z.object({
+  produit: z.string().trim().min(1, 'Produit requis').max(120, 'Nom produit trop long'),
+  qte: z.coerce
+    .number({ invalid_type_error: 'Quantité invalide' })
+    .int('Quantité : entier requis')
+    .positive('Quantité doit être ≥ 1')
+    .max(99_999, 'Quantité trop élevée'),
+  pu: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? 0 : v),
+    montantPositif('Prix unitaire'),
+  ),
+})
+
+/** Commande fournisseur */
+export const commandeFormSchema = z
+  .object({
+    date: isoDate,
+    fournisseur: z.string().trim().min(2, 'Fournisseur requis (2 caractères min)').max(120, 'Nom fournisseur trop long'),
+    echeance: optionalIsoDate,
+    lignes: z.array(commandeLigneSchema).min(1, 'Au moins un produit avec une quantité est requis'),
+  })
+  .refine((d) => !d.echeance || d.echeance >= d.date, {
+    message: 'L\'échéance de paiement doit être postérieure à la date de commande',
+    path: ['echeance'],
+  })
+
+/** Chirurgie / acte */
+export const chirurgieFormSchema = z.object({
+  date: isoDate,
+  patient: z.string().trim().min(2, 'Patient requis (2 caractères min)').max(80, 'Nom patient trop long'),
+  proprio: optionalTrimmed(80, 'Propriétaire'),
+  type: z.string().trim().min(2, 'Type d\'acte requis').max(120, 'Type d\'acte trop long'),
+  anesthesie: optionalTrimmed(100, 'Anesthésie'),
+  duree: optionalTrimmed(30, 'Durée'),
+  chirurgien: optionalTrimmed(80, 'Chirurgien'),
+  statut: z.enum(['Planifié', 'En cours', 'Terminé', 'Annulé'], { message: 'Statut invalide' }),
+  suivi: optionalTrimmed(1000, 'Suivi'),
+  montant: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? 0 : v),
+    montantPositif('Le montant'),
+  ),
+})
+
+const optionalMesure = (label, min, max) =>
+  z.preprocess(
+    (v) => {
+      const s = String(v ?? '').trim().replace(',', '.')
+      if (!s) return null
+      const n = parseFloat(s)
+      return Number.isFinite(n) ? n : undefined
+    },
+    z
+      .number({ invalid_type_error: `${label} : nombre invalide` })
+      .min(min, `${label} : valeur invraisemblable (< ${min})`)
+      .max(max, `${label} : valeur invraisemblable (> ${max})`)
+      .nullable(),
+  )
+
+/** Consultation (mesures cliniques plausibles) */
+export const consultationFormSchema = z.object({
+  date: isoDate,
+  patient: z.string().trim().min(2, 'Patient requis (2 caractères min)').max(80, 'Nom patient trop long'),
+  proprio: optionalTrimmed(80, 'Propriétaire'),
+  poids: optionalMesure('Poids (kg)', 0.01, 2000),
+  temperature: optionalMesure('Température (°C)', 25, 45),
+  fc: optionalMesure('Fréquence cardiaque', 1, 500),
+  soap_a: z.string().trim().min(2, 'Diagnostic (SOAP-A) requis').max(2000, 'Diagnostic trop long'),
+  statut: z.enum(['En attente', 'Payé', 'Annulé'], { message: 'Statut invalide' }),
+})

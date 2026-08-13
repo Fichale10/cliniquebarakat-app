@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterSelect, FilterBtns, usePagination, Pagination, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 import { fmtF } from '../../lib/utils'
-import { venteToDbRow } from '../../lib/validation'
+import { venteToDbRow, validateChirurgieForm } from '../../lib/validation'
 import { Scissors } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -81,8 +81,8 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
 
   // ── Ajout ──────────────────────────────────────────────────
   const addChir = async () => {
-    if (!form.patient.trim()) return alert('Patient requis')
-    if (!form.type.trim()) return alert('Type d\'acte requis')
+    const check = validateChirurgieForm(form)
+    if (!check.ok) return alert(check.messages.join('\n'))
     const stockErr = produitsValides.map(p => { const m=meds.find(x=>x.nom===p.med); return (m && (parseFloat(p.qte)||0) > (m.stock||0)) ? `${p.med} : stock insuffisant (${m.stock||0} dispo)` : null }).filter(Boolean)
     if (stockErr.length) return alert(stockErr.join('\n'))
     setSaving(true)

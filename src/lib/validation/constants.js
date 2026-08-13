@@ -94,4 +94,13 @@ export const FIELD_LABELS = {
   qte: 'Quantité',
   pu: 'Prix unitaire',
   note: 'Note',
+  montant: 'Montant',
+  description: 'Description',
+  produit: 'Produit',
+  echeance: 'Échéance',
+  patient: 'Patient',
+  type: 'Type d\'acte',
+  soap_a: 'Diagnostic (SOAP-A)',
+  temperature: 'Température',
+  fc: 'Fréquence cardiaque',
 }
