@@ -1,13 +1,31 @@
 import { Settings } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { ROLES } from '../../lib/roles'
+import { fmtF } from '../../lib/utils'
 
-function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva}){
+function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClinique,saveEquipe}){
   const [tab,setTab]=useState('clinique');
+  const [savingCli,setSavingCli]=useState(false);
+  const [savingEq,setSavingEq]=useState(false);
+  const [savedMsg,setSavedMsg]=useState('');
   const ROLES_EQUIPE=['Vétérinaire','Chirurgien','ASV','Réceptionniste','Autre'];
 
+  const flashSaved=(msg)=>{setSavedMsg(msg);setTimeout(()=>setSavedMsg(''),3000);}
+  const handleSaveClinique=async()=>{
+    setSavingCli(true);
+    try{ await saveClinique(clinique); flashSaved('clinique'); }
+    catch(e){ alert('Erreur sauvegarde : '+(e?.message||e)); }
+    finally{ setSavingCli(false); }
+  };
+  const handleSaveEquipe=async()=>{
+    setSavingEq(true);
+    try{ await saveEquipe(equipe); flashSaved('equipe'); }
+    catch(e){ alert('Erreur sauvegarde : '+(e?.message||e)); }
+    finally{ setSavingEq(false); }
+  };
+
   const updateMembre=(id,k,v)=>setEquipe(equipe.map(m=>m.id===id?{...m,[k]:v}:m));
-  const addMembre=()=>setEquipe([...equipe,{id:Date.now(),nom:'',role:'ASV',tel:'',actif:true}]);
+  const addMembre=()=>setEquipe([...equipe,{id:(crypto?.randomUUID?.()||String(Date.now())),nom:'',role:'ASV',tel:'',actif:true}]);
   const removeMembre=(id)=>setEquipe(equipe.filter(m=>m.id!==id));
 
   return <div className="app-page max-w-3xl space-y-5">
@@ -84,6 +102,13 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva}){
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
           💡 Ces informations apparaîtront automatiquement sur toutes vos factures, ordonnances et consentements imprimés.
         </div>
+        <div className="flex items-center gap-3">
+          <button onClick={handleSaveClinique} disabled={savingCli}
+            className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all">
+            {savingCli?'⏳ Enregistrement…':'💾 Enregistrer'}
+          </button>
+          {savedMsg==='clinique'&&<span className="text-sm font-bold text-green-600">✓ Enregistré — synchronisé sur tous les appareils</span>}
+        </div>
       </div>}
 
       {tab==='equipe'&&<div className="p-6">
@@ -116,6 +141,13 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva}){
         </div>
         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
           💡 Les membres actifs avec un nom renseigné apparaîtront automatiquement dans les menus déroulants (tâches, RDV, chirurgies, consentements…)
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button onClick={handleSaveEquipe} disabled={savingEq}
+            className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all">
+            {savingEq?'⏳ Enregistrement…':'💾 Enregistrer l\'équipe'}
+          </button>
+          {savedMsg==='equipe'&&<span className="text-sm font-bold text-green-600">✓ Enregistré — synchronisé sur tous les appareils</span>}
         </div>
       </div>}
     </div>

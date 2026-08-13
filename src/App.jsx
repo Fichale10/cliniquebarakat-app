@@ -181,7 +181,12 @@ useEffect(() => {
   const [clients,setClients]=useState(()=>getCache('clients')||[]);
   const [meds,setMeds]=useState(()=>getCache('medicaments')||[]);
   const [equipe,setEquipe]=useState(()=>getCache('equipe')||DEFAULT_TEAM);
-  const [clinique,setClinique]=useState(()=>getCache('clinique_settings')||{nom:'La Barakat',sousTitre:'Pharmacie & Clinique Vétérinaire',tel:'',adresse:'',ville:'',email:''});
+  const [clinique,setClinique]=useState(()=>{
+    const c = getCache('clinique_settings')
+    const def = {nom:'La Barakat',sousTitre:'Pharmacie & Clinique Vétérinaire',tel:'',adresse:'',ville:'',email:''}
+    if (Array.isArray(c)) { const o={...def}; c.forEach(r=>{ if(r?.key) o[r.key]=r.value }); return o }
+    return c || def
+  });
   const [showNotifs,setShowNotifs]=useState(false);
   const [luNotifs,setLuNotifs]=useState([]);
   const [activityNotifs,setActivityNotifs]=useState([]);
@@ -229,6 +234,34 @@ useEffect(() => {
   const setSyncedVersements         = syncedSet(setVersements, 'versements_fournisseurs')
   const toggleOTR=()=>setOtrMode(p=>{localStorage.setItem('lb_otr',p?'0':'1');return !p;});
   const saveTva=t=>{setTva(t);localStorage.setItem('lb_tva',JSON.stringify(t));}
+
+  // ── Persistance Supabase : Paramètres clinique & équipe ────
+  const saveClinique = async (c) => {
+    setClinique(c)
+    const rows = ['nom','sousTitre','tel','adresse','ville','email'].map(key => ({ key, value: String(c[key] ?? '') }))
+    setCache('clinique_settings', rows)
+    if (!sb || !navigator.onLine) return
+    const { error } = await sb.from('clinique_settings').upsert(rows)
+    if (error) throw new Error(error.message)
+  }
+
+  const saveEquipe = async (list) => {
+    setSyncedEquipe(list)
+    if (!sb || !navigator.onLine) return
+    const rows = list.map(m => ({ id: String(m.id), nom: m.nom || '', role: m.role || 'ASV', tel: m.tel || '', actif: m.actif !== false }))
+    const { data: existing, error: e1 } = await sb.from('equipe').select('id')
+    if (e1) throw new Error(e1.message)
+    const keep = new Set(rows.map(r => r.id))
+    const toDelete = (existing || []).map(r => String(r.id)).filter(id => !keep.has(id))
+    if (rows.length) {
+      const { error: e2 } = await sb.from('equipe').upsert(rows)
+      if (e2) throw new Error(e2.message)
+    }
+    if (toDelete.length) {
+      const { error: e3 } = await sb.from('equipe').delete().in('id', toDelete)
+      if (e3) throw new Error(e3.message)
+    }
+  }
   const [sbError,setSbError]=useState(false);
 
   const normalizeMed = (row) => {
@@ -903,7 +936,7 @@ useEffect(() => {
                 : <Suspense fallback={<SkPage stats={4} rows={7} />}>
               {view==='dashboard'&&<Dashboard {...sp}/>}
               {view==='monprofil'&&<MonProfil user={user}/>}
-              {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva}/>:<Interdit/>)}
+              {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva} saveClinique={saveClinique} saveEquipe={saveEquipe}/>:<Interdit/>)}
               {view==='comptes'&&(user?.role==='admin'?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
               {view==='patients'&&<Patients {...sp}/>}
               {view==='consultations'&&<Consultations {...sp}/>}
