@@ -81,13 +81,36 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const selectMed = (i, nom) => {
     const m2 = meds.find(m => m.nom === nom)
     const t2 = getTarifs(m2)
+    const cond = t2[0]?.conditionnement || 'Unité'
     updL(i, {
       med: nom, medSearch: nom, showSugg: false,
-      pu:   t2[0]?.prix  ?? m2?.prixVente ?? m2?.prix_vente ?? 0,
+      pu:   hasPaliers(m2) ? puAvecPalier(m2, cond, lignes[i]?.qte || 1) : (t2[0]?.prix ?? m2?.prixVente ?? m2?.prix_vente ?? 0),
       mult: t2[0]?.mult  ?? 1,
       pa:   parseFloat(m2?.prixAchat ?? m2?.prix_achat) || 0,
-      cond: t2[0]?.conditionnement || 'Unité',
+      cond,
     })
+  }
+
+  // ── Paliers de remise quantité (prix de gros au comptoir) ──
+  const hasPaliers = m => ((m?.paliersGros ?? m?.paliers_gros) || []).length > 0
+
+  /** Prix unitaire du conditionnement, remise palier appliquée selon les unités totales */
+  const puAvecPalier = (medObj, cond, qte) => {
+    const tarifs = getTarifs(medObj)
+    const t      = tarifs.find(x => x.conditionnement === cond) || tarifs[0]
+    const base   = t?.prix ?? medObj?.prixVente ?? medObj?.prix_vente ?? 0
+    const mult   = t?.mult ?? 1
+    const remise = getRemiseApplied(medObj, (parseInt(qte) || 1) * mult)
+    return remise > 0 ? Math.round(base * (1 - remise / 100)) : base
+  }
+
+  const setQte = (i, qte) => {
+    const q      = Math.max(1, parseInt(qte, 10) || 1)
+    const l      = lignes[i]
+    const medObj = meds.find(m => m.nom === l?.med)
+    const patch  = { qte: q }
+    if (medObj && hasPaliers(medObj)) patch.pu = puAvecPalier(medObj, l.cond, q)
+    updL(i, patch)
   }
 
   const removeLigne = (i) => {
@@ -95,7 +118,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     else setLignes(prev => prev.filter((_, j) => j !== i))
   }
 
-  const adjQte = (i, delta) => updL(i, { qte: Math.max(1, (parseInt(lignes[i].qte) || 0) + delta) })
+  const adjQte = (i, delta) => setQte(i, (parseInt(lignes[i].qte) || 0) + delta)
 
   const resetForm = () => {
     setLignes([{ ...EMPTY_LIGNE }])
@@ -647,6 +670,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
               {lignes.map((l, i) => {
                 const medObj  = meds.find(m => m.nom === l.med)
                 const tarifs  = getTarifs(medObj)
+                const remiseL = medObj ? getRemiseApplied(medObj, (parseInt(l.qte) || 1) * (l.mult || 1)) : 0
                 const rowErr  = ligneError(i,'med') || ligneError(i,'qte') || ligneError(i,'pu')
                 const filteredMeds = (l.medSearch||'').length >= 1
                   ? meds.filter(m => (m.stock||0) > 0 && m.nom.toLowerCase().includes((l.medSearch||'').toLowerCase()))
@@ -681,7 +705,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                       <select value={l.cond} disabled={!l.med}
                         onChange={e => {
                           const t = tarifs.find(x => x.conditionnement === e.target.value)
-                          updL(i, { cond:e.target.value, ...(t ? { pu:t.prix, mult:t.mult||1 } : {}) })
+                          updL(i, { cond:e.target.value, ...(t ? { pu: hasPaliers(medObj) ? puAvecPalier(medObj, e.target.value, l.qte) : t.prix, mult:t.mult||1 } : {}) })
                         }}
                         style={{ ...INPUT, border:'1.5px solid #e2e8f0', opacity: l.med ? 1 : 0.4 }}>
                         {tarifs.map(t => <option key={t.conditionnement} value={t.conditionnement}>{t.conditionnement}</option>)}
@@ -690,7 +714,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                         <button type="button" onClick={() => adjQte(i,-1)}
                           style={{ width:'26px', height:'34px', borderRadius:'7px', border:'1.5px solid #e2e8f0', background:'#f8fafc', fontWeight:900, fontSize:'16px', cursor:'pointer', lineHeight:1 }}>−</button>
                         <input type="number" min="1" value={l.qte}
-                          onChange={e => updL(i, { qte: parseInt(e.target.value,10) || 1 })}
+                          onChange={e => setQte(i, e.target.value)}
                           style={{ ...INPUT, width:'50px', textAlign:'center', border: ligneError(i,'qte') ? '1.5px solid #f87171' : '1.5px solid #e2e8f0', padding:'8px 4px' }} />
                         <button type="button" onClick={() => adjQte(i,1)}
                           style={{ width:'26px', height:'34px', borderRadius:'7px', border:'1.5px solid #e2e8f0', background:'#f8fafc', fontWeight:900, fontSize:'16px', cursor:'pointer', lineHeight:1 }}>+</button>
@@ -702,6 +726,11 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                         style={{ width:'28px', height:'28px', borderRadius:'7px', border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer', fontSize:'16px', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
                     </div>
                     {rowErr && <p style={{ fontSize:'11px', color:'#dc2626', marginTop:'2px', fontWeight:600 }}>{rowErr}</p>}
+                    {!rowErr && remiseL > 0 && (
+                      <p style={{ fontSize:'11px', color:'#16a34a', marginTop:'2px', fontWeight:700 }}>
+                        Remise quantité −{remiseL}% appliquée (palier gros)
+                      </p>
+                    )}
                   </div>
                 )
               })}
