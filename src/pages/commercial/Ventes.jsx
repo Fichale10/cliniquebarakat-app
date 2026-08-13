@@ -448,6 +448,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                         {MODE_ICON[v.mode]||''} {v.mode}
                       </span>
                       {isGros && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fff7ed',border:'1px solid #fed7aa',color:'#ea580c' }}>📦 Gros</span>}
+                      {v.type==='cession' && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#f5f3ff',border:'1px solid #ddd6fe',color:'#7c3aed' }}>🏥 Interne</span>}
                       <span style={{ fontSize:11,color:'#94a3b8' }}>{v.date}</span>
                     </div>
                     {/* Produits preview */}

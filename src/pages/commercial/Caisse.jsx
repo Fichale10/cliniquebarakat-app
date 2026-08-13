@@ -1044,6 +1044,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                           </span>
                           {v.type === 'gros' && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c' }}>📦 Gros</span>}
                           {(v.type === 'clinique' || v.consultation_id) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#2563eb' }}>🩺 Consultation</span>}
+                          {isCession(v) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#f5f3ff', border:'1px solid #ddd6fe', color:'#7c3aed' }}>🏥 Achat interne clinique</span>}
                           {v.caissier && <span style={{ fontSize:10, color:'#94a3b8' }}>🧾 {v.caissier}</span>}
                         </div>
                         <div style={{ fontSize:11, color:'#64748b' }}>
