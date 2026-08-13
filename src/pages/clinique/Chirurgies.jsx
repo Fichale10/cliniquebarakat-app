@@ -38,15 +38,15 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
   const montantActe     = parseFloat(form.montant) || 0
   const totalGeneral    = montantActe + totalProduits
 
-  /** Décrémente/restitue le stock des produits du bloc */
+  /** Décrémente/restitue le stock CLINIQUE des produits du bloc */
   const applyStockProduits = async (produits, delta) => {
     if (!setMeds || !produits?.length) return
     const updated = meds.map(m => {
       const p = produits.find(x => x.med === m.nom)
       if (!p) return m
-      const newStock = Math.max(0, (m.stock||0) + delta*(parseFloat(p.qte)||0))
-      if (sb && m.id) dbUpdate(sb,'medicaments',m.id,{stock:newStock}).catch(e=>console.warn('[stock chir]',e))
-      return { ...m, stock:newStock }
+      const newStock = Math.max(0, (m.stock_clinique||0) + delta*(parseFloat(p.qte)||0))
+      if (sb && m.id) dbUpdate(sb,'medicaments',m.id,{stock_clinique:newStock}).catch(e=>console.warn('[stock chir]',e))
+      return { ...m, stock_clinique:newStock }
     })
     setMeds(updated)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}
@@ -83,7 +83,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
   const addChir = async () => {
     const check = validateChirurgieForm(form)
     if (!check.ok) return alert(check.messages.join('\n'))
-    const stockErr = produitsValides.map(p => { const m=meds.find(x=>x.nom===p.med); return (m && (parseFloat(p.qte)||0) > (m.stock||0)) ? `${p.med} : stock insuffisant (${m.stock||0} dispo)` : null }).filter(Boolean)
+    const stockErr = produitsValides.map(p => { const m=meds.find(x=>x.nom===p.med); return (m && (parseFloat(p.qte)||0) > (m.stock_clinique||0)) ? `${p.med} : stock clinique insuffisant (${m.stock_clinique||0} dispo) — achetez à la pharmacie via la Caisse (Achat interne clinique)` : null }).filter(Boolean)
     if (stockErr.length) return alert(stockErr.join('\n'))
     setSaving(true)
     try {
@@ -222,7 +222,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
               </div>
               {form.produits.map((p,i) => {
                 const sous = (parseFloat(p.qte)||0)*(parseFloat(p.pu)||0)
-                const suggestions = meds.filter(m => m.stock>0 && m.nom.toLowerCase().includes((p.medSearch||'').toLowerCase()))
+                const suggestions = meds.filter(m => (m.stock_clinique||0)>0 && m.nom.toLowerCase().includes((p.medSearch||'').toLowerCase()))
                 return (
                   <div key={i} style={{ display:'grid',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 28px',gap:8,alignItems:'center',marginBottom:6 }}>
                     <div style={{ position:'relative' }}>
@@ -241,7 +241,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
                               onMouseEnter={e=>e.currentTarget.style.background='#f0fdf4'}
                               onMouseLeave={e=>e.currentTarget.style.background='none'}>
                               <span style={{ fontWeight:600 }}>{m.nom}</span>
-                              <span style={{ fontSize:11,color:'#94a3b8' }}>stk: {m.stock}</span>
+                              <span style={{ fontSize:11,color:'#94a3b8' }}>clinique: {m.stock_clinique||0}</span>
                             </button>
                           ))}
                           {!suggestions.length && <div style={{ padding:'7px 12px',fontSize:13,color:'#94a3b8' }}>Aucun résultat</div>}

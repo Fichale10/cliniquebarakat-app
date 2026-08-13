@@ -15,18 +15,19 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
   const lastMonthDate = new Date(); lastMonthDate.setMonth(lastMonthDate.getMonth() - 1)
   const lastMonthStr  = lastMonthDate.toISOString().slice(0, 7)
 
-  // ── Ventes ──────────────────────────────────────────────────
-  const ventesMois        = (ventesHist || []).filter(v => v.date?.startsWith(thisMonthStr))
-  const ventesLastMois    = (ventesHist || []).filter(v => v.date?.startsWith(lastMonthStr))
+  // ── Ventes (hors achats internes clinique → pas de double comptage) ──
+  const ventesReelles     = (ventesHist || []).filter(v => v.type !== 'cession')
+  const ventesMois        = ventesReelles.filter(v => v.date?.startsWith(thisMonthStr))
+  const ventesLastMois    = ventesReelles.filter(v => v.date?.startsWith(lastMonthStr))
   const totalMois         = ventesMois.reduce((s,v) => s+(v.total||0), 0)
   const totalLastMois     = ventesLastMois.reduce((s,v) => s+(v.total||0), 0)
   const totalMoisPaye     = ventesMois.filter(v => v.statut==='Payé').reduce((s,v) => s+(v.total||0), 0)
   const revenuTrend       = totalLastMois > 0 ? Math.round(((totalMois - totalLastMois) / totalLastMois) * 100) : null
   const nbVentesMois      = ventesMois.length
-  const totalCreances     = (ventesHist||[]).filter(v=>['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s,v)=>s+(v.total||0),0)
+  const totalCreances     = ventesReelles.filter(v=>['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s,v)=>s+(v.total||0),0)
 
   // ── Ventes aujourd'hui ──────────────────────────────────────
-  const ventesJour        = (ventesHist||[]).filter(v => v.date === todayStr && v.statut !== 'Annulé')
+  const ventesJour        = ventesReelles.filter(v => v.date === todayStr && v.statut !== 'Annulé')
   const caJour            = ventesJour.reduce((s,v) => s+(v.total||0), 0)
 
   // ── RDV ─────────────────────────────────────────────────────

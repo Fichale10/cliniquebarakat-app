@@ -7,7 +7,7 @@ import {
 } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
-import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
+import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites, CLIENT_INTERNE, isCession } from '../../lib/ventes'
 import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
@@ -28,6 +28,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const [lignes, setLignes]             = useState([{ ...EMPTY_LIGNE }])
   const [posDate, setPosDate]           = useState(today())
   const [client, setClient]             = useState('')
+  const [achatInterne, setAchatInterne] = useState(false)
   const [mode, setMode]                 = useState('Espèces')
   const [note, setNote]                 = useState('')
   const [recu, setRecu]                 = useState(null)
@@ -123,7 +124,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const resetForm = () => {
     setLignes([{ ...EMPTY_LIGNE }])
     setPosDate(today())
-    setClient(''); setNote(''); setMontantDonne('')
+    setClient(''); setNote(''); setMontantDonne(''); setAchatInterne(false)
     setFormErrors({}); setValidationMessages([])
   }
 
@@ -134,7 +135,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const monnaie  = montantDonne ? Math.max(0, (parseFloat(montantDonne) || 0) - totalTTC) : 0
 
   const enregistrer = async () => {
-    const checked = validateCaisseForm({ client, mode, note, lignes }, meds)
+    const checked = validateCaisseForm({ client: achatInterne ? CLIENT_INTERNE : client, mode, note, lignes }, meds)
     if (!checked.ok) { setFormErrors(checked.fieldErrors); setValidationMessages(checked.messages); return }
     const { data: validated } = checked
     const lignesValides = validated.lignes
@@ -147,6 +148,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       note: validated.note, tvaAmt,
       montant_paye: statut === 'Payé' ? totalTTC : 0,
       caissier: user?.name || '—',
+      type: achatInterne ? 'cession' : 'detail',
     })
 
     setSaving(true)
@@ -158,9 +160,12 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         const updatedMeds = meds.map(m => {
           const l = lignesValides.find(x => x.med === m.nom)
           if (!l) return m
-          const newStock = Math.max(0, (m.stock || 0) - l.qte * (l.mult || 1))
-          if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, { stock: newStock }).catch(e => console.warn('[stock]', e))
-          return { ...m, stock: newStock }
+          const unites = l.qte * (l.mult || 1)
+          const newStock = Math.max(0, (m.stock || 0) - unites)
+          const patch = { stock: newStock }
+          if (achatInterne) patch.stock_clinique = (m.stock_clinique || 0) + unites
+          if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, patch).catch(e => console.warn('[stock]', e))
+          return { ...m, ...patch }
         })
         setMeds(updatedMeds)
       }
@@ -229,16 +234,25 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   }
 
   // ── Historique / Ventes helpers ───────────────────────────
-  const applyStockDelta = async (lignesV, delta) => {
+  /** delta -1 = sortie, +1 = restitution — selon le type de vente (detail/gros/clinique/cession) */
+  const applyStockDelta = async (lignesV, delta, venteType = 'detail') => {
     const updates = meds.map(m => {
       const l = lignesV.find(x => x.med === m.nom)
       if (!l) return null
-      const mult = l.mult || 1
-      return { medId: m.id, newStock: Math.max(0, (m.stock || 0) + delta * (parseInt(l.qte) || 0) * mult) }
+      const unites = (parseInt(l.qte) || 0) * (l.mult || 1)
+      let patch
+      if (venteType === 'clinique') {
+        patch = { stock_clinique: Math.max(0, (m.stock_clinique || 0) + delta * unites) }
+      } else if (venteType === 'cession') {
+        patch = { stock: Math.max(0, (m.stock || 0) + delta * unites), stock_clinique: Math.max(0, (m.stock_clinique || 0) - delta * unites) }
+      } else {
+        patch = { stock: Math.max(0, (m.stock || 0) + delta * unites) }
+      }
+      return { medId: m.id, patch }
     }).filter(Boolean)
     if (!updates.length) return
-    await Promise.all(updates.map(({ medId, newStock }) => dbUpdate(sb, 'medicaments', medId, { stock: newStock })))
-    const updatedMeds = meds.map(m => { const u = updates.find(x => x.medId === m.id); return u ? { ...m, stock: u.newStock } : m })
+    await Promise.all(updates.map(({ medId, patch }) => dbUpdate(sb, 'medicaments', medId, patch)))
+    const updatedMeds = meds.map(m => { const u = updates.find(x => x.medId === m.id); return u ? { ...m, ...u.patch } : m })
     setMeds(updatedMeds)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updatedMeds)) } catch (e) {}
   }
@@ -299,7 +313,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       })
       const saved = await dbInsert(sb, 'ventes', row)
       setVentesHist([saved, ...ventes].slice(0, 500))
-      if (validated.statut === 'Payé') await applyStockDelta(validated.lignes, -1)
+      if (validated.statut === 'Payé') await applyStockDelta(validated.lignes, -1, venteForm.type || 'detail')
       if (logAction && sb) logAction(sb, user, 'vente_added', `${validated.client} — ${fmtF(validated.total)}`)
       setVenteForm({ date:today(), client:'', lignes:[{med:'',medSearch:'',cond:'',qte:1,pu:'',showSugg:false}], mode:'Espèces', statut:'Payé', type:'detail' })
       setVenteFormErrors({}); setVenteValidMsgs([]); setShowVenteForm(false)
@@ -325,8 +339,8 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       setConsultations((consultations||[]).map(c => c.id === vente.consultation_id ? { ...c, statut: cStatut } : c))
     }
     if (vente?.lignes) {
-      if (newStatut === 'Payé') await applyStockDelta(vente.lignes, -1)
-      else if (newStatut === 'Annulé' && vente.statut === 'Payé') await applyStockDelta(vente.lignes, +1)
+      if (newStatut === 'Payé') await applyStockDelta(vente.lignes, -1, vente.type || 'detail')
+      else if (newStatut === 'Annulé' && vente.statut === 'Payé') await applyStockDelta(vente.lignes, +1, vente.type || 'detail')
     }
   }
 
@@ -339,7 +353,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     try {
       await dbDelete(sb, 'ventes', id)
       setVentesHist(ventes.filter(v => v.id !== id))
-      if (vente?.statut === 'Payé' && vente.lignes) await applyStockDelta(vente.lignes, +1)
+      if (vente?.statut === 'Payé' && vente.lignes) await applyStockDelta(vente.lignes, +1, vente.type || 'detail')
     } catch (e) {
       alert(e?.message || 'Erreur suppression')
     }
@@ -644,11 +658,19 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 </div>
                 <div>
                   <label style={LBL}>Client</label>
-                  <input value={client} onChange={e => patchCaisse({ client: e.target.value })}
-                    placeholder="Nom du client…" list="caisse-clients" style={INPUT} />
-                  <datalist id="caisse-clients">
-                    {nomsClients.map(n => <option key={n} value={n} />)}
-                  </datalist>
+                  {achatInterne
+                    ? <div style={{ ...INPUT, background:'#eff6ff', border:'1.5px solid #93c5fd', fontWeight:700, color:'#1d4ed8', display:'flex', alignItems:'center' }}>🏥 {CLIENT_INTERNE}</div>
+                    : <>
+                        <input value={client} onChange={e => patchCaisse({ client: e.target.value })}
+                          placeholder="Nom du client…" list="caisse-clients" style={INPUT} />
+                        <datalist id="caisse-clients">
+                          {nomsClients.map(n => <option key={n} value={n} />)}
+                        </datalist>
+                      </>}
+                  <label style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, cursor:'pointer', fontSize:12, fontWeight:600, color: achatInterne ? '#1d4ed8' : '#64748b' }}>
+                    <input type="checkbox" checked={achatInterne} onChange={e => setAchatInterne(e.target.checked)} style={{ accentColor:'#1d4ed8' }} />
+                    Achat interne clinique
+                  </label>
                 </div>
                 <div>
                   <label style={LBL}>Mode de paiement</label>

@@ -8,7 +8,7 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
   const [sending,setSending]=useState(false);
   const [sent,setSent]=useState(false);
 
-  const ventesMois=(ventesHist||[]).filter(v=>v.date?.startsWith(moisSel));
+  const ventesMois=(ventesHist||[]).filter(v=>v.date?.startsWith(moisSel)&&v.type!=='cession');
   const depsMois=(depsHist||[]).filter(d=>d.date?.startsWith(moisSel));
   const totalVentes=ventesMois.filter(v=>v.statut!=='Annulé').reduce((s,v)=>s+(v.total||0)+(v.tva_amt||0),0);
   const totalDeps=depsMois.reduce((s,d)=>s+(d.montant||0),0);

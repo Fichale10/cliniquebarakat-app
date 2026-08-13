@@ -11,15 +11,24 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
   const restant    = v => venteRestant(v, tva)
   const totalDu    = creances.reduce((s, v) => s + restant(v), 0)
 
-  /** Décrémente le stock à l'encaissement final (comme Ventes/Caisse) */
+  /** Décrémente le stock à l'encaissement final — selon le type de vente :
+   *  detail/gros → stock pharmacie · clinique → stock clinique · cession → transfert pharmacie→clinique */
   const decrementStock = async (vente) => {
     if (!setMeds || !vente?.lignes?.length) return
     const updated = meds.map(m => {
       const l = vente.lignes.find(x => x.med === m.nom)
       if (!l) return m
-      const newStock = Math.max(0, (m.stock||0) - ligneUnites(l))
-      if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, { stock: newStock }).catch(e => console.warn('[stock creance]', e))
-      return { ...m, stock: newStock }
+      const unites = ligneUnites(l)
+      let patch
+      if (vente.type === 'clinique') {
+        patch = { stock_clinique: Math.max(0, (m.stock_clinique||0) - unites) }
+      } else if (vente.type === 'cession') {
+        patch = { stock: Math.max(0, (m.stock||0) - unites), stock_clinique: (m.stock_clinique||0) + unites }
+      } else {
+        patch = { stock: Math.max(0, (m.stock||0) - unites) }
+      }
+      if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, patch).catch(e => console.warn('[stock creance]', e))
+      return { ...m, ...patch }
     })
     setMeds(updated)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}

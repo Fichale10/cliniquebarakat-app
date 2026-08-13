@@ -441,7 +441,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                       </td>
                       <td style={{ padding:'10px 12px',minWidth:110 }}>
                         <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:4 }}>
-                          <span style={{ fontSize:13,fontWeight:800,fontFamily:'monospace',color:crit?'#dc2626':'#0f172a' }}>{m.stock}</span>
+                          <span style={{ fontSize:13,fontWeight:800,fontFamily:'monospace',color:crit?'#dc2626':'#0f172a' }}>{m.stock}{(m.stock_clinique||0)>0&&<span style={{ fontSize:10,fontWeight:600,color:'#2563eb' }}> +{m.stock_clinique} clin.</span>}</span>
                           <span style={{ fontSize:10,color:'#94a3b8' }}>{m.unite}</span>
                           {crit && <span style={{ fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>🚨</span>}
                         </div>
@@ -525,7 +525,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                     <div style={{ marginBottom:10 }}>
                       <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4 }}>
                         <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8' }}>STOCK</span>
-                        <span style={{ fontSize:13,fontWeight:900,fontFamily:'monospace',color:crit?'#dc2626':'#0f172a' }}>{m.stock} <span style={{ fontSize:10,fontWeight:400,color:'#94a3b8' }}>{m.unite}</span></span>
+                        <span style={{ fontSize:13,fontWeight:900,fontFamily:'monospace',color:crit?'#dc2626':'#0f172a' }}>{m.stock} <span style={{ fontSize:10,fontWeight:400,color:'#94a3b8' }}>{m.unite}</span>{(m.stock_clinique||0)>0&&<span style={{ fontSize:10,fontWeight:600,color:'#2563eb' }}> · clinique: {m.stock_clinique}</span>}</span>
                       </div>
                       <div style={{ height:6,borderRadius:99,background:'#f1f5f9',overflow:'hidden' }}>
                         <div style={{ height:'100%',width:`${stockPct}%`,borderRadius:99,background:crit?'#ef4444':stockPct<40?'#f59e0b':'#22c55e',transition:'width .4s' }} />

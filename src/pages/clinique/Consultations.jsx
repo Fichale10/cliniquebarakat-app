@@ -108,15 +108,15 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
     if (newRdvs.length) setRdvs([...(rdvs||[]), ...newRdvs].sort((a,b) => (a.date+a.heure).localeCompare(b.date+b.heure)))
   }
 
-  /** Décrémente/restitue le stock des traitements (delta -1 ou +1) */
+  /** Décrémente/restitue le stock CLINIQUE des traitements (delta -1 ou +1) */
   const applyStockTraits = async (traitements, delta) => {
     if (!setMeds) return
     const updated = meds.map(m => {
       const t = (traitements||[]).find(x => x.med === m.nom)
       if (!t) return m
-      const newStock = Math.max(0, (m.stock||0) + delta*(parseFloat(t.qte)||0))
-      if (sb && m.id) dbUpdate(sb,'medicaments',m.id,{stock:newStock}).catch(e=>console.warn('[stock consult]',e))
-      return { ...m, stock:newStock }
+      const newStock = Math.max(0, (m.stock_clinique||0) + delta*(parseFloat(t.qte)||0))
+      if (sb && m.id) dbUpdate(sb,'medicaments',m.id,{stock_clinique:newStock}).catch(e=>console.warn('[stock consult]',e))
+      return { ...m, stock_clinique:newStock }
     })
     setMeds(updated)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}
@@ -174,7 +174,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
     const check = validateConsultationForm(form)
     if (!check.ok) return alert(check.messages.join('\n'))
     // Stock suffisant ?
-    const stockErr = traitsValides.map(t => { const m=meds.find(x=>x.nom===t.med); return (m && (parseFloat(t.qte)||0) > (m.stock||0)) ? `${t.med} : stock insuffisant (${m.stock||0} dispo)` : null }).filter(Boolean)
+    const stockErr = traitsValides.map(t => { const m=meds.find(x=>x.nom===t.med); return (m && (parseFloat(t.qte)||0) > (m.stock_clinique||0)) ? `${t.med} : stock clinique insuffisant (${m.stock_clinique||0} dispo) — achetez à la pharmacie via la Caisse (Achat interne clinique)` : null }).filter(Boolean)
     if (stockErr.length) return alert(stockErr.join('\n'))
     setSaving(true)
     try {
@@ -424,7 +424,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
               {form.traitements.map((t,i) => {
                 const sous = (parseFloat(t.qte)||0)*(parseFloat(t.pu)||0)
                 const hint = doseHint(t)
-                const suggestions = meds.filter(m => m.stock>0 && m.nom.toLowerCase().includes((t.medSearch||'').toLowerCase()))
+                const suggestions = meds.filter(m => (m.stock_clinique||0)>0 && m.nom.toLowerCase().includes((t.medSearch||'').toLowerCase()))
                 return (
                   <div key={i} style={{ marginBottom:6 }}>
                     <div style={{ display:'grid',gridTemplateColumns:'2fr 0.7fr 1fr 1fr 28px',gap:8,alignItems:'center' }}>
@@ -444,7 +444,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                                 onMouseEnter={e=>e.currentTarget.style.background='#f0fdf4'}
                                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
                                 <span style={{ fontWeight:600 }}>{m.nom}</span>
-                                <span style={{ fontSize:11,color:'#94a3b8' }}>stk: {m.stock}</span>
+                                <span style={{ fontSize:11,color:'#94a3b8' }}>clinique: {m.stock_clinique||0}</span>
                               </button>
                             ))}
                             {!suggestions.length && <div style={{ padding:'7px 12px',fontSize:13,color:'#94a3b8' }}>Aucun résultat</div>}

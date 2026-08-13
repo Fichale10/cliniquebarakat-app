@@ -4,6 +4,8 @@ import { Badge, PrintBtn } from "../../components/ui"
 
 function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
   const mask = v => otrMode ? '••••• F' : fmtF(v)
+  // Achats internes clinique exclus (pas de double comptage)
+  const ventesReelles = ventesHist.filter(v => v.type !== 'cession')
 
   const months = useMemo(() => {
     const result = []
@@ -20,7 +22,7 @@ function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
 
   const DATA = useMemo(() => months.map(({ key, label }) => ({
     m: label,
-    r: ventesHist
+    r: ventesReelles
       .filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(key))
       .reduce((s, v) => s + (v.total || 0) + (v.tva_amt || 0), 0),
     d: depsHist
@@ -48,7 +50,7 @@ function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
     .sort((a, b) => b.m - a.m),
   [depsHist, curMonthKey])
 
-  const curVentes = ventesHist.filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(curMonthKey))
+  const curVentes = ventesReelles.filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(curMonthKey))
   const totalVentesCur = curVentes.reduce((s, v) => s + (v.total || 0) + (v.tva_amt || 0), 0)
   const RP = [{ t: 'Ventes comptoir', m: totalVentesCur, p: 100 }]
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { fmtF } from "../../lib/utils"
-import { venteMarge, ligneCA, ligneCoutAchat } from "../../lib/ventes"
+import { venteMarge, ligneCA, ligneCoutAchat, isCession } from "../../lib/ventes"
 import { BarChart3 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -25,15 +25,24 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   const ventesP=(ventesHist||[]).filter(v=>v.date&&inP(v.date));
   const depsP  =(depsHist||[]).filter(d=>d.date&&inP(d.date));
 
-  const ca     =ventesP.filter(v=>v.statut==='Payé').reduce((s,v)=>s+(v.total||0)+(v.tva_amt||0),0);
-  const credit =ventesP.filter(v=>v.statut!=='Payé'&&v.statut!=='Annulé').reduce((s,v)=>s+Math.max(0,(v.total||0)+(v.tva_amt||0)-(v.montant_paye||0)),0);
+  // Ventes internes (pharmacie → clinique) exclues du CA consolidé
+  const ventesReelles=ventesP.filter(v=>!isCession(v));
+  const ttcV=v=>(v.total||0)+(v.tva_amt||0);
+
+  const ca     =ventesReelles.filter(v=>v.statut==='Payé').reduce((s,v)=>s+ttcV(v),0);
+  const credit =ventesReelles.filter(v=>v.statut!=='Payé'&&v.statut!=='Annulé').reduce((s,v)=>s+Math.max(0,ttcV(v)-(v.montant_paye||0)),0);
   const totalD =depsP.reduce((s,d)=>s+(d.montant||0),0);
   const benefice=ca-totalD;
-  const nbV=ventesP.length;
+  const nbV=ventesReelles.length;
   const panier=nbV>0?Math.round(ca/nbV):0;
 
+  // ── Répartition Pharmacie / Clinique (2 caisses) ──
+  const caPharmacie =ventesP.filter(v=>v.statut==='Payé'&&(!v.type||v.type==='detail'||v.type==='gros')).reduce((s,v)=>s+ttcV(v),0);
+  const caCessions  =ventesP.filter(v=>v.statut==='Payé'&&isCession(v)).reduce((s,v)=>s+ttcV(v),0);
+  const caClinique  =ventesP.filter(v=>v.statut==='Payé'&&v.type==='clinique').reduce((s,v)=>s+ttcV(v),0);
+
   // ── Marge brute (prix vente − prix d'achat, figé à la vente si dispo) ──
-  const ventesPayees = ventesP.filter(v=>v.statut==='Payé');
+  const ventesPayees = ventesReelles.filter(v=>v.statut==='Payé');
   const margeBrute   = ventesPayees.reduce((s,v)=>s+venteMarge(v,meds),0);
   const margePct     = ca>0?Math.round((margeBrute/ca)*100):0;
   const hasPaFige    = ventesPayees.some(v=>(v.lignes||[]).some(l=>parseFloat(l.pa)>0));
@@ -53,7 +62,7 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   const meilleurJour=caParJourSem.reduce((b,j)=>j.ca>b.ca?j:b,caParJourSem[0]);
 
   // Série chronologique
-  const caByDate={};   ventesP.filter(v=>v.statut==='Payé').forEach(v=>{caByDate[v.date]=(caByDate[v.date]||0)+(v.total||0)+(v.tva_amt||0);});
+  const caByDate={};   ventesReelles.filter(v=>v.statut==='Payé').forEach(v=>{caByDate[v.date]=(caByDate[v.date]||0)+(v.total||0)+(v.tva_amt||0);});
   const depByDate={};  depsP.forEach(d=>{depByDate[d.date]=(depByDate[d.date]||0)+(d.montant||0);});
 
   const allDates=[];
@@ -74,9 +83,9 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   }
   const maxV=Math.max(...serie.map(s=>Math.max(s.ca,s.deps)),1);
 
-  // Top produits (CA + marge)
+  // Top produits (CA + marge) — hors ventes internes
   const tp={};
-  ventesP.filter(v=>v.statut==='Payé').forEach(v=>(v.lignes||[]).forEach(l=>{
+  ventesReelles.filter(v=>v.statut==='Payé').forEach(v=>(v.lignes||[]).forEach(l=>{
     if(!l.med)return;
     if(!tp[l.med])tp[l.med]={nom:l.med,qte:0,ca:0,marge:0};
     tp[l.med].qte+=parseInt(l.qte)||0;
@@ -125,6 +134,31 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
         </div>
       ))}
     </div>
+
+    {/* Répartition Pharmacie / Clinique */}
+    {(caPharmacie>0||caClinique>0||caCessions>0)&&(
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <h3 className="font-bold text-lg mb-1">🏪 Répartition Pharmacie / Clinique — {labelMap[periode]}</h3>
+        <p className="text-xs text-slate-400 mb-4">Les achats internes de la clinique à la pharmacie sont exclus du CA consolidé (pas de double comptage)</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border-2 border-violet-200 bg-violet-50 p-4">
+            <div className="text-xs font-bold text-violet-600 uppercase tracking-wide mb-1">💊 CA Pharmacie</div>
+            <div className="text-xl font-black text-violet-700 font-mono">{mask(caPharmacie+caCessions)}</div>
+            <div className="text-xs text-violet-500 mt-1">dont ventes clients : {mask(caPharmacie)}<br/>dont ventes à la clinique : {mask(caCessions)}</div>
+          </div>
+          <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
+            <div className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-1">🩺 CA Clinique</div>
+            <div className="text-xl font-black text-blue-700 font-mono">{mask(caClinique)}</div>
+            <div className="text-xs text-blue-500 mt-1">actes + produits facturés aux clients<br/>coût d'achats internes : {mask(caCessions)}</div>
+          </div>
+          <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
+            <div className="text-xs font-bold text-green-600 uppercase tracking-wide mb-1">✅ CA Consolidé</div>
+            <div className="text-xl font-black text-green-700 font-mono">{mask(ca)}</div>
+            <div className="text-xs text-green-500 mt-1">argent réellement entré des clients<br/>(ventes internes neutralisées)</div>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Graphique */}
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">

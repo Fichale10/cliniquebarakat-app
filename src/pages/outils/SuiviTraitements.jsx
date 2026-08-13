@@ -111,8 +111,8 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
       await dbUpdate(sb,'traitements',t.id,{vente_id:saved.id});
       setTraitements(traitements.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
       if(paye&&m?.id&&setMeds){
-        const newStock=Math.max(0,(m.stock||0)-(parseFloat(t.qte)||0));
-        await dbUpdate(sb,'medicaments',m.id,{stock:newStock}).catch(e=>console.warn('[stock]',e));
+        const newStock=Math.max(0,(m.stock_clinique||0)-(parseFloat(t.qte)||0));
+        await dbUpdate(sb,'medicaments',m.id,{stock_clinique:newStock}).catch(e=>console.warn('[stock]',e));
         setMeds(meds.map(x=>x.id===m.id?{...x,stock:newStock}:x));
       }
     }catch(e){alert('Erreur facturation : '+(e?.message||e));}
@@ -196,7 +196,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             <select value={form.medicament} onChange={selectMedicament}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}>
               <option value="">— Choisir —</option>
-              {meds.filter(m=>m.stock>0).map(m=><option key={m.id} value={m.nom}>{m.nom}</option>)}
+              {meds.filter(m=>(m.stock_clinique||0)>0).map(m=><option key={m.id} value={m.nom}>{m.nom} (clinique: {m.stock_clinique||0})</option>)}
             </select>
           </div>
           <div>

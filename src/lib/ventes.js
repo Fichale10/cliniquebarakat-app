@@ -12,6 +12,12 @@ export const fmtK = n => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M F` : n
 
 // ── Statuts ──────────────────────────────────────────────────
 export const STATUTS = VENTE_STATUTS
+
+// ── Achats internes (la clinique achète à la pharmacie) ─────
+export const CLIENT_INTERNE = 'Clinique (interne)'
+/** Vente interne pharmacie → clinique : exclue du CA consolidé */
+export const isCession = v => v?.type === 'cession'
+
 export const STATUT_STYLE = {
   'Payé':               { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
   'À crédit':           { bg: '#fff7ed', border: '#fed7aa', text: '#ea580c' },
