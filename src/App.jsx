@@ -5,6 +5,7 @@ import { isValidView, DEFAULT_VIEW } from './lib/routes'
 
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
+import { NavIcon } from './components/ui/AppIcons'
 import { ToastContainer } from './components/Toast'
 import { SkPage } from './components/Skeleton'
 
@@ -670,7 +671,7 @@ useEffect(() => {
                         background:active?'rgba(13,148,136,0.14)':'transparent',
                         boxShadow:active?'0 0 0 1.5px rgba(13,148,136,0.22)':'none',
                         transition:'all .18s',
-                      }}>{item.icon}</span>
+                      }}><NavIcon id={item.id} size={15} /></span>
                       {!sidebarCollapsed&&<span className="nav-label truncate" style={{fontSize:'13px',fontWeight:active?700:500}}>{item.label}</span>}
                       {/* Partie droite : badge prioritaire, sinon dot ou lock */}
                       {!sidebarCollapsed&&(
@@ -768,7 +769,7 @@ useEffect(() => {
             ☰
           </button>
           <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'linear-gradient(135deg,#0d9488,#14b8a6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'17px',flexShrink:0,boxShadow:'0 2px 10px rgba(13,148,136,0.28)'}}>
-            {NAV_ALL.find(n=>n.id===view)?.icon||'📋'}
+            <NavIcon id={view} size={18} color="white" />
           </div>
           <div>
             <h2 className="app-header-title">{NAV_ALL.find(n=>n.id===view)?.label||'–'}</h2>
