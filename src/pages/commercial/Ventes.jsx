@@ -3,7 +3,7 @@ import { Btn, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, Filt
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
-import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill } from 'lucide-react'
+import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -471,7 +471,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                     {ta>0&&!otrMode && <div style={{ fontSize:10,color:'#94a3b8' }}>TTC: {fmtF(totalTTC(v))}</div>}
                     <div style={{ display:'flex',gap:4,justifyContent:'flex-end',marginTop:6 }} onClick={e=>e.stopPropagation()}>
                       <button onClick={()=>printRecu(v)} title="Imprimer le reçu"
-                        style={{ width:30,height:30,borderRadius:8,background:'#f1f5f9',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>🖨️</button>
+                        style={{ width:30,height:30,borderRadius:8,background:'#f1f5f9',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer' }}><Printer size={14} strokeWidth={2.4} /></button>
                       {v.statut!=='Payé'&&v.statut!=='Annulé' && <>
                         <button onClick={()=>handleStatut(v.id,'Payé')}
                           style={{ padding:'5px 10px',borderRadius:8,background:'#f0fdf4',border:'1px solid #bbf7d0',fontSize:11,fontWeight:700,color:'#16a34a',cursor:'pointer' }}>✓ Payé</button>
@@ -479,7 +479,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                           style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>✕</button>
                       </>}
                       <button onClick={()=>deleteVente(v.id)} title="Supprimer"
-                        style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>🗑️</button>
+                        style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#ef4444' }}><Trash2 size={14} strokeWidth={2.4} /></button>
                     </div>
                     <span style={{ fontSize:10,color:'#cbd5e1',marginTop:4,display:'block' }}>{isExpanded?'▲':'▼'}</span>
                   </div>

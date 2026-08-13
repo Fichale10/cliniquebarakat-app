@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { Printer } from 'lucide-react'
 
 const printZone = (zoneId) => {
   const el = document.getElementById(zoneId)
@@ -11,15 +11,17 @@ const printZone = (zoneId) => {
   w.print()
 }
 
-function PrintBtn({ zoneId, label = '🖨 Imprimer' }) {
+function PrintBtn({ zoneId, label = 'Imprimer' }) {
+  // Retire un éventuel émoji imprimante passé en label (anciens appels)
+  const clean = String(label).replace(/🖨️?\s*/g, '').trim() || 'Imprimer'
   return (
     <button
       type="button"
       onClick={() => printZone(zoneId)}
       className="no-print text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
-      style={{ background: '#475569', color: 'white', border: 'none', cursor: 'pointer' }}
+      style={{ background: '#475569', color: 'white', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
     >
-      {label}
+      <Printer size={13} strokeWidth={2.4} /> {clean}
     </button>
   )
 }

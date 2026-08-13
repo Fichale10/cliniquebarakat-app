@@ -1,4 +1,4 @@
-import { Receipt } from 'lucide-react'
+import { Receipt, Printer, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, PrintBtn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -231,11 +231,11 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
                       </button>
                       <button onClick={() => printFac(f.id)}
                         className="text-xs bg-slate-700 hover:bg-slate-800 text-white px-2 py-1 rounded-lg no-print">
-                        🖨
+                        <Printer size={13} strokeWidth={2.4} />
                       </button>
                       <button onClick={() => deleteFacture(f.id)}
                         className="text-xs bg-red-50 hover:bg-red-100 text-red-500 px-2 py-1 rounded-lg no-print">
-                        🗑
+                        <Trash2 size={13} strokeWidth={2.4} />
                       </button>
                     </div>
                   </td>

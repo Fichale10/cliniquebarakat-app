@@ -1,4 +1,4 @@
-import { Syringe } from 'lucide-react'
+import { Syringe, Trash2 } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { EmptyState } from '../../components/ui'
 
@@ -180,8 +180,8 @@ function SuiviTraitements({patients, meds, user}){
                   {t.actif?'Terminer':'Réactiver'}
                 </button>
                 <button onClick={()=>{if(confirm('Supprimer ce traitement ?'))supprimer(t.id);}}
-                  style={{padding:'7px 10px',borderRadius:'8px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,fontSize:'12px',cursor:'pointer'}}>
-                  🗑
+                  style={{padding:'7px 10px',borderRadius:'8px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'flex',alignItems:'center'}}>
+                  <Trash2 size={13} strokeWidth={2.4} />
                 </button>
               </div>
             </div>

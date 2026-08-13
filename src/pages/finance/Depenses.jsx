@@ -1,4 +1,4 @@
-import { Wallet } from 'lucide-react'
+import { Wallet, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, Field, PrintBtn, FilterPeriode, FilterBar, FilterSelect } from "../../components/ui"
 import { fmtF, newId } from "../../lib/utils"
@@ -147,7 +147,7 @@ function Depenses({ otrMode, depsHist = [], setDepsHist, sb }) {
                     <td className="p-3 text-sm">{d.mode}</td>
                     <td className={`p-3 font-bold font-mono ${otrMode ? 'text-slate-300' : 'text-red-600'}`}>{mask(d.montant)}</td>
                     <td className="p-3 no-print">
-                      <button onClick={() => handleDelete(d.id)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50">🗑</button>
+                      <button onClick={() => handleDelete(d.id)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50"><Trash2 size={13} strokeWidth={2.4} /></button>
                     </td>
                   </tr>
                 ))}

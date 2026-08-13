@@ -1,4 +1,4 @@
-import { Pill, AlertTriangle, Clock, Coins, Package, Factory } from 'lucide-react'
+import { Pill, AlertTriangle, Clock, Coins, Package, Factory, Pencil, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import {
   Btn, Field, DupWarning, ValidationBanner,
@@ -471,9 +471,9 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                       <td style={{ padding:'10px 12px' }}>
                         <div style={{ display:'flex',gap:4 }}>
                           <button type="button" onClick={()=>startEdit(m)}
-                            style={{ width:30,height:30,borderRadius:8,background:'#fffbeb',border:'1px solid #fde68a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>✏️</button>
+                            style={{ width:30,height:30,borderRadius:8,background:'#fffbeb',border:'1px solid #fde68a',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#d97706' }}><Pencil size={14} strokeWidth={2.4} /></button>
                           <button type="button" onClick={()=>handleDelete(m)}
-                            style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>🗑️</button>
+                            style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#ef4444' }}><Trash2 size={14} strokeWidth={2.4} /></button>
                         </div>
                       </td>
                     </tr>
@@ -516,8 +516,8 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                         <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:cc.bg,border:`1px solid ${cc.border}`,color:cc.text }}>{m.categorie}</span>
                       </div>
                       <div style={{ display:'flex',gap:4,flexShrink:0 }}>
-                        <button onClick={()=>startEdit(m)} style={{ width:28,height:28,borderRadius:8,background:'#fffbeb',border:'1px solid #fde68a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>✏️</button>
-                        <button onClick={()=>handleDelete(m)} style={{ width:28,height:28,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>🗑️</button>
+                        <button onClick={()=>startEdit(m)} style={{ width:28,height:28,borderRadius:8,background:'#fffbeb',border:'1px solid #fde68a',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#d97706' }}><Pencil size={13} strokeWidth={2.4} /></button>
+                        <button onClick={()=>handleDelete(m)} style={{ width:28,height:28,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#ef4444' }}><Trash2 size={13} strokeWidth={2.4} /></button>
                       </div>
                     </div>
 

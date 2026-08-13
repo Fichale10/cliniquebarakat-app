@@ -1,4 +1,4 @@
-import { Factory, Coins } from 'lucide-react'
+import { Factory, Coins, Pencil, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react';
 import { today, fmtF, findDups } from '../../lib/utils';
 import { newId } from '../../lib/db';
@@ -568,11 +568,11 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
                       onMouseEnter={e => e.currentTarget.style.opacity=1}
                       ref={el => { if(el) { const card=el.closest('[data-hover]')||el.parentElement; card.addEventListener('mouseenter',()=>{el.style.opacity=1}); card.addEventListener('mouseleave',()=>{el.style.opacity=0}); } }}>
                       <button onClick={() => { setEditTarget(f); setView('form-edit'); }}
-                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>✏️</button>
+                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#d97706' }}><Pencil size={13} strokeWidth={2.4} /></button>
                       <button onClick={() => toggleActif(f.id)}
                         style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>{f.actif?'⏸':'▶'}</button>
                       <button onClick={() => handleDelete(f.id)}
-                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer' }}>🗑️</button>
+                        style={{ width:28,height:28,borderRadius:8,background:'white',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#ef4444' }}><Trash2 size={13} strokeWidth={2.4} /></button>
                     </div>
                   </div>
                 );
@@ -727,7 +727,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
                               </div>
                               <div style={{ display:'flex',alignItems:'center',gap:10 }}>
                                 <span style={{ fontSize:14,fontWeight:900,color:'#16a34a',fontVariantNumeric:'tabular-nums' }}>{fmtF(v.montant)}</span>
-                                <button onClick={() => delVersement(v.id)} style={{ fontSize:12,color:'#f87171',background:'none',border:'none',cursor:'pointer' }}>🗑</button>
+                                <button onClick={() => delVersement(v.id)} style={{ color:'#f87171',background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center' }}><Trash2 size={13} strokeWidth={2.4} /></button>
                               </div>
                             </div>
                           ))}

@@ -1,4 +1,4 @@
-import { ListChecks } from 'lucide-react'
+import { ListChecks, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -271,7 +271,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
                           <button onClick={() => deleteTache(t.id)}
                             className="text-xs px-2 py-1 rounded-lg transition-all"
                             style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
-                            🗑
+                            <Trash2 size={13} strokeWidth={2.4} />
                           </button>
                         </div>
                       </div>

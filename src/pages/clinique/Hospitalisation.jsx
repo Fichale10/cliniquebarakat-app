@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Trash2 } from 'lucide-react'
 import { Btn, Badge, Field, AutoSuggest, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
@@ -209,8 +210,8 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
                 <Btn onClick={() => sortir(sel.id)} color="green">✓ Sortie du patient</Btn>
               )}
               <button onClick={() => setConfirmDel(sel.id)}
-                style={{ fontSize: 12, padding: '6px 10px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer' }}>
-                🗑
+                style={{ fontSize: 12, padding: '6px 10px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Trash2 size={13} strokeWidth={2.4} />
               </button>
             </div>
           </div>

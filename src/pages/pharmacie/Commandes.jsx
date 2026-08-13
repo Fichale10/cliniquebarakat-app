@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react'
+import { Package, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -251,7 +251,7 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                       </div>
                     )}
                     <button onClick={e => { e.stopPropagation(); deleteCommande(c.id) }}
-                      className="text-xs text-red-400 hover:text-red-600 mt-1 no-print">🗑</button>
+                      className="text-xs text-red-400 hover:text-red-600 mt-1 no-print"><Trash2 size={13} strokeWidth={2.4} /></button>
                   </div>
                 </div>
               </div>

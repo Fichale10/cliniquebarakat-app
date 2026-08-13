@@ -1,4 +1,4 @@
-import { FileText } from 'lucide-react'
+import { FileText, Printer, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, FilterBar, FilterSelect, usePagination, Pagination, EmptyState, AutoSuggest } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -412,11 +412,11 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                     <div style={{ display:'flex',gap:5 }} onClick={e=>e.stopPropagation()}>
                       <button onClick={()=>handlePrint(o)}
                         style={{ padding:'6px 12px',borderRadius:9,background:'#1e293b',color:'white',border:'none',fontSize:11,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:4 }}>
-                        🖨️ Imprimer
+                        <Printer size={12} strokeWidth={2.4} /> Imprimer
                       </button>
                       <button onClick={()=>setConfirmDel(confirmDel===o.id?null:o.id)}
-                        style={{ width:30,height:30,borderRadius:9,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>
-                        🗑️
+                        style={{ width:30,height:30,borderRadius:9,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#ef4444' }}>
+                        <Trash2 size={14} strokeWidth={2.4} />
                       </button>
                     </div>
                     <span style={{ fontSize:11,color:'#94a3b8',padding:'2px 8px',borderRadius:99,background:'#f1f5f9' }}>

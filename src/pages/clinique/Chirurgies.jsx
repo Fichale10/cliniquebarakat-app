@@ -3,7 +3,7 @@ import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterSelect, FilterBtns, us
 import { newId } from '../../lib/db'
 import { fmtF } from '../../lib/utils'
 import { venteToDbRow, validateChirurgieForm } from '../../lib/validation'
-import { Scissors } from 'lucide-react'
+import { Scissors, Trash2 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -351,8 +351,8 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
                       </div>
                     ) : (
                       <button onClick={() => setConfirmDel(c.id)}
-                        style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer' }}>
-                        🗑
+                        style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                        <Trash2 size={13} strokeWidth={2.4} />
                       </button>
                     )}
                   </td>

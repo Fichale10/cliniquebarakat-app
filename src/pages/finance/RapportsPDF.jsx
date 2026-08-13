@@ -1,4 +1,4 @@
-import { FileDown } from 'lucide-react'
+import { FileDown, Printer } from 'lucide-react'
 import { useState } from 'react'
 
 function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
@@ -127,7 +127,7 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
             style={{border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px 12px',fontSize:'13px',outline:'none'}}/>
           <button onClick={genererPDF}
             style={{padding:'10px 20px',borderRadius:'10px',background:'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
-            🖨️ Générer PDF
+            <Printer size={15} strokeWidth={2.4} /> Générer PDF
           </button>
         </div>
       </div>

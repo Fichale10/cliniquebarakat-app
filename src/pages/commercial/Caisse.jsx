@@ -8,7 +8,7 @@ import {
 import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
-import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock } from 'lucide-react'
+import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
@@ -602,16 +602,16 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 </div>
                 <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
                   <button type="button" onClick={() => imprimerRecu(recu)}
-                    style={{ padding:'8px 14px', borderRadius:'9px', background:'#166534', color:'white', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer' }}>
-                    🖨️ Imprimer
+                    style={{ padding:'8px 14px', borderRadius:'9px', background:'#166534', color:'white', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:'5px' }}>
+                    <Printer size={13} strokeWidth={2.4} /> Imprimer
                   </button>
                   <button type="button" onClick={modifierVente} disabled={cancelling}
-                    style={{ padding:'8px 14px', borderRadius:'9px', background:'#1d4ed8', color:'white', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer' }}>
-                    ✏️ Modifier
+                    style={{ padding:'8px 14px', borderRadius:'9px', background:'#1d4ed8', color:'white', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:'5px' }}>
+                    <Pencil size={13} strokeWidth={2.4} /> Modifier
                   </button>
                   <button type="button" onClick={annulerVente} disabled={cancelling}
-                    style={{ padding:'8px 14px', borderRadius:'9px', background:'#dc2626', color:'white', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer' }}>
-                    🗑 Annuler
+                    style={{ padding:'8px 14px', borderRadius:'9px', background:'#dc2626', color:'white', border:'none', fontWeight:700, fontSize:'13px', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:'5px' }}>
+                    <Trash2 size={13} strokeWidth={2.4} /> Annuler
                   </button>
                   <button type="button" onClick={() => setRecu(null)}
                     style={{ padding:'8px 14px', borderRadius:'9px', background:'white', color:'#64748b', border:'1px solid #e2e8f0', fontWeight:700, fontSize:'13px', cursor:'pointer' }}>
@@ -798,8 +798,8 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
               </button>
               {lignesOk.length > 0 && (
                 <button type="button" onClick={resetForm}
-                  style={{ width:'100%', marginTop:'8px', padding:'10px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.2)', background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.6)', fontWeight:600, fontSize:'13px', cursor:'pointer' }}>
-                  🗑 Vider le panier
+                  style={{ width:'100%', marginTop:'8px', padding:'10px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.2)', background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.6)', fontWeight:600, fontSize:'13px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
+                  <Trash2 size={13} strokeWidth={2.4} /> Vider le panier
                 </button>
               )}
             </div>
@@ -1055,12 +1055,12 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                         {v.note && <div style={{ marginTop:10, padding:'8px 12px', borderRadius:10, background:'#fffbeb', border:'1px solid #fde68a', fontSize:12, color:'#92400e' }}>📌 {v.note}</div>}
                         {/* Actions */}
                         <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:12 }}>
-                          <button onClick={() => imprimerRecu(v)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#475569', cursor:'pointer' }}>🖨️ Imprimer</button>
+                          <button onClick={() => imprimerRecu(v)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#475569', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}><Printer size={12} strokeWidth={2.4} /> Imprimer</button>
                           {v.statut !== 'Payé' && v.statut !== 'Annulé' && <>
                             <button onClick={() => handleStatut(v.id,'Payé')} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #bbf7d0', background:'#f0fdf4', color:'#16a34a', cursor:'pointer' }}>✓ Marquer Payé</button>
                             <button onClick={() => handleStatut(v.id,'Annulé')} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer' }}>✕ Annuler</button>
                           </>}
-                          <button onClick={() => deleteVente(v.id)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #fecaca', background:'#fef2f2', color:'#ef4444', cursor:'pointer' }}>🗑 Supprimer</button>
+                          <button onClick={() => deleteVente(v.id)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #fecaca', background:'#fef2f2', color:'#ef4444', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}><Trash2 size={12} strokeWidth={2.4} /> Supprimer</button>
                         </div>
                       </div>
                     )}
@@ -1147,7 +1147,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                           {(c.ecart||0)===0 ? '✓ juste' : ((c.ecart>0?'+':'')+fmtF(c.ecart))}
                         </span>
                         <button onClick={()=>imprimerCloture(c)} title="Imprimer"
-                          style={{ width:28, height:28, borderRadius:8, background:'white', border:'1px solid #e2e8f0', cursor:'pointer', fontSize:12 }}>🖨️</button>
+                          style={{ width:28, height:28, borderRadius:8, background:'white', border:'1px solid #e2e8f0', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}><Printer size={13} strokeWidth={2.4} /></button>
                       </div>
                     </div>
                   )

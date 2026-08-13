@@ -1,4 +1,4 @@
-import { Calendar } from 'lucide-react'
+import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import AgendaCalendrier from './AgendaCalendrier'
 import RappelsPanel from './RappelsPanel'
@@ -242,11 +242,11 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
                 <>
                   <button type="button" onClick={() => openEdit(r)}
                     className="rdv-action-btn" style={{ flex: '1 1 90px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb' }}>
-                    ✏️ Modifier
+                    <Pencil size={12} strokeWidth={2.4} style={{ verticalAlign: '-2px', marginRight: 4 }} />Modifier
                   </button>
                   <button type="button" onClick={() => deleteRDV(r.id, r.patient)}
                     className="rdv-action-btn" style={{ border: '1px solid #fecaca', background: '#fff5f5', color: '#ef4444' }}>
-                    🗑 Supprimer
+                    <Trash2 size={12} strokeWidth={2.4} style={{ verticalAlign: '-2px', marginRight: 4 }} />Supprimer
                   </button>
                 </>
               )}

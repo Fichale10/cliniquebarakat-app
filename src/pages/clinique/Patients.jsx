@@ -1,4 +1,4 @@
-import { PawPrint, Sparkles, AlertTriangle, BarChart3, Stethoscope } from 'lucide-react'
+import { PawPrint, Sparkles, AlertTriangle, BarChart3, Stethoscope, Pencil, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, DupWarning, ValidationBanner, FormSection, FilterBtns, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbDelete, dbUpdate, newId } from '../../lib/db'
@@ -343,16 +343,16 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                       </a>
                     )}
                     <button onClick={() => startEdit(p)}
-                      style={{ width:30,height:30,borderRadius:8,background:'#eff6ff',border:'1px solid #bfdbfe',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer',transition:'all .12s' }}
+                      style={{ width:30,height:30,borderRadius:8,background:'#eff6ff',border:'1px solid #bfdbfe',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all .12s',color:'#2563eb' }}
                       onMouseEnter={e=>{e.currentTarget.style.background='#dbeafe'}}
                       onMouseLeave={e=>{e.currentTarget.style.background='#eff6ff'}}>
-                      ✏️
+                      <Pencil size={14} strokeWidth={2.4} />
                     </button>
                     <button onClick={() => handleDelete(p)}
-                      style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer',transition:'all .12s' }}
+                      style={{ width:30,height:30,borderRadius:8,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all .12s',color:'#ef4444' }}
                       onMouseEnter={e=>{e.currentTarget.style.background='#fee2e2'}}
                       onMouseLeave={e=>{e.currentTarget.style.background='#fef2f2'}}>
-                      🗑️
+                      <Trash2 size={14} strokeWidth={2.4} />
                     </button>
                     <span style={{ color:'#cbd5e1',fontSize:12,marginLeft:2 }}>{isExp?'▲':'▼'}</span>
                   </div>

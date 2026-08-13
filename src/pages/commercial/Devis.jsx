@@ -1,4 +1,4 @@
-import { FileSpreadsheet } from 'lucide-react'
+import { FileSpreadsheet, Printer, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, Field, AutoSuggest, Badge, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -229,7 +229,7 @@ ${d.notes ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-ra
                   <div className="flex gap-1.5 mt-2 justify-end flex-wrap">
                     <button onClick={() => printDevis(d)}
                       className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold no-print">
-                      🖨️
+                      <Printer size={13} strokeWidth={2.4} />
                     </button>
                     {d.statut !== 'Converti' && d.statut !== 'Refusé' && <>
                       {d.statut !== 'Accepté' && (
@@ -251,7 +251,7 @@ ${d.notes ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-ra
                     </>}
                     <button onClick={() => deleteDevis(d.id)}
                       className="text-xs bg-red-50 hover:bg-red-100 text-red-400 px-2 py-1.5 rounded-lg no-print">
-                      🗑
+                      <Trash2 size={13} strokeWidth={2.4} />
                     </button>
                   </div>
                 </div>

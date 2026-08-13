@@ -1,4 +1,4 @@
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
@@ -346,7 +346,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
                   className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${c.actif?'bg-red-50 hover:bg-red-100 text-red-600':'bg-green-50 hover:bg-green-100 text-green-600'}`}>
                   {c.actif?'⏸ Désactiver':'▶ Activer'}
                 </button>}
-                {!isMe&&<button onClick={()=>deleteCompte(c.id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg font-semibold transition-all">🗑 Supprimer</button>}
+                {!isMe&&<button onClick={()=>deleteCompte(c.id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg font-semibold transition-all inline-flex items-center gap-1"><Trash2 size={12} strokeWidth={2.4} /> Supprimer</button>}
               </div>
             </div>
             {/* Changer rôle inline */}

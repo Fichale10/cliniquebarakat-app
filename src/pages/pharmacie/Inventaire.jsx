@@ -1,4 +1,4 @@
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
@@ -547,8 +547,8 @@ function TabHistorique({ inventaires = [], setInventaires, sb, dbDelete }) {
                 Voir détail →
               </button>
               <button onClick={() => supprimer(inv.id)}
-                style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '7px 10px', color: '#dc2626', cursor: 'pointer', fontSize: 13 }}>
-                🗑
+                style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '7px 10px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Trash2 size={13} strokeWidth={2.4} />
               </button>
             </div>
           </div>

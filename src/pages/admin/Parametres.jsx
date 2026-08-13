@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react'
+import { Settings, Trash2 } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { ROLES } from '../../lib/roles'
 import { fmtF } from '../../lib/utils'
@@ -135,7 +135,7 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
                 </div>
                 <span className="text-xs font-semibold text-slate-600">{m.actif?'Actif':'Inactif'}</span>
               </label>
-              <button onClick={()=>removeMembre(m.id)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50 transition-all">🗑 Retirer</button>
+              <button onClick={()=>removeMembre(m.id)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50 transition-all inline-flex items-center gap-1"><Trash2 size={12} strokeWidth={2.4} /> Retirer</button>
             </div>
           </div>)}
         </div>

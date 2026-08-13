@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react'
+import { Users, Pencil, Trash2 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -330,12 +330,12 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                         <button onClick={()=>startEdit(c)}
                           style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',
                             background:'#fffbeb',border:'1px solid #fde68a',color:'#d97706' }}>
-                          ✏️ Modifier
+                          <Pencil size={12} strokeWidth={2.4} /> Modifier
                         </button>
                         <button onClick={()=>setConfirmDel(confirmDel===c.id?null:c.id)}
                           style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',
                             background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626',marginLeft:'auto' }}>
-                          🗑️ Supprimer
+                          <Trash2 size={12} strokeWidth={2.4} /> Supprimer
                         </button>
                       </div>
 

@@ -3,7 +3,7 @@ import { Btn, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode, EmptySta
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
 import { venteToDbRow, validateConsultationForm } from '../../lib/validation'
 import { fmtF, fmtK } from '../../lib/ventes'
-import { Stethoscope, CheckCircle2, Hourglass, BarChart3 } from 'lucide-react'
+import { Stethoscope, CheckCircle2, Hourglass, BarChart3, Printer } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 const EMPTY_TRAIT = { med:'', medSearch:'', qte:1, pu:'', rappel:'', showSugg:false }
@@ -549,8 +549,8 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                         </button>
                       )}
                       <button onClick={()=>{ const el=document.getElementById(`cp-${c.id}`); el.classList.remove('hidden'); setTimeout(()=>{ printZone(`cp-${c.id}`); el.classList.add('hidden') },100) }}
-                        style={{ width:30,height:30,borderRadius:8,background:'#f1f5f9',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,cursor:'pointer' }}>
-                        🖨️
+                        style={{ width:30,height:30,borderRadius:8,background:'#f1f5f9',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer' }}>
+                        <Printer size={14} strokeWidth={2.4} />
                       </button>
                     </div>
                     <span style={{ fontSize:10,color:'#cbd5e1',display:'block',marginTop:4 }}>{isExp?'▲':'▼'}</span>
