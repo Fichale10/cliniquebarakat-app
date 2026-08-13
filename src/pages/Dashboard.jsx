@@ -65,6 +65,13 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
       .slice(0, 6)
   }, [achatsHist, versements])
 
+  // ── Numéro WhatsApp : normalise au format international (+228 par défaut) ──
+  const waNumber = (tel) => {
+    const digits = String(tel||'').replace(/[^\d]/g,'')
+    if (!digits) return null
+    return digits.length === 8 ? `228${digits}` : digits
+  }
+
   // ── Rappels vaccinaux (à J+14 ou en retard) ──────────────────
   const rappelsVaccins = useMemo(() => {
     const limite = new Date(Date.now() + 14*86400000).toISOString().split('T')[0]
@@ -322,10 +329,21 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <div key={i} className="dash-alert-row" style={{ gridTemplateColumns:'1.4fr 1fr 1fr' }}>
               <span style={{ fontWeight:600,fontSize:13 }}>🐾 {r.patient} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {r.vaccin}</span></span>
               <span style={{ textAlign:'center',fontSize:12,color:'#64748b' }}>{r.proprio}{r.tel ? ` · 📞 ${r.tel}` : ''}</span>
-              <div style={{ textAlign:'center' }}>
+              <div style={{ textAlign:'center',display:'flex',gap:6,justifyContent:'center',alignItems:'center' }}>
                 {r.jours < 0
                   ? <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>⚠️ Retard {Math.abs(r.jours)}j</span>
                   : <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#faf5ff',color:'#9333ea',border:'1px solid #e9d5ff' }}>💉 J-{r.jours}</span>}
+                {waNumber(r.tel) && (
+                  <a
+                    href={`https://wa.me/${waNumber(r.tel)}?text=${encodeURIComponent(
+                      `Bonjour${r.proprio?` ${r.proprio}`:''}, le rappel de vaccination (${r.vaccin}) de ${r.patient} est prévu le ${new Date(r.prochain+'T00:00:00').toLocaleDateString('fr-FR')}. Merci de prendre rendez-vous à la clinique La Barakat. 🐾`
+                    )}`}
+                    target="_blank" rel="noopener noreferrer"
+                    title="Relancer sur WhatsApp"
+                    style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#dcfce7',color:'#16a34a',border:'1px solid #bbf7d0',textDecoration:'none',whiteSpace:'nowrap' }}>
+                    📱 Relancer
+                  </a>
+                )}
               </div>
             </div>
           ))}
