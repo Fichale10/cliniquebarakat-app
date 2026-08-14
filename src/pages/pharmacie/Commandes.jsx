@@ -1,4 +1,4 @@
-import { Package, Trash2, Printer, MessageCircle } from 'lucide-react'
+import { Package, Trash2, Printer, MessageCircle, Pencil } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -13,6 +13,7 @@ const EMPTY_FORM = { date: today(), fournisseur: '', echeance: '', lignes: [{ pr
 function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], setAchatsHist, sb }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm]         = useState(EMPTY_FORM)
+  const [editingId, setEditingId] = useState(null)
   const [saving, setSaving]     = useState(false)
   const [exp, setExp]           = useState(null)
   const [fCmdStatut, setFCmdStatut] = useState('')
@@ -61,18 +62,30 @@ function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], set
     const d = check.data
     setSaving(true)
     try {
-      const row = {
-        id: newId(), num: genNum(), date: d.date,
-        fournisseur: d.fournisseur,
-        lignes: d.lignes,
-        total: d.lignes.reduce((s, l) => s + l.qte * l.pu, 0),
-        statut: 'En attente',
-        date_reception: null,
-        echeance: d.echeance,
+      if (editingId) {
+        // ── Modification d'une commande existante (non reçue) ──
+        const updates = {
+          date: d.date, fournisseur: d.fournisseur, lignes: d.lignes,
+          total: d.lignes.reduce((s, l) => s + l.qte * l.pu, 0),
+          echeance: d.echeance,
+        }
+        await dbUpdate(sb, 'commandes', editingId, updates)
+        setAchatsHist((achatsHist || []).map(c => c.id === editingId ? { ...c, ...updates } : c))
+      } else {
+        const row = {
+          id: newId(), num: genNum(), date: d.date,
+          fournisseur: d.fournisseur,
+          lignes: d.lignes,
+          total: d.lignes.reduce((s, l) => s + l.qte * l.pu, 0),
+          statut: 'En attente',
+          date_reception: null,
+          echeance: d.echeance,
+        }
+        const saved = await dbInsert(sb, 'commandes', row)
+        setAchatsHist([saved, ...(achatsHist || [])])
       }
-      const saved = await dbInsert(sb, 'commandes', row)
-      setAchatsHist([saved, ...(achatsHist || [])])
       setForm(EMPTY_FORM)
+      setEditingId(null)
       setShowForm(false)
     } catch (e) {
       alert('Erreur : ' + (e?.message || e))
@@ -226,11 +239,11 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
             <h2 className="text-xl font-bold flex items-center gap-2"><Package size={20} color="#7c3aed" strokeWidth={2.3} /> Commandes fournisseurs</h2>
             <p className="text-xs text-slate-400 mt-0.5">{(achatsHist || []).length} commande(s)</p>
           </div>
-          <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle commande'}</Btn>
+          <Btn onClick={() => { if (showForm) { setEditingId(null); setForm(EMPTY_FORM) } setShowForm(!showForm) }}>{showForm ? '✕ Annuler' : '+ Nouvelle commande'}</Btn>
         </div>
 
         {showForm && (
-          <FormPanel icon="📦" title="Nouvelle commande fournisseur" subtitle="Passez une commande auprès d'un fournisseur" color="blue" onClose={() => setShowForm(false)}>
+          <FormPanel icon="📦" title={editingId ? `Modifier la commande ${(achatsHist||[]).find(c=>c.id===editingId)?.num || ''}` : 'Nouvelle commande fournisseur'} subtitle={editingId ? 'Corrigez les produits, quantités ou prix avant réception' : 'Passez une commande auprès d\'un fournisseur'} color="blue" onClose={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }}>
             <FormSection label="Informations" icon="📋" color="blue" noTopMargin>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <Field label="Date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} type="date" />
@@ -317,7 +330,7 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Total commande</p>
                 <span className="text-2xl font-black text-blue-600 font-mono">{fmtF(montantTotal)}</span>
               </div>
-              <Btn color="blue" onClick={addCommande} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Passer la commande'}</Btn>
+              <Btn color="blue" onClick={addCommande} disabled={saving}>{saving ? '⏳ Enregistrement…' : editingId ? '✓ Enregistrer les modifications' : '✓ Passer la commande'}</Btn>
             </div>
           </FormPanel>
         )}
@@ -361,6 +374,18 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
                         <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'Reçu') }} color="green" sm>✓ Reçu</Btn>
                         <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'Annulé') }} color="red" sm>✕</Btn>
                       </div>
+                    )}
+                    {c.statut !== 'Reçu' && c.statut !== 'Annulé' && (
+                      <button onClick={e => { e.stopPropagation();
+                          setForm({
+                            date: c.date || today(), fournisseur: c.fournisseur || '', echeance: c.echeance || '',
+                            lignes: (c.lignes || []).map(l => ({ produit: l.produit === '__autre__' ? (l.nomLibre || '') : (l.produit || ''), qte: String(l.qte ?? ''), pu: String(l.pu ?? '') })),
+                          })
+                          setEditingId(c.id); setShowForm(true)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                        title="Modifier la commande"
+                        className="text-xs text-amber-500 hover:text-amber-700 mt-1 no-print mr-2"><Pencil size={13} strokeWidth={2.4} /></button>
                     )}
                     <button onClick={e => { e.stopPropagation(); imprimerBon(c) }} title="Imprimer le bon de commande"
                       className="text-xs text-slate-500 hover:text-slate-700 mt-1 no-print mr-2"><Printer size={13} strokeWidth={2.4} /></button>
