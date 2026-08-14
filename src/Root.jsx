@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { Mail, KeyRound, Eye, EyeOff, LogIn, UserPlus, ShieldCheck, Loader2, AlertTriangle } from 'lucide-react'
 import { sb } from './lib/supabase'
 import { isValidView, DEFAULT_VIEW } from './lib/routes'
 import { logAction } from './lib/roles'
@@ -81,25 +82,28 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
         </div>
 
         {/* Card */}
-        <div style={{ background:'rgba(10,20,35,0.82)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'22px', boxShadow:'0 8px 40px rgba(0,0,0,0.5)' }}>
+        <div style={{ background:'rgba(10,20,35,0.72)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'22px', boxShadow:'0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
           <div style={{ padding:'22px 22px 6px' }}>
-            <h2 style={{ textAlign:'center', color:'rgba(255,255,255,0.9)', fontWeight:700, fontSize:'15px', margin:'0 0 16px' }}>Connexion à votre espace</h2>
+            <h2 style={{ textAlign:'center', color:'rgba(255,255,255,0.9)', fontWeight:700, fontSize:'15px', margin:'0 0 4px' }}>Connexion à votre espace</h2>
+            <p style={{ textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:'12px', margin:'0 0 16px', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
+              <ShieldCheck size={13} color="#4ade80" /> Accès sécurisé · réservé à l'équipe
+            </p>
 
             {err && (
               <div style={{ background:'rgba(239,68,68,0.14)', border:'1px solid rgba(239,68,68,0.28)', borderRadius:'10px', padding:'10px 13px', marginBottom:'13px', color:'#fca5a5', fontSize:'13px', fontWeight:600, display:'flex', alignItems:'center', gap:'7px' }}>
-                ⚠️ {err}
+                <AlertTriangle size={15} style={{ flexShrink:0 }} /> {err}
               </div>
             )}
             {loading && (
               <div style={{ background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.22)', borderRadius:'10px', padding:'10px 13px', marginBottom:'13px', color:'#93c5fd', fontSize:'13px', display:'flex', alignItems:'center', gap:'7px' }}>
-                🔄 Chargement…
+                <Loader2 size={15} className="animate-spin" style={{ flexShrink:0 }} /> Chargement…
               </div>
             )}
 
             <div style={{ marginBottom:'13px' }}>
               <label style={{ display:'block', fontSize:'10px', fontWeight:800, color:'rgba(255,255,255,0.42)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:'6px' }}>Adresse email</label>
               <div style={{ position:'relative' }}>
-                <span style={{ position:'absolute', left:'13px', top:'50%', transform:'translateY(-50%)', fontSize:'14px', pointerEvents:'none' }}>✉️</span>
+                <Mail size={15} style={{ position:'absolute', left:'13px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:'rgba(134,239,172,0.55)' }} />
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey}
                   className="login-dark-input" placeholder="votre@email.com" onFocus={fi} onBlur={bi} />
               </div>
@@ -108,12 +112,12 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
             <div style={{ marginBottom:'10px' }}>
               <label style={{ display:'block', fontSize:'10px', fontWeight:800, color:'rgba(255,255,255,0.42)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:'6px' }}>Mot de passe</label>
               <div style={{ position:'relative' }}>
-                <span style={{ position:'absolute', left:'13px', top:'50%', transform:'translateY(-50%)', fontSize:'14px', pointerEvents:'none' }}>🔑</span>
+                <KeyRound size={15} style={{ position:'absolute', left:'13px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:'rgba(134,239,172,0.55)' }} />
                 <input type={showPw ? 'text' : 'password'} value={pw} onChange={e => setPw(e.target.value)} onKeyDown={handleKey}
                   className="login-dark-input" style={{ paddingRight:'44px' }} placeholder="••••••••" onFocus={fi} onBlur={bi} />
-                <button type="button" onClick={() => setShowPw(p => !p)}
-                  style={{ position:'absolute', right:'13px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:'15px', color:'rgba(255,255,255,0.4)', padding:0 }}>
-                  {showPw ? '🙈' : '👁️'}
+                <button type="button" onClick={() => setShowPw(p => !p)} title={showPw ? 'Masquer' : 'Afficher'}
+                  style={{ position:'absolute', right:'13px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.45)', padding:0, display:'flex' }}>
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -125,16 +129,20 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
             </div>
 
             <button onClick={doLogin} disabled={checking || loading}
-              style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'none', background:'linear-gradient(135deg,#166534 0%,#1d4ed8 100%)', color:'white', fontWeight:800, fontSize:'15px', cursor:'pointer', fontFamily:"'Outfit',sans-serif", boxShadow:'0 4px 24px rgba(22,101,52,0.4)', transition:'all .2s', opacity:checking||loading ? 0.6 : 1, marginBottom:'4px' }}>
-              {checking ? '⏳ Vérification…' : '🔓 Se connecter'}
+              onMouseEnter={e => { if(!checking&&!loading){ e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow='0 6px 28px rgba(34,197,94,0.45)' } }}
+              onMouseLeave={e => { e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 4px 24px rgba(22,101,52,0.4)' }}
+              style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'none', background:'linear-gradient(135deg,#16a34a 0%,#1d4ed8 100%)', color:'white', fontWeight:800, fontSize:'15px', cursor: checking||loading ? 'wait' : 'pointer', fontFamily:"'Outfit',sans-serif", boxShadow:'0 4px 24px rgba(22,101,52,0.4)', transition:'all .2s', opacity:checking||loading ? 0.6 : 1, marginBottom:'4px', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
+              {checking ? <><Loader2 size={17} className="animate-spin" /> Vérification…</> : <><LogIn size={17} strokeWidth={2.5} /> Se connecter</>}
             </button>
           </div>
 
           <div style={{ padding:'14px 22px 18px', borderTop:'1px solid rgba(255,255,255,0.07)', marginTop:'8px', textAlign:'center' }}>
             <p style={{ color:'rgba(255,255,255,0.35)', fontSize:'12px', margin:'0 0 10px' }}>Pas encore de compte ?</p>
             <button onClick={onRegister}
-              style={{ width:'100%', padding:'11px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.15)', background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.8)', fontWeight:700, fontSize:'14px', cursor:'pointer', fontFamily:"'Outfit',sans-serif", transition:'all .2s' }}>
-              ✍️ Demander un accès
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.28)' }}
+              onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.15)' }}
+              style={{ width:'100%', padding:'11px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.15)', background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.8)', fontWeight:700, fontSize:'14px', cursor:'pointer', fontFamily:"'Outfit',sans-serif", transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
+              <UserPlus size={15} strokeWidth={2.4} /> Demander un accès
             </button>
             <p style={{ color:'rgba(255,255,255,0.16)', fontSize:'11px', margin:'14px 0 0' }}>© La Barakat — Lomé, Togo</p>
           </div>
