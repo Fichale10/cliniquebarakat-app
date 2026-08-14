@@ -12,7 +12,7 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
   const today=()=>new Date().toISOString().split('T')[0];
 
   // Alertes stock critique
-  const alertesStock=meds.filter(m=>m.stock<=m.seuil);
+  const alertesStock=meds.filter(m=>(m.seuil||0)>0&&m.stock<=m.seuil);
   // RDV du jour (depuis le state Supabase)
   const rdvsAujourdhui = rdvsProp.filter(r => r.date === today() && r.statut !== 'Annulé' && r.statut !== 'Terminé');
 

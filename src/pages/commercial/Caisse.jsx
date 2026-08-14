@@ -170,7 +170,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
         setMeds(updatedMeds)
       }
 
-      if (logAction && sb) logAction(sb, user, 'vente_caisse', `${vente.id} — ${fmtF(totalTTC)}`)
+      if (logAction && sb) logAction(sb, user, 'vente_caisse', `${validated.client || 'Comptoir'} — ${fmtF(totalTTC)}${achatInterne ? ' (achat interne clinique)' : ''}`)
       setRecu(vente)
       resetForm()
     } catch (e) {
