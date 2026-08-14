@@ -151,6 +151,19 @@ function App({ user, setUser, comptesRoot, setComptesRoot, onLogout, reloadCompt
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  // ── Raccourci clavier Ctrl+K / Cmd+K : recherche globale ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'k') {
+        e.preventDefault();
+        setGlobalSearchOpen(true);
+        setUserMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [heure, setHeure] = useState(() => new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}));
@@ -663,7 +676,7 @@ useEffect(() => {
             </div>
             {!sidebarCollapsed&&<div className="min-w-0 flex-1">
               <div className="mb-0.5">
-                <span className="font-black truncate block" style={{fontSize:'13px',letterSpacing:'.02em',color:'#1e293b'}}>{clinique.nom}</span>
+                <span className="font-black truncate block" style={{fontSize:'13px',letterSpacing:'.02em',color:'#f1f5f9'}}>{clinique.nom}</span>
               </div>
               <p style={{fontSize:'10px',color:'#94a3b8',letterSpacing:'.03em'}}>{clinique.sousTitre}</p>
             </div>}
@@ -694,7 +707,7 @@ useEffect(() => {
                   const active=view===item.id;
                   const todayS=new Date().toISOString().split('T')[0];
                   const badge=
-                    item.id==='medicaments' ? meds.filter(m=>m.stock<=m.seuil).length :
+                    item.id==='medicaments' ? meds.filter(m=>(m.seuil||0)>0&&m.stock<=m.seuil).length :
                     item.id==='agenda'      ? rdvs.filter(r=>r.date===todayS).length :
                     0;
                   return (
@@ -839,7 +852,7 @@ useEffect(() => {
           <button
             onClick={()=>{setGlobalSearchOpen(true);setUserMenuOpen(false);}}
             className="no-print header-btn"
-            title="Recherche"
+            title="Recherche (Ctrl+K)"
             style={{fontSize:'16px'}}
           >
             <Search size={17} strokeWidth={2.2} />
@@ -911,10 +924,10 @@ useEffect(() => {
           {/* Notifs */}
           <button onClick={()=>setShowNotifs(p=>!p)} className="no-print header-btn" style={{position:'relative'}}>
             <Bell size={17} strokeWidth={2.2} />
-            {notifsNonLues.length>0&&<span style={{position:'absolute',top:'3px',right:'3px',width:'16px',height:'16px',
-              background:'#ef4444',borderRadius:'50%',color:'white',fontWeight:800,
+            {notifsNonLues.length>0&&<span style={{position:'absolute',top:'2px',right:'1px',minWidth:'16px',height:'16px',padding:'0 3px',
+              background:'#ef4444',borderRadius:'99px',color:'white',fontWeight:800,
               display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',
-              border:'2px solid white'}}>{notifsNonLues.length}</span>}
+              border:'2px solid white'}}>{notifsNonLues.length>9?'9+':notifsNonLues.length}</span>}
           </button>
           {online&&<button onClick={()=>loadAll({ force: true })} disabled={syncing} className="no-print header-btn" title="Rafraîchir" style={{opacity:syncing?0.5:1}}><RotateCw size={16} strokeWidth={2.2} className={syncing?'animate-spin':''} /></button>}
           <button onClick={()=>{document.body.classList.toggle('dark-mode');localStorage.setItem('lb_dark',document.body.classList.contains('dark-mode')?'1':'0');}}

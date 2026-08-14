@@ -1,5 +1,5 @@
 import { Package, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateCommandeForm } from '../../lib/validation'
@@ -19,6 +19,22 @@ function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], set
   const [fCmdFourn, setFCmdFourn]   = useState('')
   const [fCmdPeriode, setFCmdPeriode] = useState('')
   const [searchCmd, setSearchCmd]   = useState('')
+
+  // ── Pré-remplissage depuis les alertes stock du Dashboard ──
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('lb_cmd_prefill')
+      if (!raw) return
+      localStorage.removeItem('lb_cmd_prefill')
+      const p = JSON.parse(raw)
+      if (!p?.produit) return
+      setForm({
+        date: today(), fournisseur: p.fournisseur || '', echeance: '',
+        lignes: [{ produit: p.produit, qte: String(p.qte || 1), pu: String(p.pu ?? '') }],
+      })
+      setShowForm(true)
+    } catch (e) {}
+  }, [])
 
   const fournisseurOptions = [
     ...new Set([

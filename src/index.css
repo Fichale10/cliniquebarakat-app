@@ -198,11 +198,14 @@
 
 /* ── Navigation groupée (sidebar) ── */
 .sidebar-group {
-  border: 1px solid rgba(255,255,255,0.04);
-  border-radius: 12px;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
 }
+.sidebar-group:last-child { border-bottom: none; }
 .sidebar-group summary {
   list-style: none;
 }
@@ -1095,11 +1098,11 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
   color: #cbd5e1 !important;
 }
 .sidebar-group {
-  border-color: #f1f5f9 !important;
+  border-color: transparent !important;
   background: transparent !important;
 }
 .sidebar-group[open] {
-  background: rgba(13,148,136,0.018) !important;
+  background: transparent !important;
 }
 .sidebar-cat-btn:hover {
   background: #f8fffe !important;

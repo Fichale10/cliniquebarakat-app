@@ -40,7 +40,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
     .sort((a,b) => a.date.localeCompare(b.date) || a.heure.localeCompare(b.heure))
 
   // ── Stock ────────────────────────────────────────────────────
-  const alertesStock      = meds.filter(m => m.stock <= m.seuil)
+  const alertesStock      = meds.filter(m => (m.seuil||0) > 0 && m.stock <= m.seuil)
   const now               = Date.now()
   const peremProches      = meds.filter(m => {
     if (!m.peremption) return false
@@ -160,10 +160,10 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
   const speciesColors  = ['#2563eb','#16a34a','#d97706','#7c3aed','#dc2626']
 
   const KPIS = [
-    { label:'Patients enregistrés', val:patients.length,           icon:PawPrint,      grad:'linear-gradient(135deg,#0d9488,#14b8a6)', shadow:'rgba(13,148,136,0.4)',  vw:'patients', sub:`${especeTop[0]?especeTop[0][0]:'–'} majoritaire` },
-    { label:"RDV aujourd'hui",      val:rdvsAujourdhui.length,     icon:Calendar,      grad:'linear-gradient(135deg,#7c3aed,#a855f7)', shadow:'rgba(124,58,237,0.4)', vw:'agenda',   sub:`${rdvsProchains.length} dans les 3 prochains jours` },
-    { label:'Stocks critiques',     val:alertesStock.length,       icon:AlertTriangle, grad:'linear-gradient(135deg,#dc2626,#f87171)', shadow:'rgba(220,38,38,0.4)',   vw:'medicaments', sub: peremProches.length ? `+ ${peremProches.length} expirent bientôt` : 'médicaments en alerte' },
-    { label:'Encaissé ce mois',     val:fmtK(totalMoisPaye),       icon:Coins,         grad:'linear-gradient(135deg,#b45309,#f59e0b)', shadow:'rgba(180,83,9,0.4)',    vw:'caisse',
+    { label:'Patients enregistrés', val:patients.length,           icon:PawPrint,      grad:'linear-gradient(135deg,#0d9488,#14b8a6)', shadow:'rgba(13,148,136,0.22)',  vw:'patients', sub: especeTop[0] ? `${especeTop[0][0]} majoritaire` : 'aucun patient enregistré' },
+    { label:"RDV aujourd'hui",      val:rdvsAujourdhui.length,     icon:Calendar,      grad:'linear-gradient(135deg,#7c3aed,#a855f7)', shadow:'rgba(124,58,237,0.22)', vw:'agenda',   sub:`${rdvsProchains.length} dans les 3 prochains jours` },
+    { label:'Stocks critiques',     val:alertesStock.length,       icon:AlertTriangle, grad:'linear-gradient(135deg,#dc2626,#f87171)', shadow:'rgba(220,38,38,0.22)',   vw:'medicaments', sub: peremProches.length ? `+ ${peremProches.length} expirent bientôt` : 'médicaments en alerte' },
+    { label:'Encaissé ce mois',     val:fmtK(totalMoisPaye),       icon:Coins,         grad:'linear-gradient(135deg,#b45309,#f59e0b)', shadow:'rgba(180,83,9,0.22)',    vw:'caisse',
       sub: totalDettes > 0 ? `${fmtK(totalDettes)} à payer fourn.` : totalCreances > 0 ? `${fmtK(totalCreances)} de créances` : `${nbVentesMois} vente(s)`,
       subColor: totalDettes > 0 ? '#fca5a5' : totalCreances > 0 ? '#fde68a' : undefined,
       trend: revenuTrend },
@@ -270,7 +270,17 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <div key={m.id} className="dash-alert-row">
               <span style={{ fontWeight:600,fontSize:13 }}>{m.nom}</span>
               <span style={{ textAlign:'center',fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:'#dc2626' }}>{m.stock} / {m.seuil}</span>
-              <div style={{ textAlign:'center' }}><span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>🚨 Critique</span></div>
+              <div style={{ display:'flex',gap:6,justifyContent:'center',alignItems:'center',flexWrap:'wrap' }}>
+                <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>🚨 Critique</span>
+                <button type="button" title={`Commander ${m.nom}${m.fournisseur?` chez ${m.fournisseur}`:''}`}
+                  onClick={() => {
+                    try { localStorage.setItem('lb_cmd_prefill', JSON.stringify({ produit:m.nom, qte:Math.max((m.seuil||0)*2 - (m.stock||0), 1), pu:m.prixAchat ?? m.prix_achat ?? '', fournisseur:m.fournisseur||'' })) } catch(e) {}
+                    setView('commandes')
+                  }}
+                  style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#0d9488',color:'white',border:'none',cursor:'pointer' }}>
+                  Commander →
+                </button>
+              </div>
             </div>
           ))}
           {peremProches.slice(0,3).map(m => {
