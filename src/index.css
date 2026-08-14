@@ -1509,6 +1509,39 @@ body.dark-mode .dash-card { background: #131720 !important; border-color: #262c3
 .dash-kpi-deco  { width: 120px !important; height: 120px !important; right: -30px !important; top: -30px !important; background: rgba(255,255,255,0.07) !important; }
 .dash-kpi-deco2 { width: 90px !important;  height: 90px !important;  background: rgba(255,255,255,0.04) !important; }
 
+/* ── KPI cards — version douce (fond clair, accent coloré) ── */
+.dash-kpi--soft {
+  background: var(--app-surface) !important;
+  border: 1px solid var(--app-border) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.05) !important;
+}
+.dash-kpi--soft:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.10) !important;
+  border-color: var(--kpi-accent, var(--app-border)) !important;
+}
+.dash-kpi--soft:focus-visible {
+  outline: 2px solid var(--kpi-accent, #0d9488);
+  outline-offset: 2px;
+}
+.dash-kpi--soft .dash-kpi-icon {
+  background: var(--kpi-icon-bg, rgba(0,0,0,0.05)) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.dash-kpi--soft .dash-kpi-foot {
+  border-top-color: var(--app-border);
+  color: var(--app-muted);
+}
+.dash-kpi--soft .dash-kpi-deco,
+.dash-kpi--soft .dash-kpi-deco2 {
+  background: var(--kpi-icon-bg, rgba(0,0,0,0.03)) !important;
+  opacity: .45;
+}
+body.dark-mode .dash-kpi--soft {
+  background: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+}
+
 /* ── Stat tiles ── */
 .stat-tile {
   background: #ffffff !important;

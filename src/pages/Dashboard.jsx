@@ -160,12 +160,12 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
   const speciesColors  = ['#2563eb','#16a34a','#d97706','#7c3aed','#dc2626']
 
   const KPIS = [
-    { label:'Patients enregistrés', val:patients.length,           icon:PawPrint,      grad:'linear-gradient(135deg,#0d9488,#14b8a6)', shadow:'rgba(13,148,136,0.22)',  vw:'patients', sub: especeTop[0] ? `${especeTop[0][0]} majoritaire` : 'aucun patient enregistré' },
-    { label:"RDV aujourd'hui",      val:rdvsAujourdhui.length,     icon:Calendar,      grad:'linear-gradient(135deg,#7c3aed,#a855f7)', shadow:'rgba(124,58,237,0.22)', vw:'agenda',   sub:`${rdvsProchains.length} dans les 3 prochains jours` },
-    { label:'Stocks critiques',     val:alertesStock.length,       icon:AlertTriangle, grad:'linear-gradient(135deg,#dc2626,#f87171)', shadow:'rgba(220,38,38,0.22)',   vw:'medicaments', sub: peremProches.length ? `+ ${peremProches.length} expirent bientôt` : 'médicaments en alerte' },
-    { label:'Encaissé ce mois',     val:fmtK(totalMoisPaye),       icon:Coins,         grad:'linear-gradient(135deg,#b45309,#f59e0b)', shadow:'rgba(180,83,9,0.22)',    vw:'caisse',
+    { label:'Patients enregistrés', val:patients.length,           icon:PawPrint,      accent:'#0d9488', vw:'patients', sub: especeTop[0] ? `${especeTop[0][0]} majoritaire` : 'aucun patient enregistré' },
+    { label:"RDV aujourd'hui",      val:rdvsAujourdhui.length,     icon:Calendar,      accent:'#7c3aed', vw:'agenda',   sub:`${rdvsProchains.length} dans les 3 prochains jours` },
+    { label:'Stocks critiques',     val:alertesStock.length,       icon:AlertTriangle, accent:'#dc2626', vw:'medicaments', sub: peremProches.length ? `+ ${peremProches.length} expirent bientôt` : 'médicaments en alerte' },
+    { label:'Encaissé ce mois',     val:fmtK(totalMoisPaye),       icon:Coins,         accent:'#d97706', vw:'caisse',
       sub: totalDettes > 0 ? `${fmtK(totalDettes)} à payer fourn.` : totalCreances > 0 ? `${fmtK(totalCreances)} de créances` : `${nbVentesMois} vente(s)`,
-      subColor: totalDettes > 0 ? '#fca5a5' : totalCreances > 0 ? '#fde68a' : undefined,
+      subColor: totalDettes > 0 ? '#dc2626' : totalCreances > 0 ? '#d97706' : undefined,
       trend: revenuTrend },
   ]
 
@@ -221,32 +221,32 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
       {/* ══ KPI CARDS ══════════════════════════════════════════ */}
       <div className="dash-kpi-grid">
         {KPIS.map((k, i) => (
-          <button key={i} type="button" className="dash-kpi text-left"
-            style={{ background:k.grad, boxShadow:`0 8px 32px ${k.shadow}` }}
+          <button key={i} type="button" className="dash-kpi dash-kpi--soft text-left"
+            style={{ '--kpi-accent': k.accent, '--kpi-icon-bg': `${k.accent}1f` }}
             onClick={() => setView(k.vw)}>
             <div className="dash-kpi-deco"  aria-hidden />
             <div className="dash-kpi-deco2" aria-hidden />
             <div className="dash-kpi-inner">
               <div>
-                <div className="dash-kpi-val">{k.val}</div>
-                <div className="dash-kpi-label">{k.label}</div>
+                <div className="dash-kpi-val" style={{ color:k.accent }}>{k.val}</div>
+                <div className="dash-kpi-label" style={{ color:'var(--app-muted)' }}>{k.label}</div>
               </div>
-              <div className="dash-kpi-icon" style={{ fontSize:22 }}><k.icon size={24} color="white" strokeWidth={2.2} /></div>
+              <div className="dash-kpi-icon" style={{ fontSize:22 }}><k.icon size={24} color={k.accent} strokeWidth={2.2} /></div>
             </div>
             <div className="dash-kpi-foot" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:10, opacity:.85 }}>
+              <span style={{ fontSize:10, opacity:.9 }}>
                 {k.trend != null ? (
                   <>
-                    <span style={{ color:k.trend>=0?'#4ade80':'#fca5a5', fontWeight:800 }}>
+                    <span style={{ color:k.trend>=0?'#16a34a':'#dc2626', fontWeight:800 }}>
                       {k.trend>=0?'↑':'↓'} {Math.abs(k.trend)}% vs mois préc.
                     </span>
                     {k.subColor && <span style={{ color:k.subColor, fontWeight:700, marginLeft:6 }}>· {k.sub}</span>}
                   </>
                 ) : (
-                  <span style={{ opacity:.7, color:k.subColor }}>{k.sub}</span>
+                  <span style={{ opacity:.85, color:k.subColor }}>{k.sub}</span>
                 )}
               </span>
-              <span>Voir →</span>
+              <span style={{ color:k.accent, fontWeight:700 }}>Voir →</span>
             </div>
           </button>
         ))}
