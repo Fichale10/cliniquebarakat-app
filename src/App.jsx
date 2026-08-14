@@ -6,7 +6,7 @@ import { isValidView, DEFAULT_VIEW } from './lib/routes'
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
 import { NavIcon } from './components/ui/AppIcons'
-import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon } from 'lucide-react'
+import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon, LogOut } from 'lucide-react'
 import { ToastContainer } from './components/Toast'
 import { SkPage } from './components/Skeleton'
 
@@ -152,6 +152,7 @@ function App({ user, setUser, comptesRoot, setComptesRoot, onLogout, reloadCompt
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [heure, setHeure] = useState(() => new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}));
 
 useEffect(() => {
@@ -743,7 +744,7 @@ useEffect(() => {
               color:otrMode?'#d97706':'#94a3b8'}}>
             {otrMode?'🙈 Mode OTR actif':'👁️ Mode OTR'}
           </button>}
-          <button onClick={()=>{if(confirm('Se déconnecter ?')) onLogout?.()}}
+          <button onClick={()=>setConfirmLogout(true)}
             style={{width:'100%',padding:'9px 12px',borderRadius:'10px',fontSize:'12px',fontWeight:700,
               background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.15)',
               color:'#ef4444',transition:'all .18s',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
@@ -900,7 +901,7 @@ useEffect(() => {
             <button
               onClick={()=>{
                 setUserMenuOpen(false);
-                if(confirm('Se déconnecter ?')) onLogout?.()
+                setConfirmLogout(true);
               }}
               style={{width:'100%',padding:'10px 12px',borderRadius:12,border:'1px solid rgba(239,68,68,0.35)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontWeight:900,color:'rgba(239,68,68,0.95)',textAlign:'left',marginTop:8}}
             >
@@ -1104,6 +1105,32 @@ useEffect(() => {
       </div>
     </>}
   </div>
+  {/* ── Modale de confirmation de déconnexion ── */}
+  {confirmLogout && (
+    <div onClick={()=>setConfirmLogout(false)}
+      style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(5,15,10,0.55)',backdropFilter:'blur(4px)',WebkitBackdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div onClick={e=>e.stopPropagation()}
+        style={{background:'var(--app-surface)',borderRadius:20,padding:'28px 26px 22px',maxWidth:360,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,0.35)',textAlign:'center',animation:'loginFadeIn .25s ease both'}}>
+        <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(239,68,68,0.1)',border:'1.5px solid rgba(239,68,68,0.25)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px'}}>
+          <LogOut size={24} color="#ef4444" strokeWidth={2.2} />
+        </div>
+        <h3 style={{fontSize:17,fontWeight:900,color:'var(--app-text)',margin:'0 0 6px'}}>Se déconnecter ?</h3>
+        <p style={{fontSize:13,color:'var(--app-muted)',margin:'0 0 20px'}}>
+          {user?.name ? `À bientôt, ${user.name}. ` : ''}Vos données sont synchronisées, vous ne perdrez rien.
+        </p>
+        <div style={{display:'flex',gap:10}}>
+          <button onClick={()=>setConfirmLogout(false)}
+            style={{flex:1,padding:'11px',borderRadius:12,border:'1.5px solid var(--app-border)',background:'transparent',color:'var(--app-text)',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:"'Outfit',sans-serif"}}>
+            Rester
+          </button>
+          <button onClick={()=>{setConfirmLogout(false);onLogout?.()}}
+            style={{flex:1,padding:'11px',borderRadius:12,border:'none',background:'linear-gradient(135deg,#ef4444,#dc2626)',color:'white',fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:"'Outfit',sans-serif",boxShadow:'0 4px 16px rgba(239,68,68,0.35)',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+            <LogOut size={15} strokeWidth={2.4} /> Déconnexion
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
   <ToastContainer />
 </>
 }
