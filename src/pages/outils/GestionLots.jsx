@@ -1,5 +1,7 @@
-import { Microscope } from 'lucide-react'
+import { Microscope, Download } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { PrintBtn } from '../../components/ui'
+import { exportCSV, today } from '../../lib/utils'
 
 function GestionLots({meds, ventesHist, user}){
   const [search,setSearch]=useState('');
@@ -39,13 +41,22 @@ function GestionLots({meds, ventesHist, user}){
   const statBg={Valide:'#f0fdf4',Expiré:'#fef2f2','Expire bientôt':'#fffbeb'};
 
   return <div className="app-page space-y-5">
-    <div className="app-card">
+    <div className="app-card" id="lots-print">
       <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2"><Microscope size={20} color="#0d9488" strokeWidth={2.3} /> Lots & Traçabilité</h2>
           <p className="text-sm text-slate-500">{filtered.length} lot(s) · {lots.filter(l=>l.statut==='Expiré').length} expiré(s)</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap no-print">
+          <button onClick={()=>{
+              const rows=filtered.map(l=>[l.lot,l.medicament,l.ref||'',l.fournisseur,l.peremption||'',`${l.stock??''} ${l.unite||''}`.trim(),(ventesParLot[l.lot]?.qte)||0,l.statut])
+              exportCSV(`lots_labarakat_${today()}`,['N° Lot','Médicament','Réf.','Fournisseur','Péremption','Stock','Vendu (unités)','Statut'],rows)
+            }}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-bold"
+            style={{background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488',cursor:'pointer'}}>
+            <Download size={13} strokeWidth={2.4} /> Exporter CSV
+          </button>
+          <PrintBtn zoneId="lots-print" label="Imprimer"/>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher lot…"
             style={{border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'7px 12px',fontSize:'13px',outline:'none',width:'180px'}}/>
           <select value={filterMed} onChange={e=>setFilterMed(e.target.value)}

@@ -1,7 +1,9 @@
-import { ScrollText } from 'lucide-react'
+import { ScrollText, Download } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
+import { PrintBtn } from '../../components/ui'
+import { exportCSV, today } from '../../lib/utils'
 
 function JournalActivite({user}){
   const [logs,setLogs]=useState([]);
@@ -44,13 +46,22 @@ function JournalActivite({user}){
   const roleInfo=r=>ROLES[r]||{label:r,icon:'👤',color:'#64748b'};
 
   return <div className="app-page space-y-5">
-    <div className="app-card p-5">
+    <div className="app-card p-5" id="journal-print">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2"><ScrollText size={20} color="#0d9488" strokeWidth={2.3} /> Journal d'activité</h2>
           <p className="text-sm text-slate-500">{filtered.length} entrée(s)</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap no-print">
+          <button onClick={()=>{
+              const rows=filtered.map(l=>[fmt(l.created_at),l.user_name||'',l.user_email||'',roleInfo(l.user_role).label,l.action||'',l.details||''])
+              exportCSV(`journal_labarakat_${today()}`,['Date','Utilisateur','Email','Rôle','Action','Détails'],rows)
+            }}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-bold"
+            style={{background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488',cursor:'pointer'}}>
+            <Download size={13} strokeWidth={2.4} /> Exporter CSV
+          </button>
+          <PrintBtn zoneId="journal-print" label="Imprimer"/>
           <input type="text" value={search} onChange={e=>setSearch(e.target.value)}
             placeholder="Rechercher…"
             className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-green-400"

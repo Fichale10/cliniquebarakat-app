@@ -1,4 +1,4 @@
-import { Package, Trash2 } from 'lucide-react'
+import { Package, Trash2, Printer, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { fmtF } from '../../lib/utils'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -141,6 +141,49 @@ function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], set
     } catch (e) {
       alert('Erreur suppression : ' + (e?.message || e))
     }
+  }
+
+  // ── Impression du bon de commande ──
+  const nomLigne = l => l.produit === '__autre__' ? (l.nomLibre || '') : (l.produit || '')
+  const imprimerBon = (c) => {
+    const w = window.open('', '_blank', 'width=700,height=800')
+    if (!w) return
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bon de commande ${c.num}</title>
+<style>body{font-family:sans-serif;padding:30px;max-width:640px;margin:0 auto;color:#1e293b}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th{background:#eff6ff;padding:8px;text-align:left;font-size:12px;color:#1d4ed8;border-bottom:2px solid #bfdbfe}
+td{padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}
+@media print{button{display:none}}</style></head><body>
+<div style="display:flex;justify-content:space-between;border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:20px">
+  <div style="display:flex;align-items:center;gap:10px"><img src="/logo.png" alt="La Barakat" style="width:56px;height:56px;border-radius:50%;object-fit:cover"><div><h1 style="margin:0;color:#14532d">LA BARAKAT</h1><p style="margin:4px 0;color:#666;font-size:12px">Pharmacie & Clinique Vétérinaire · Lomé, Togo</p></div></div>
+  <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#1d4ed8">BON DE COMMANDE</div><div style="color:#666;font-size:12px">${c.num} · ${c.date}</div></div>
+</div>
+<div style="margin-bottom:16px"><b>Fournisseur :</b> ${c.fournisseur}${c.echeance ? `<br><b>Échéance de paiement :</b> ${c.echeance}` : ''}</div>
+<table><thead><tr><th>Produit</th><th>Qté</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>
+${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${fmtF(l.pu)}</td><td>${fmtF((parseFloat(l.qte)||0)*(parseFloat(l.pu)||0))}</td></tr>`).join('')}
+</tbody></table>
+<div style="display:flex;justify-content:flex-end"><div style="min-width:220px;display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #1d4ed8;font-weight:900;font-size:16px;color:#1d4ed8"><span>TOTAL</span><span>${fmtF(c.total || 0)}</span></div></div>
+<div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+  <div style="text-align:center"><div style="border-bottom:1px solid #334155;height:40px;margin-bottom:4px"></div><div style="font-size:12px;color:#666">Signature La Barakat</div></div>
+  <div style="text-align:center"><div style="border-bottom:1px solid #334155;height:40px;margin-bottom:4px"></div><div style="font-size:12px;color:#666">Signature fournisseur</div></div>
+</div>
+<br><button onclick="window.print()" style="width:100%;padding:10px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Imprimer le bon de commande</button>
+</body></html>`)
+    w.document.close()
+  }
+
+  // ── Envoi WhatsApp au fournisseur ──
+  const waNumber = (tel) => {
+    const digits = String(tel || '').replace(/[^\d]/g, '')
+    if (!digits) return null
+    return digits.length === 8 ? `228${digits}` : digits
+  }
+  const telFournisseur = (nom) => (fournisseurs || []).find(f => f.nom === nom)?.tel || ''
+  const envoyerWA = (c) => {
+    const num = waNumber(telFournisseur(c.fournisseur))
+    const lignesTxt = (c.lignes || []).map(l => `• ${nomLigne(l)} × ${l.qte}`).join('\n')
+    const msg = encodeURIComponent(`Bonjour,\n\nCommande ${c.num} — La Barakat (Pharmacie & Clinique Vétérinaire, Lomé) :\n\n${lignesTxt}\n\nTotal estimé : ${fmtF(c.total || 0)}\nDate souhaitée de livraison : dès que possible.\n\nMerci de confirmer la disponibilité et le délai. 🙏`)
+    window.open(num ? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank')
   }
 
   const now2 = new Date()
@@ -319,6 +362,10 @@ function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], set
                         <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'Annulé') }} color="red" sm>✕</Btn>
                       </div>
                     )}
+                    <button onClick={e => { e.stopPropagation(); imprimerBon(c) }} title="Imprimer le bon de commande"
+                      className="text-xs text-slate-500 hover:text-slate-700 mt-1 no-print mr-2"><Printer size={13} strokeWidth={2.4} /></button>
+                    <button onClick={e => { e.stopPropagation(); envoyerWA(c) }} title="Envoyer au fournisseur par WhatsApp"
+                      className="text-xs text-green-500 hover:text-green-700 mt-1 no-print mr-2"><MessageCircle size={13} strokeWidth={2.4} /></button>
                     <button onClick={e => { e.stopPropagation(); deleteCommande(c.id) }}
                       className="text-xs text-red-400 hover:text-red-600 mt-1 no-print"><Trash2 size={13} strokeWidth={2.4} /></button>
                   </div>
