@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory } from 'lucide-react'
+import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown } from 'lucide-react'
+import { joursAvantRupture } from '../lib/ventes'
 
 function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], rdvs, user, clinique }) {
   const fmtF  = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
@@ -41,6 +42,15 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
 
   // ── Stock ────────────────────────────────────────────────────
   const alertesStock      = meds.filter(m => (m.seuil||0) > 0 && m.stock <= m.seuil)
+
+  // ── Prévision de rupture : produits encore au-dessus du seuil mais
+  //    qui seront épuisés sous 7 jours au rythme de vente actuel ──
+  const rupturesProchaines = useMemo(() => meds
+    .filter(m => (m.stock||0) > 0 && !((m.seuil||0) > 0 && m.stock <= m.seuil))
+    .map(m => ({ m, j: joursAvantRupture(m, ventesHist || []) }))
+    .filter(x => x.j != null && x.j <= 7)
+    .sort((a, b) => a.j - b.j)
+    .slice(0, 4), [meds, ventesHist])
   const now               = Date.now()
   const peremProches      = meds.filter(m => {
     if (!m.peremption) return false
@@ -253,14 +263,14 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
       </div>
 
       {/* ══ ALERTES ══════════════════════════════════════════════ */}
-      {(alertesStock.length > 0 || peremProches.length > 0) && (
+      {(alertesStock.length > 0 || peremProches.length > 0 || rupturesProchaines.length > 0) && (
         <div className="dash-alert-panel">
           <div className="dash-alert-head">
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={{ width:28,height:28,borderRadius:'50%',background:'#ef4444',display:'inline-flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14,fontWeight:900 }}>!</span>
               <span style={{ fontWeight:800,fontSize:15,color:'#991b1b' }}>Alertes</span>
               <span style={{ fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,background:'#ef4444',color:'white' }}>
-                {alertesStock.length+peremProches.length} urgent{alertesStock.length+peremProches.length>1?'s':''}
+                {alertesStock.length+peremProches.length+rupturesProchaines.length} urgent{alertesStock.length+peremProches.length+rupturesProchaines.length>1?'s':''}
               </span>
             </div>
             <button type="button" className="dash-link" style={{ color:'#ef4444' }} onClick={() => setView('medicaments')}>Gérer le stock →</button>
@@ -293,6 +303,26 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               </div>
             )
           })}
+          {rupturesProchaines.map(({ m, j }) => (
+            <div key={`${m.id}-r`} className="dash-alert-row">
+              <span style={{ fontWeight:600,fontSize:13 }}>{m.nom}</span>
+              <span style={{ textAlign:'center',fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:'#ea580c' }}>{m.stock} en stock</span>
+              <div style={{ display:'flex',gap:6,justifyContent:'center',alignItems:'center',flexWrap:'wrap' }}>
+                <span title="Estimation basée sur vos ventes des 30 derniers jours"
+                  style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fff7ed',color:'#ea580c',border:'1px solid #fed7aa' }}>
+                  <TrendingDown size={11} strokeWidth={2.6} /> Rupture ~{j === 0 ? "aujourd'hui" : j + 'j'}
+                </span>
+                <button type="button" title={`Commander ${m.nom}${m.fournisseur?` chez ${m.fournisseur}`:''}`}
+                  onClick={() => {
+                    try { localStorage.setItem('lb_cmd_prefill', JSON.stringify({ produit:m.nom, qte:Math.max((m.seuil||0)*2, 10), pu:m.prixAchat ?? m.prix_achat ?? '', fournisseur:m.fournisseur||'' })) } catch(e) {}
+                    setView('commandes')
+                  }}
+                  style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#0d9488',color:'white',border:'none',cursor:'pointer' }}>
+                  Commander →
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

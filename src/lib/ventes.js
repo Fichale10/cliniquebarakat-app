@@ -93,7 +93,23 @@ export const venteEncaisse = (v, tva) =>
 // ── Stock ────────────────────────────────────────────────────
 /** Unités réelles décrémentées par une ligne (qte × conditionnement) */
 export const ligneUnites = l => (parseInt(l?.qte) || 0) * (parseInt(l?.mult) || 1)
-
+/** Jours estimés avant rupture du stock pharmacie,
+ *  basé sur la moyenne des sorties des `fenetre` derniers jours
+ *  (ventes payées détail/gros/cessions — les ventes cliniques sortent du stock clinique).
+ *  Retourne null si aucune vente récente (pas de tendance), 0 si déjà en rupture. */
+export const joursAvantRupture = (med, ventes = [], fenetre = 30) => {
+  const stock = parseFloat(med?.stock) || 0
+  if (stock <= 0) return 0
+  const depuis = new Date(Date.now() - fenetre * 86400000).toISOString().split('T')[0]
+  let unites = 0
+  for (const v of ventes) {
+    if (v?.statut !== 'Payé' || v?.type === 'clinique') continue
+    if (!v.date || v.date < depuis) continue
+    for (const l of (v.lignes || [])) if (l.med === med.nom) unites += ligneUnites(l)
+  }
+  if (unites <= 0) return null
+  return Math.floor(stock / (unites / fenetre))
+}
 // ── Marges ─────────────────────────────────────────────────
 /** Coût d'achat d'une ligne : pa figé à la vente, sinon prix d'achat actuel (estimé) */
 export const ligneCoutAchat = (l, meds = []) => {
