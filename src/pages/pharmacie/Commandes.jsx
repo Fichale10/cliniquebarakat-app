@@ -165,19 +165,35 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                   <div key={i} className="text-xs font-bold text-slate-400 px-1">{h}</div>
                 ))}
               </div>
-              <datalist id="cmd-produits">
-                {(meds || []).map(m => <option key={m.id} value={m.nom}>{m.unite}</option>)}
-              </datalist>
-              {form.lignes.map((l, i) => (
+              {form.lignes.map((l, i) => {
+                const q = String(l.produit || '').toLowerCase()
+                const suggestions = (meds || []).filter(m => m.nom.toLowerCase().includes(q))
+                return (
                 <div key={i} className="grid gap-2 mb-1.5 items-center" style={{ gridTemplateColumns: '2fr 1fr 1fr 28px' }}>
-                  <input list="cmd-produits" value={l.produit} placeholder="Produit (catalogue ou nouveau)…"
-                    onChange={e => {
-                      const med = meds.find(m => m.nom === e.target.value)
-                      updLigne(i, { produit: e.target.value, ...(med ? { pu: med.prixAchat ?? med.prix_achat ?? '' } : {}) })
-                    }}
-                    style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%' }}
-                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
-                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
+                  <div style={{ position: 'relative' }}>
+                    <input value={l.produit} placeholder="Choisir ou saisir un produit…"
+                      onChange={e => {
+                        const med = meds.find(m => m.nom === e.target.value)
+                        updLigne(i, { produit: e.target.value, showSugg: true, ...(med ? { pu: med.prixAchat ?? med.prix_achat ?? '' } : {}) })
+                      }}
+                      onFocus={() => updLigne(i, { showSugg: true })}
+                      onBlur={() => setTimeout(() => updLigne(i, { showSugg: false }), 160)}
+                      style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%' }} />
+                    {l.showSugg && suggestions.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: 'white', border: '1.5px solid #e2e8f0', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 220, overflowY: 'auto' }}>
+                        {suggestions.slice(0, 20).map(m => (
+                          <button key={m.id || m.nom} type="button"
+                            onMouseDown={() => updLigne(i, { produit: m.nom, pu: m.prixAchat ?? m.prix_achat ?? '', showSugg: false })}
+                            style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '8px 12px', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                            <span style={{ fontWeight: 600 }}>{m.nom}</span>
+                            <span style={{ color: '#64748b', fontSize: 11 }}>{m.unite} · stk:{m.stock}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input type="number" placeholder="0" value={l.qte} onChange={e => updLigne(i, { qte: e.target.value })}
                     style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%', textAlign: 'center' }}
                     onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
@@ -191,8 +207,9 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                         className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-50 rounded-lg text-xs transition-all">✕</button>
                     : <div />}
                 </div>
-              ))}
-              <p style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>💡 Tapez librement le nom d'un <b>nouveau produit</b> s'il n'est pas encore au catalogue — pensez à créer sa fiche dans Médicaments à la réception pour gérer son stock.</p>
+                )
+              })}
+              <p style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>💡 Cliquez pour choisir dans le catalogue, ou tapez librement le nom d'un <b>nouveau produit</b> — pensez à créer sa fiche dans Médicaments à la réception pour gérer son stock.</p>
             </FormSection>
 
             <div className="flex items-center justify-between mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
