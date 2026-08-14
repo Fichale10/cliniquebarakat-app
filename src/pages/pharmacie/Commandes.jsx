@@ -165,25 +165,19 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                   <div key={i} className="text-xs font-bold text-slate-400 px-1">{h}</div>
                 ))}
               </div>
+              <datalist id="cmd-produits">
+                {(meds || []).map(m => <option key={m.id} value={m.nom}>{m.unite}</option>)}
+              </datalist>
               {form.lignes.map((l, i) => (
                 <div key={i} className="grid gap-2 mb-1.5 items-center" style={{ gridTemplateColumns: '2fr 1fr 1fr 28px' }}>
-                  <select style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', cursor: 'pointer', color: 'var(--app-text)', width: '100%' }}
-                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
-                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }}
-                    value={l.produit} onChange={e => {
+                  <input list="cmd-produits" value={l.produit} placeholder="Produit (catalogue ou nouveau)…"
+                    onChange={e => {
                       const med = meds.find(m => m.nom === e.target.value)
-                      updLigne(i, { produit: e.target.value, pu: med ? med.prixAchat || '' : l.pu })
-                    }}>
-                    <option value="">— Choisir —</option>
-                    {(meds || []).map(m => <option key={m.id} value={m.nom}>{m.nom} ({m.unite})</option>)}
-                    <option value="__autre__">Autre produit…</option>
-                  </select>
-                  {l.produit === '__autre__' && (
-                    <input placeholder="Nom du produit" value={l.nomLibre || ''} onChange={e => updLigne(i, { nomLibre: e.target.value })}
-                      style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%' }}
-                      onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
-                      onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
-                  )}
+                      updLigne(i, { produit: e.target.value, ...(med ? { pu: med.prixAchat ?? med.prix_achat ?? '' } : {}) })
+                    }}
+                    style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%' }}
+                    onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
+                    onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.boxShadow='none' }} />
                   <input type="number" placeholder="0" value={l.qte} onChange={e => updLigne(i, { qte: e.target.value })}
                     style={{ border: '1.5px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', fontSize: '13.5px', outline: 'none', background: 'var(--app-surface)', fontFamily: "'Outfit',sans-serif", transition: 'border-color .18s, box-shadow .18s', color: 'var(--app-text)', width: '100%', textAlign: 'center' }}
                     onFocus={e => { e.target.style.borderColor='#0d9488'; e.target.style.boxShadow='0 0 0 3.5px rgba(13,148,136,0.14)' }}
@@ -198,6 +192,7 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
                     : <div />}
                 </div>
               ))}
+              <p style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>💡 Tapez librement le nom d'un <b>nouveau produit</b> s'il n'est pas encore au catalogue — pensez à créer sa fiche dans Médicaments à la réception pour gérer son stock.</p>
             </FormSection>
 
             <div className="flex items-center justify-between mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
