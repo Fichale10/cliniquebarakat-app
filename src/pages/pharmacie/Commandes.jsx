@@ -10,7 +10,7 @@ const SC = { Reçu: 'green', 'En transit': 'blue', 'En attente': 'yellow', Annul
 
 const EMPTY_FORM = { date: today(), fournisseur: '', echeance: '', lignes: [{ produit: '', qte: '', pu: '' }] }
 
-function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHist, sb }) {
+function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], setAchatsHist, sb }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm]         = useState(EMPTY_FORM)
   const [saving, setSaving]     = useState(false)
@@ -66,11 +66,52 @@ function Commandes({ meds = [], fournisseurs = [], achatsHist = [], setAchatsHis
   }
 
   const changeStatut = async (id, statut) => {
+    const cmd = (achatsHist || []).find(c => c.id === id)
     const updates = { statut }
     if (statut === 'Reçu') updates.date_reception = today()
     try {
       await dbUpdate(sb, 'commandes', id, updates)
       setAchatsHist((achatsHist || []).map(c => c.id === id ? { ...c, ...updates } : c))
+
+      // ── Réception : entrée en stock + création des nouveaux produits ──
+      if (statut === 'Reçu' && cmd && cmd.statut !== 'Reçu' && setMeds) {
+        let updatedMeds = [...meds]
+        const nouveaux = []
+        for (const l of (cmd.lignes || [])) {
+          const nom = String((l.produit === '__autre__' ? l.nomLibre : l.produit) || '').trim()
+          const qte = parseFloat(l.qte) || 0
+          const pu  = parseFloat(l.pu) || 0
+          if (!nom || qte <= 0) continue
+          const m = updatedMeds.find(x => String(x.nom || '').toLowerCase() === nom.toLowerCase())
+          if (m) {
+            const patch = { stock: (m.stock || 0) + qte, ...(pu > 0 ? { prix_achat: pu } : {}) }
+            try {
+              await dbUpdate(sb, 'medicaments', m.id, patch)
+              updatedMeds = updatedMeds.map(x => x.id === m.id ? { ...x, ...patch, ...(pu > 0 ? { prixAchat: pu } : {}) } : x)
+            } catch (e) { console.warn('[reception stock]', e?.message || e) }
+          } else {
+            nouveaux.push({ nom, qte, pu })
+          }
+        }
+        for (const n of nouveaux) {
+          if (!confirm(`« ${n.nom} » n'existe pas au catalogue.\n\nCréer sa fiche dans Médicaments ?\n• Stock initial : ${n.qte}\n• Prix d'achat : ${fmtF(n.pu)}\n(complétez ensuite prix de vente, catégorie, péremption…)`)) continue
+          const row = {
+            id: newId(), ref: `VET-${Date.now()}`, nom: n.nom, categorie: 'Autre', unite: 'flacons',
+            stock: n.qte, seuil: 0, prix_achat: n.pu, prix_vente: 0,
+            fournisseur: cmd.fournisseur || '', dose_mg_kg: null, lot: '', peremption: null,
+            tarifs: [], prix_gros: 0, paliers_gros: [],
+          }
+          try {
+            const saved = await dbInsert(sb, 'medicaments', row)
+            updatedMeds = [...updatedMeds, { ...saved, prixAchat: n.pu, prixVente: 0, prixGros: 0, paliersGros: [] }]
+          } catch (e) {
+            alert(`Création de « ${n.nom} » impossible : ${e?.message || e}\nCréez sa fiche manuellement dans Médicaments.`)
+          }
+        }
+        setMeds(updatedMeds)
+        try { localStorage.setItem('lb_medicaments', JSON.stringify(updatedMeds)) } catch (e) {}
+        if (nouveaux.length) alert('Réception enregistrée ✓ Pensez à compléter les nouvelles fiches (prix de vente, catégorie, unité, péremption) dans Médicaments.')
+      }
     } catch (e) {
       alert('Erreur : ' + (e?.message || e))
     }
