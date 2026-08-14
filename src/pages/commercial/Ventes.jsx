@@ -3,7 +3,8 @@ import { Btn, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, Filt
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
-import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2 } from 'lucide-react'
+import { exportCSV } from '../../lib/utils'
+import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2, Download } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -252,7 +253,21 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
               )}
             </p>
           </div>
-          <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle vente'}</Btn>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <button onClick={() => {
+                const rows = filtered.map(v => [
+                  v.date, v.client||'Comptoir', v.type==='gros'?'Gros':v.type==='cession'?'Interne clinique':v.type==='clinique'?'Clinique':'Détail',
+                  v.statut, v.mode||'', (v.lignes||[]).map(l=>`${l.med} x${l.qte}`).join(' | '),
+                  v.total||0, v.tva_amt||0, (v.total||0)+(v.tva_amt||0), v.montant_paye||0, v.caissier||'',
+                ])
+                exportCSV(`ventes_labarakat_${today()}`, ['Date','Client','Type','Statut','Mode','Produits','Total HT (F)','TVA (F)','Total TTC (F)','Payé (F)','Caissier'], rows)
+              }}
+              className="no-print"
+              style={{ display:'inline-flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:11,fontSize:12,fontWeight:700,cursor:'pointer',background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488' }}>
+              <Download size={13} strokeWidth={2.4} /> Exporter CSV
+            </button>
+            <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle vente'}</Btn>
+          </div>
         </div>
 
         {/* Formulaire */}

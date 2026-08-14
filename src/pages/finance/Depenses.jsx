@@ -1,7 +1,7 @@
-import { Wallet, Trash2 } from 'lucide-react'
+import { Wallet, Trash2, Download } from 'lucide-react'
 import { useState } from 'react'
 import { Btn, Field, PrintBtn, FilterPeriode, FilterBar, FilterSelect } from "../../components/ui"
-import { fmtF, newId } from "../../lib/utils"
+import { fmtF, newId, exportCSV } from "../../lib/utils"
 import { dbInsert, dbDelete } from "../../lib/db"
 
 const CATS = ['Achats stock','Salaires','Électricité','Eau','Loyer','WiFi / Internet','Entretien','Transport','Frais vétérinaires','Autres']
@@ -95,7 +95,15 @@ function Depenses({ otrMode, depsHist = [], setDepsHist, sb }) {
               <p className="text-xs text-slate-400 mt-0.5">{depsHist.length} dépense(s)</p>
             </div>
             <div className="flex gap-2 no-print">
-              <PrintBtn zoneId="depenses-print" label="🖨 Imprimer"/>
+              <button onClick={() => {
+                  const rows = depsFiltered.map(d => [d.date, d.categorie||'', d.description||'', d.mode||'', d.montant||0])
+                  exportCSV(`depenses_labarakat_${today()}`, ['Date','Catégorie','Description','Mode','Montant (F)'], rows)
+                }}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-bold"
+                style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#16a34a', cursor:'pointer' }}>
+                <Download size={13} strokeWidth={2.4} /> Exporter CSV
+              </button>
+              <PrintBtn zoneId="depenses-print" label="Imprimer"/>
               <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle dépense'}</Btn>
             </div>
           </div>

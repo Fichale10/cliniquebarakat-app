@@ -14,6 +14,24 @@ export const newId  = () => {
   catch { return 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
 };
 
+// ── Export CSV (compatible Excel français : BOM UTF-8 + point-virgule) ──
+export function exportCSV(filename, headers, rows) {
+  const esc = (v) => {
+    const s = String(v ?? '');
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [headers.map(esc).join(';'), ...rows.map(r => r.map(esc).join(';'))];
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename.endsWith('.csv') ? filename : filename + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── Print ────────────────────────────────────────────────────
 export function printZone(id) {
   const el = document.getElementById(id);

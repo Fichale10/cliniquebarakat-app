@@ -2,10 +2,19 @@ import { useState } from 'react'
 import { Badge, EmptyState } from '../../components/ui'
 import { dbUpdate } from '../../lib/db'
 import { fmtF, venteTTC, venteRestant, ligneUnites } from '../../lib/ventes'
-import { Coins } from 'lucide-react'
+import { exportCSV, today } from '../../lib/utils'
+import { Coins, Download, MessageCircle } from 'lucide-react'
 
-function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, setConsultations, meds = [], setMeds }) {
+function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, setConsultations, meds = [], setMeds, clients = [] }) {
   const mask  = v => otrMode ? '••••• F' : fmtF(v)
+
+  // ── Relance WhatsApp ──
+  const waNumber = (tel) => {
+    const digits = String(tel||'').replace(/[^\d]/g,'')
+    if (!digits) return null
+    return digits.length === 8 ? `228${digits}` : digits
+  }
+  const telClient = (nom) => clients.find(x => x.nom === nom)?.tel || ''
 
   const creances   = (ventesHist || []).filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut))
   const restant    = v => venteRestant(v, tva)
@@ -107,9 +116,19 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
       </div>
 
       <div className="app-card">
-        <div className="p-5 border-b">
-          <h2 className="text-xl font-bold flex items-center gap-2"><Coins size={20} color="#ea580c" strokeWidth={2.3} /> Suivi des créances</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Clients qui n'ont pas encore payé — groupés par client</p>
+        <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2"><Coins size={20} color="#ea580c" strokeWidth={2.3} /> Suivi des créances</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Clients qui n'ont pas encore payé — groupés par client</p>
+          </div>
+          <button onClick={() => {
+              const rows = creances.map(v => [v.date, v.client||'', v.statut, (v.lignes||[]).map(l=>`${l.med} x${l.qte}`).join(' | '), venteTTC(v,tva), v.montant_paye||0, restant(v)])
+              exportCSV(`creances_labarakat_${today()}`, ['Date','Client','Statut','Produits','Total TTC (F)','Payé (F)','Restant dû (F)'], rows)
+            }}
+            className="no-print inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-bold"
+            style={{ background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c', cursor:'pointer' }}>
+            <Download size={13} strokeWidth={2.4} /> Exporter CSV
+          </button>
         </div>
 
         {!listeClients.length && <EmptyState icon="✅" title="Aucune créance en attente" subtitle="Tous vos clients sont à jour — félicitations !" />}
@@ -130,7 +149,17 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
                   </div>
                   <div className="text-right">
                     <div className="text-xl font-black text-orange-600 font-mono">{mask(c.total)}</div>
-                    <div className="text-xs text-slate-400">{expanded === c.client ? '▲ Masquer' : '▼ Voir détail'}</div>
+                    <div className="flex items-center gap-2 justify-end mt-1">
+                      {waNumber(telClient(c.client)) && (
+                        <a href={`https://wa.me/${waNumber(telClient(c.client))}?text=${encodeURIComponent(`Bonjour ${c.client}, votre solde impayé chez La Barakat (Pharmacie & Clinique Vétérinaire) s'élève à ${fmtF(c.total)}. Merci de passer régulariser à votre convenance. 🙏`)}`}
+                          target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-bold"
+                          style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#16a34a' }}>
+                          <MessageCircle size={12} strokeWidth={2.4} /> Relancer
+                        </a>
+                      )}
+                      <span className="text-xs text-slate-400">{expanded === c.client ? '▲ Masquer' : '▼ Voir détail'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
