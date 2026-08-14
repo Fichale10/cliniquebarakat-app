@@ -874,11 +874,8 @@ body.dark-mode .four-card--slate .four-card__tag { background: #2a2d3a; color: #
     html, body { height: 100%; margin: 0; padding: 0; }
     body.login-bg {
       min-height: 100vh;
-      background-image: url('/login-bg.jpg');
-      background-size: cover;
-      background-position: center center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
+      /* !important requis : la règle thème « body { background: var(--app-bg) !important } » écrase sinon l'image */
+      background: #050f0a url('/login-bg.jpg') center center / cover no-repeat fixed !important;
     }
     body.login-bg::before {
       content: '';
