@@ -881,7 +881,7 @@ body.dark-mode .four-card--slate .four-card__tag { background: #2a2d3a; color: #
       content: '';
       position: fixed;
       inset: 0;
-      background: linear-gradient(160deg,rgba(3,12,7,0.45) 0%,rgba(5,15,32,0.50) 55%,rgba(3,12,7,0.45) 100%);
+      background: linear-gradient(160deg,rgba(3,12,7,0.30) 0%,rgba(5,15,32,0.36) 55%,rgba(3,12,7,0.30) 100%);
       z-index: 0;
       pointer-events: none;
     }  

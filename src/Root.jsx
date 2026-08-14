@@ -20,12 +20,14 @@ import App from './App'
 
 // ── Composant Login ───────────────────────────────────────────
 function Login({ loading, onLogin, onRegister, onForgot }) {
-  const [email, setEmail]   = useState('')
+  const [email, setEmail]   = useState(() => localStorage.getItem('lb_last_email') || '')
   const [pw, setPw]         = useState('')
   const [showPw, setShowPw] = useState(false)
   const [err, setErr]       = useState('')
   const [checking, setChecking] = useState(false)
   const [now, setNow]       = useState(new Date())
+  const emailRef = useRef(null)
+  const pwRef    = useRef(null)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -35,12 +37,18 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
     document.body.classList.add('login-bg')
     return () => document.body.classList.remove('login-bg')
   }, [])
+  // Autofocus : mot de passe si l'email est déjà mémorisé, sinon email
+  useEffect(() => {
+    const t = setTimeout(() => (email ? pwRef : emailRef).current?.focus(), 150)
+    return () => clearTimeout(t)
+  }, [])
 
   const doLogin = async () => {
     if (!email || !pw) { setErr('Veuillez remplir tous les champs.'); return }
     setChecking(true); setErr('')
     const result = await onLogin(email.trim(), pw)
     if (!result.ok) setErr(result.msg || 'Email ou mot de passe incorrect.')
+    else { try { localStorage.setItem('lb_last_email', email.trim()) } catch (e) {} }
     setChecking(false)
   }
   const handleKey = e => { if (e.key === 'Enter') doLogin() }
@@ -104,7 +112,7 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
               <label style={{ display:'block', fontSize:'10px', fontWeight:800, color:'rgba(255,255,255,0.42)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:'6px' }}>Adresse email</label>
               <div style={{ position:'relative' }}>
                 <Mail size={15} style={{ position:'absolute', left:'13px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:'rgba(134,239,172,0.55)' }} />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey}
+                <input ref={emailRef} type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey}
                   className="login-dark-input" placeholder="votre@email.com" onFocus={fi} onBlur={bi} />
               </div>
             </div>
@@ -113,7 +121,7 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
               <label style={{ display:'block', fontSize:'10px', fontWeight:800, color:'rgba(255,255,255,0.42)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:'6px' }}>Mot de passe</label>
               <div style={{ position:'relative' }}>
                 <KeyRound size={15} style={{ position:'absolute', left:'13px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:'rgba(134,239,172,0.55)' }} />
-                <input type={showPw ? 'text' : 'password'} value={pw} onChange={e => setPw(e.target.value)} onKeyDown={handleKey}
+                <input ref={pwRef} type={showPw ? 'text' : 'password'} value={pw} onChange={e => setPw(e.target.value)} onKeyDown={handleKey}
                   className="login-dark-input" style={{ paddingRight:'44px' }} placeholder="••••••••" onFocus={fi} onBlur={bi} />
                 <button type="button" onClick={() => setShowPw(p => !p)} title={showPw ? 'Masquer' : 'Afficher'}
                   style={{ position:'absolute', right:'13px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.45)', padding:0, display:'flex' }}>
