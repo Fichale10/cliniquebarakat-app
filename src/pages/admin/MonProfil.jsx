@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { sb } from '../../lib/supabase'
+import { ROLES } from '../../lib/roles'
 import { Btn, Field } from '../../components/ui'
 
 function MonProfil({ user }) {
+  const roleInfo = ROLES[user?.role] || ROLES.utilisateur
   const [pwActuel, setPwActuel] = useState('')
   const [pwNew, setPwNew] = useState('')
   const [pwConfirm, setPwConfirm] = useState('')
@@ -66,15 +68,15 @@ function MonProfil({ user }) {
           <div>
             <h2 className="text-xl font-black text-slate-900">{user?.name}</h2>
             <p className="text-slate-500 text-sm">{user?.email}</p>
-            <span className={`mt-1 inline-block text-xs font-bold px-2.5 py-1 rounded-full ${user?.role==='admin'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-700'}`}>
-              {user?.role==='admin'?'👑 Administrateur':'👤 Utilisateur'}
+            <span className="mt-1 inline-block text-xs font-bold px-2.5 py-1 rounded-full" style={{background:roleInfo.bg,color:roleInfo.color}}>
+              {roleInfo.icon} {roleInfo.label}
             </span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-slate-50 rounded-xl p-3 text-center">
             <p className="text-xs text-slate-400 font-bold uppercase mb-1">Rôle</p>
-            <p className="font-bold text-slate-700">{user?.role==='admin'?'Administrateur':'Utilisateur'}</p>
+            <p className="font-bold" style={{color:roleInfo.color}}>{roleInfo.label}</p>
           </div>
           <div className="bg-slate-50 rounded-xl p-3 text-center">
             <p className="text-xs text-slate-400 font-bold uppercase mb-1">Statut</p>
