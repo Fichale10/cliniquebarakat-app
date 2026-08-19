@@ -238,6 +238,7 @@ function Register({ onBack, onRegister }) {
                 <select value={role} onChange={e => setRole(e.target.value)} className="login-dark-input" style={{ paddingLeft:'14px', cursor:'pointer' }}>
                   <option value="veterinaire">🩺 Vétérinaire</option>
                   <option value="pharmacien">💊 Pharmacien</option>
+                  <option value="technicien">🔬 Technicien</option>
                   <option value="caissier">🛒 Caissier</option>
                 </select>
               </div>

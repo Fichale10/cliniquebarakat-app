@@ -32,7 +32,7 @@ export const ACCOUNT_ROLES_ADMIN = [
 ]
 
 /** Rôles proposés à l'inscription publique */
-export const ACCOUNT_ROLES_REGISTER = ['veterinaire', 'pharmacien', 'caissier']
+export const ACCOUNT_ROLES_REGISTER = ['veterinaire', 'pharmacien', 'technicien', 'caissier']
 
 export const PATIENT_ESPECES = ['Chien', 'Chat', 'Bovin', 'Caprin', 'Ovin', 'Volaille']
 
