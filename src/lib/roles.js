@@ -34,9 +34,10 @@ export const canAccess = (role, id) => {
   // Admin total
   if (role === 'admin') return true
 
-  // Admin secondaire (bloquer comptes)
+  // Admin secondaire : tout, y compris l'approbation des inscriptions
+  // (la création/suppression de comptes reste réservée à l'admin principal,
+  //  géré dans la page GestionComptes + endpoint /api/create-user)
   if (role === 'admin2') {
-    if (id === 'comptes') return false
     return true
   }
 

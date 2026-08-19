@@ -991,7 +991,7 @@ useEffect(() => {
               {view==='dashboard'&&<Dashboard {...sp}/>}
               {view==='monprofil'&&<MonProfil user={user}/>}
               {view==='parametres'&&(isAdmin?<Parametres equipe={equipe} setEquipe={setSyncedEquipe} clinique={clinique} setClinique={setClinique} tva={tva} saveTva={saveTva} saveClinique={saveClinique} saveEquipe={saveEquipe}/>:<Interdit/>)}
-              {view==='comptes'&&(user?.role==='admin'?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
+              {view==='comptes'&&((user?.role==='admin'||user?.role==='admin2')?<GestionComptes comptes={comptes} setComptes={setSyncedComptes} currentUser={user} reloadComptes={reloadComptes}/>:<Interdit/>)}
               {view==='patients'&&<Patients {...sp}/>}
               {view==='consultations'&&<Consultations {...sp}/>}
               {view==='dossiers'&&<Dossiers {...sp}/>}

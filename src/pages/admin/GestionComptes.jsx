@@ -13,6 +13,9 @@ import { createUserAccount, updateProfile, deleteProfile, mergeProfiles } from '
 
 function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
   const pending=comptes.filter(c=>c.pending&&!c.actif);
+  // Admin secondaire : approbation/rejet des inscriptions uniquement —
+  // création, changement de rôle, désactivation et suppression réservés à l'admin principal.
+  const isFullAdmin = currentUser?.role === 'admin'
 
   const syncComptesList = async (updated) => {
     setComptes(updated)
@@ -244,7 +247,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       <div className="p-5 border-b flex items-center justify-between">
         <div><h2 className="text-xl font-bold flex items-center gap-2"><ShieldCheck size={20} color="#0d9488" strokeWidth={2.3} /> Comptes utilisateurs</h2>
           <p className="text-xs text-slate-400 mt-0.5">{comptes.length} compte(s) · {comptes.filter(c=>c.actif).length} actif(s)</p></div>
-        {step===0&&<Btn onClick={()=>setStep(1)}>+ Nouvel utilisateur</Btn>}
+        {step===0&&isFullAdmin&&<Btn onClick={()=>setStep(1)}>+ Nouvel utilisateur</Btn>}
       </div>
 
       {/* ── Étape 1 ── */}
@@ -334,6 +337,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
                 </div>
               </div>
               <div className="flex flex-col gap-1.5 shrink-0">
+                {isFullAdmin&&<>
                 <button onClick={()=>{setEditId(editId===c.id&&editRole===null?null:c.id);setEditRole(c.role);setEditPw('');}}
                   className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-semibold transition-all text-left">
                   🎭 Changer rôle
@@ -347,6 +351,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
                   {c.actif?'⏸ Désactiver':'▶ Activer'}
                 </button>}
                 {!isMe&&<button onClick={()=>deleteCompte(c.id)} className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg font-semibold transition-all inline-flex items-center gap-1"><Trash2 size={12} strokeWidth={2.4} /> Supprimer</button>}
+                </>}
               </div>
             </div>
             {/* Changer rôle inline */}
@@ -395,7 +400,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}}>
         {[
           {icon:'👑', role:'Administrateur',   color:'#d97706', bg:'#fff7ed', items:['Tous les modules','Comptes utilisateurs','Finances & rapports','Paramètres clinique']},
-          {icon:'🛡️',role:'Admin secondaire',  color:'#7c3aed', bg:'#faf5ff', items:['Tout sauf gestion comptes','Finances & rapports','Fournisseurs','Paramètres']},
+          {icon:'🛡️',role:'Admin secondaire',  color:'#7c3aed', bg:'#faf5ff', items:['Tous les modules','Approbation des inscriptions','Finances & rapports','Paramètres']},
           {icon:'🩺', role:'Vétérinaire',       color:'#2563eb', bg:'#eff6ff', items:['Patients & dossiers','Consultations & RDV','Ordonnances','Chirurgies & hospitalisation']},
           {icon:'💊', role:'Pharmacien',        color:'#16a34a', bg:'#f0fdf4', items:['Médicaments & stock','Ventes & caisse','Commandes fournisseurs','Ordonnances']},
           {icon:'🔬', role:'Technicien',        color:'#0891b2', bg:'#ecfeff', items:['Patients (consultation)','Médicaments & inventaire','Lots & préparations','Tâches & agenda']},
