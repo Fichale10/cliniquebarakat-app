@@ -1,11 +1,15 @@
 import { useMemo } from 'react'
 import { fmtF } from "../../lib/utils"
+import { venteEncaisse } from "../../lib/ventes"
 import { Badge, PrintBtn } from "../../components/ui"
 
-function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
+function Finances({ clinique, otrMode, ventesHist = [], depsHist = [], tva }) {
   const mask = v => otrMode ? '••••• F' : fmtF(v)
   // Achats internes clinique exclus (pas de double comptage)
   const ventesReelles = ventesHist.filter(v => v.type !== 'cession')
+  // Encaissé réel : TTC si payé, versements partiels sinon, 0 si annulé
+  // (même définition que la section Recettes du Dashboard)
+  const encV = v => v.statut === 'Annulé' ? 0 : venteEncaisse(v, tva)
 
   const months = useMemo(() => {
     const result = []
@@ -23,8 +27,8 @@ function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
   const DATA = useMemo(() => months.map(({ key, label }) => ({
     m: label,
     r: ventesReelles
-      .filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(key))
-      .reduce((s, v) => s + (v.total || 0) + (v.tva_amt || 0), 0),
+      .filter(v => String(v.date || '').startsWith(key))
+      .reduce((s, v) => s + encV(v), 0),
     d: depsHist
       .filter(dep => String(dep.date || '').startsWith(key))
       .reduce((s, dep) => s + (dep.montant || 0), 0),
@@ -50,8 +54,8 @@ function Finances({ clinique, otrMode, ventesHist = [], depsHist = [] }) {
     .sort((a, b) => b.m - a.m),
   [depsHist, curMonthKey])
 
-  const curVentes = ventesReelles.filter(v => v.statut === 'Payé' && String(v.date || '').startsWith(curMonthKey))
-  const totalVentesCur = curVentes.reduce((s, v) => s + (v.total || 0) + (v.tva_amt || 0), 0)
+  const curVentes = ventesReelles.filter(v => String(v.date || '').startsWith(curMonthKey))
+  const totalVentesCur = curVentes.reduce((s, v) => s + encV(v), 0)
   const RP = [{ t: 'Ventes comptoir', m: totalVentesCur, p: 100 }]
 
   const hasData = DATA.some(m => m.r > 0 || m.d > 0)

@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { fmtF } from "../../lib/utils"
-import { venteMarge, ligneCA, ligneCoutAchat, isCession } from "../../lib/ventes"
+import { venteMarge, ligneCA, ligneCoutAchat, isCession, venteEncaisse } from "../../lib/ventes"
 import { BarChart3 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
-function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
+function Rapports({ventesHist,depsHist,otrMode,meds=[],tva}){
   const [periode,setPeriode]=useState('jour');
   const mask=v=>otrMode?'••••• F':fmtF(v);
 
@@ -28,18 +28,21 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   // Ventes internes (pharmacie → clinique) exclues du CA consolidé
   const ventesReelles=ventesP.filter(v=>!isCession(v));
   const ttcV=v=>(v.total||0)+(v.tva_amt||0);
+  // Encaissé réel : TTC si payé, versements partiels sinon, 0 si annulé
+  // (même définition que la section Recettes du Dashboard)
+  const encV=v=>v.statut==='Annulé'?0:venteEncaisse(v,tva);
 
-  const ca     =ventesReelles.filter(v=>v.statut==='Payé').reduce((s,v)=>s+ttcV(v),0);
+  const ca     =ventesReelles.reduce((s,v)=>s+encV(v),0);
   const credit =ventesReelles.filter(v=>v.statut!=='Payé'&&v.statut!=='Annulé').reduce((s,v)=>s+Math.max(0,ttcV(v)-(v.montant_paye||0)),0);
   const totalD =depsP.reduce((s,d)=>s+(d.montant||0),0);
   const benefice=ca-totalD;
-  const nbV=ventesReelles.length;
+  const nbV=ventesReelles.filter(v=>v.statut!=='Annulé').length;
   const panier=nbV>0?Math.round(ca/nbV):0;
 
   // ── Répartition Pharmacie / Clinique (2 caisses) ──
-  const caPharmacie =ventesP.filter(v=>v.statut==='Payé'&&(!v.type||v.type==='detail'||v.type==='gros')).reduce((s,v)=>s+ttcV(v),0);
-  const caCessions  =ventesP.filter(v=>v.statut==='Payé'&&isCession(v)).reduce((s,v)=>s+ttcV(v),0);
-  const caClinique  =ventesP.filter(v=>v.statut==='Payé'&&v.type==='clinique').reduce((s,v)=>s+ttcV(v),0);
+  const caPharmacie =ventesP.filter(v=>!v.type||v.type==='detail'||v.type==='gros').reduce((s,v)=>s+encV(v),0);
+  const caCessions  =ventesP.filter(v=>isCession(v)).reduce((s,v)=>s+encV(v),0);
+  const caClinique  =ventesP.filter(v=>v.type==='clinique').reduce((s,v)=>s+encV(v),0);
 
   // ── Marge brute (prix vente − prix d'achat, figé à la vente si dispo) ──
   const ventesPayees = ventesReelles.filter(v=>v.statut==='Payé');
@@ -51,10 +54,10 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   const JOURS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   const caParJourSem = useMemo(()=>{
     const acc=[0,0,0,0,0,0,0], cnt=[0,0,0,0,0,0,0];
-    ventesPayees.forEach(v=>{
-      if(!v.date)return;
+    ventesReelles.forEach(v=>{
+      if(!v.date||v.statut==='Annulé')return;
       const idx=(new Date(v.date+'T00:00:00').getDay()+6)%7; // 0=Lun
-      acc[idx]+=(v.total||0)+(v.tva_amt||0); cnt[idx]++;
+      acc[idx]+=encV(v); cnt[idx]++;
     });
     return JOURS.map((j,i)=>({jour:j,ca:acc[i],nb:cnt[i]}));
   },[ventesHist,periode]);
@@ -62,7 +65,7 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[]}){
   const meilleurJour=caParJourSem.reduce((b,j)=>j.ca>b.ca?j:b,caParJourSem[0]);
 
   // Série chronologique
-  const caByDate={};   ventesReelles.filter(v=>v.statut==='Payé').forEach(v=>{caByDate[v.date]=(caByDate[v.date]||0)+(v.total||0)+(v.tva_amt||0);});
+  const caByDate={};   ventesReelles.forEach(v=>{if(v.statut==='Annulé')return;caByDate[v.date]=(caByDate[v.date]||0)+encV(v);});
   const depByDate={};  depsP.forEach(d=>{depByDate[d.date]=(depByDate[d.date]||0)+(d.montant||0);});
 
   const allDates=[];

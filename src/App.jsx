@@ -971,7 +971,7 @@ useEffect(() => {
               {view==='commandes'&&<Commandes {...sp}/>}
               {view==='inventaire'&&<Inventaire {...sp}/>}
 
-              {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist}/>:<Interdit/>)}
+              {view==='finances'&&(isAdmin?<Finances clinique={clinique} otrMode={otrMode} ventesHist={ventesHist} depsHist={depsHist} tva={tva}/>:<Interdit/>)}
               {view==='depenses'&&(isAdmin?<Depenses otrMode={otrMode} depsHist={depsHist} setDepsHist={setSyncedDepsHist} sb={sb}/>:<Interdit/>)}
               {view==='historique'&&<Historique ventesHist={ventesHist} achatsHist={achatsHist} meds={meds}/>}
               {view==='journal'&&<JournalActivite user={user}/>}
@@ -979,7 +979,7 @@ useEffect(() => {
               {view==='caisse'&&<Caisse {...sp}/>}
               {view==='ia'&&<AssistantIA patients={patients} meds={meds} user={user} sb={sb}/>}
               {view==='notifications'&&<GestionNotifications meds={meds} user={user}/>}
-              {view==='rapports'&&(isAdmin?<Rapports ventesHist={ventesHist} depsHist={depsHist} otrMode={otrMode} meds={meds}/>:<Interdit/>)}
+              {view==='rapports'&&(isAdmin?<Rapports ventesHist={ventesHist} depsHist={depsHist} otrMode={otrMode} meds={meds} tva={tva}/>:<Interdit/>)}
               {view==='rapportspdf'&&(isAdmin?<RapportsPDF ventesHist={ventesHist} depsHist={depsHist} meds={meds} patients={patients} clinique={clinique} otrMode={otrMode}/>:<Interdit/>)}
               {view==='carteclients'&&<CarteClients clients={clients} patients={patients}/>}
               {view==='traitements'&&<SuiviTraitements patients={patients} meds={meds} setMeds={setSyncedMeds} user={user} sb={sb} tva={tva} ventesHist={ventesHist} setVentesHist={setSyncedVentesHist}/>}
