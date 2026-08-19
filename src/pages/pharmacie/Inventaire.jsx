@@ -1,5 +1,5 @@
 import { ClipboardList, Trash2, BarChart3, Archive, RefreshCw } from 'lucide-react'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Fragment } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
 
@@ -574,13 +574,42 @@ function TabMouvements({ sb }) {
 
   const filtered = (rows || []).filter(r => !q || String(r.med_nom||'').toLowerCase().includes(q.toLowerCase()) || String(r.par_email||'').toLowerCase().includes(q.toLowerCase()))
 
+  const num = (v) => parseFloat(v) || 0
+  const deltas = (r) => ({ dP: num(r.stock_apres) - num(r.stock_avant), dC: num(r.clinique_apres) - num(r.clinique_avant) })
+
+  /** Type déduit du sens des deltas : Transfert (pharmacie↔clinique), Sortie ou Entrée */
+  const typeMouvement = (r) => {
+    const { dP, dC } = deltas(r)
+    if (dP && dC && Math.sign(dP) !== Math.sign(dC)) return { label:'Transfert', bg:'#faf5ff', color:'#7c3aed', border:'#e9d5ff' }
+    if (dP + dC < 0) return { label:'Sortie',  bg:'#fef2f2', color:'#dc2626', border:'#fecaca' }
+    return             { label:'Entrée',  bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0' }
+  }
+
+  // ── Synthèse du jour ──
+  const todayIso = new Date().toISOString().split('T')[0]
+  const rowsJour = (rows || []).filter(r => String(r.created_at||'').startsWith(todayIso))
+  const nbSorties = rowsJour.filter(r => typeMouvement(r).label === 'Sortie').length
+  const nbEntrees = rowsJour.filter(r => typeMouvement(r).label === 'Entrée').length
+  const nbTransferts = rowsJour.filter(r => typeMouvement(r).label === 'Transfert').length
+
+  // ── Regroupement par jour ──
+  const hier = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const jourLabel = (iso) => iso === todayIso ? "Aujourd'hui" : iso === hier ? 'Hier' : new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })
+  const groupes = []
+  for (const r of filtered) {
+    const iso = String(r.created_at||'').slice(0, 10)
+    const g = groupes[groupes.length - 1]
+    if (g && g.iso === iso) g.rows.push(r)
+    else groupes.push({ iso, rows: [r] })
+  }
+
   const Delta = ({ avant, apres }) => {
     if (avant == null && apres == null) return <span style={{ color:'#94a3b8' }}>–</span>
-    const d = (parseFloat(apres)||0) - (parseFloat(avant)||0)
+    const d = num(apres) - num(avant)
     if (!d) return <span style={{ color:'#94a3b8' }}>–</span>
     return (
       <span style={{ fontWeight:800, fontFamily:"'Space Mono',monospace", fontSize:12, color: d>0 ? '#16a34a' : '#dc2626' }}>
-        {parseFloat(avant)||0} → {parseFloat(apres)||0} ({d>0?'+':''}{d})
+        {num(avant)} → {num(apres)} ({d>0?'+':''}{d})
       </span>
     )
   }
@@ -589,11 +618,20 @@ function TabMouvements({ sb }) {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
       <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg font-bold">🔁 Mouvements de stock</h2>
+          <h2 className="text-lg font-bold flex items-center gap-2"><RefreshCw size={17} color="#0d9488" strokeWidth={2.4} /> Mouvements de stock</h2>
           <p className="text-xs text-slate-400">Journal automatique côté serveur — ventes, réceptions, inventaires, annulations, corrections (300 derniers)</p>
         </div>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Produit ou utilisateur…"
-          style={{ fontSize:13, padding:'8px 12px', borderRadius:10, border:'1px solid #e2e8f0', minWidth:220 }} />
+        <div className="flex items-center gap-3 flex-wrap">
+          {rowsJour.length > 0 && (
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+              <span style={{ fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:99, background:'#fef2f2', color:'#dc2626', border:'1px solid #fecaca' }}>↓ {nbSorties} sortie(s)</span>
+              <span style={{ fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:99, background:'#f0fdf4', color:'#16a34a', border:'1px solid #bbf7d0' }}>↑ {nbEntrees} entrée(s)</span>
+              {nbTransferts > 0 && <span style={{ fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:99, background:'#faf5ff', color:'#7c3aed', border:'1px solid #e9d5ff' }}>⇄ {nbTransferts} transfert(s)</span>}
+            </div>
+          )}
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Produit ou utilisateur…"
+            style={{ fontSize:13, padding:'8px 12px', borderRadius:10, border:'1px solid #e2e8f0', minWidth:220 }} />
+        </div>
       </div>
       {rows === null && <p className="p-5 text-sm text-slate-400 italic">Chargement…</p>}
       {rows !== null && !filtered.length && (
@@ -604,24 +642,40 @@ function TabMouvements({ sb }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
-                <th className="px-4 py-2">Date</th>
+                <th className="px-4 py-2">Heure</th>
                 <th className="px-4 py-2">Produit</th>
+                <th className="px-4 py-2">Type</th>
                 <th className="px-4 py-2">Stock pharmacie</th>
                 <th className="px-4 py-2">Stock clinique</th>
                 <th className="px-4 py-2">Par</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(r => (
-                <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50">
-                  <td className="px-4 py-2 whitespace-nowrap text-xs text-slate-500">
-                    {new Date(r.created_at).toLocaleDateString('fr-FR')} {new Date(r.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
-                  </td>
-                  <td className="px-4 py-2 font-semibold">{r.med_nom || '–'}</td>
-                  <td className="px-4 py-2"><Delta avant={r.stock_avant} apres={r.stock_apres} /></td>
-                  <td className="px-4 py-2"><Delta avant={r.clinique_avant} apres={r.clinique_apres} /></td>
-                  <td className="px-4 py-2 text-xs text-slate-500">{r.par_email || '–'}</td>
-                </tr>
+              {groupes.map(g => (
+                <Fragment key={g.iso}>
+                  <tr>
+                    <td colSpan={6} style={{ padding:'8px 16px', background:'#f8fafc', fontSize:11, fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.06em', borderBottom:'1px solid #f1f5f9' }}>
+                      📅 {jourLabel(g.iso)} · {g.rows.length} mouvement(s)
+                    </td>
+                  </tr>
+                  {g.rows.map(r => {
+                    const t = typeMouvement(r)
+                    return (
+                      <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50">
+                        <td className="px-4 py-2 whitespace-nowrap text-xs text-slate-500" style={{ fontFamily:"'Space Mono',monospace" }}>
+                          {new Date(r.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
+                        </td>
+                        <td className="px-4 py-2 font-semibold">{r.med_nom || '–'}</td>
+                        <td className="px-4 py-2">
+                          <span style={{ fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:99, background:t.bg, color:t.color, border:`1px solid ${t.border}`, whiteSpace:'nowrap' }}>{t.label}</span>
+                        </td>
+                        <td className="px-4 py-2"><Delta avant={r.stock_avant} apres={r.stock_apres} /></td>
+                        <td className="px-4 py-2"><Delta avant={r.clinique_avant} apres={r.clinique_apres} /></td>
+                        <td className="px-4 py-2 text-xs text-slate-500" title={r.par_email || ''}>{(r.par_email || '–').split('@')[0]}</td>
+                      </tr>
+                    )
+                  })}
+                </Fragment>
               ))}
             </tbody>
           </table>
