@@ -67,11 +67,15 @@ function stripEmptyLignes(lignes) {
 function checkStock(lignes, meds) {
   const messages = []
   const fieldErrors = {}
+  const todayStr = new Date().toISOString().split('T')[0]
   lignes.forEach((l, i) => {
     const m = meds.find((x) => x.nom === l.med)
     if (!m) {
       messages.push(`Ligne ${i + 1} — Médicament inconnu : ${l.med}`)
       fieldErrors[`lignes.${i}.med`] = 'Médicament introuvable'
+    } else if (m.peremption && m.peremption < todayStr) {
+      messages.push(`Ligne ${i + 1} — ⚠️ ${l.med} est PÉRIMÉ depuis le ${new Date(m.peremption + 'T00:00:00').toLocaleDateString('fr-FR')} — vente bloquée`)
+      fieldErrors[`lignes.${i}.med`] = 'Produit périmé — vente interdite'
     } else if ((m.stock || 0) < l.qte) {
       messages.push(`Ligne ${i + 1} — Stock insuffisant pour ${l.med} (disponible : ${m.stock ?? 0})`)
       fieldErrors[`lignes.${i}.qte`] = `Stock max : ${m.stock ?? 0}`

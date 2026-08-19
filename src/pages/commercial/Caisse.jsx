@@ -470,12 +470,15 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     dbFetch(sb, 'clotures_caisse').then(rows => setClotures(rows || [])).catch(() => setClotures([]))
   }, [tab, sb])
 
-  /** Attendu du jour par mode de paiement (ventes payées, TTC) */
+  /** Attendu du jour par mode de paiement — encaissé réel des ventes du jour
+   *  (TTC si payée, versements partiels sinon — même convention que les Recettes) */
   const attenduParMode = () => {
     const map = {}
-    ventes.filter(v => v.date === today() && v.statut === 'Payé').forEach(v => {
+    ventes.filter(v => v.date === today() && v.statut !== 'Annulé').forEach(v => {
+      const enc = venteEncaisse(v, tva)
+      if (enc <= 0) return
       const mode = v.mode && v.mode !== '–' ? v.mode : 'Espèces'
-      map[mode] = (map[mode] || 0) + venteTTC(v, tva)
+      map[mode] = (map[mode] || 0) + enc
     })
     if (!('Espèces' in map)) map['Espèces'] = 0
     return map

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown } from 'lucide-react'
-import { joursAvantRupture, venteEncaisse } from '../lib/ventes'
+import { joursAvantRupture, venteEncaisse, venteMarge } from '../lib/ventes'
 
 function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], depsHist = [], rdvs, user, clinique, tva, otrMode }) {
   const fmtF  = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
@@ -71,9 +71,10 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
       .reduce((s,v) => s + venteEncaisse(v, tva), 0)
     const trend = prevEnc > 0 ? Math.round(((encaisse - prevEnc) / prevEnc) * 100) : null
     const deps  = (depsHist||[]).filter(x => x.date && x.date >= du && x.date <= au).reduce((s,x) => s + (x.montant||0), 0)
+    const marge = vs.filter(v => v.statut === 'Payé').reduce((s,v) => s + venteMarge(v, meds), 0)
     return { encaisse, facture, nb, panier: nb ? Math.round(facture/nb) : 0,
-             encClinique, encPharma: encaisse - encClinique, trend, deps, net: encaisse - deps }
-  }, [ventesHist, depsHist, recRange, tva])
+             encClinique, encPharma: encaisse - encClinique, trend, deps, net: encaisse - deps, marge }
+  }, [ventesHist, depsHist, recRange, tva, meds])
 
   // ── RDV ─────────────────────────────────────────────────────
   const rdvsAll           = rdvs || []
@@ -344,6 +345,14 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <p style={{ fontSize:11, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>CA facturé (HT)<span>→</span></p>
             <p style={{ fontSize:22, fontWeight:900, color:'#2563eb', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.facture)}</p>
             <p style={{ fontSize:10, color:'#1d4ed8', margin:'2px 0 0', opacity:.8 }}>{recStats.nb} vente(s) · panier moyen {otrMode ? '•••' : fmtK(recStats.panier)}</p>
+          </button>
+          <button type="button" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
+            style={{ padding:'12px 14px', borderRadius:12, background:'#fffbeb', border:'1px solid #fde68a', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(217,119,6,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#b45309', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>Marge brute<span>→</span></p>
+            <p style={{ fontSize:22, fontWeight:900, color:'#d97706', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.marge)}</p>
+            <p style={{ fontSize:10, color:'#b45309', margin:'2px 0 0', opacity:.8 }}>{otrMode || !recStats.facture ? 'ventes payées' : `${Math.round((recStats.marge / recStats.facture) * 100)}% du CA · ventes payées`}</p>
           </button>
           <button type="button" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
             style={{ padding:'12px 14px', borderRadius:12, background:'#faf5ff', border:'1px solid #e9d5ff', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
