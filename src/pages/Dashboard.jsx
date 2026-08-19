@@ -36,6 +36,11 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
   const [recPeriode, setRecPeriode] = useState('jour')
   const [recDu, setRecDu]           = useState(todayStr)
   const [recAu, setRecAu]           = useState(todayStr)
+  // Brouillon des dates personnalisées — appliquées au clic sur « Appliquer »
+  const [recDuTmp, setRecDuTmp]     = useState(todayStr)
+  const [recAuTmp, setRecAuTmp]     = useState(todayStr)
+  const recPersoModifie = recDuTmp !== recDu || recAuTmp !== recAu
+  const appliquerPerso  = () => { setRecDu(recDuTmp); setRecAu(recAuTmp) }
   const [showDeps, setShowDeps]     = useState(false)
 
   const recRange = useMemo(() => {
@@ -304,13 +309,22 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
         {recPeriode === 'perso' && (
           <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', marginBottom:12 }}>
             <label style={{ fontSize:12, fontWeight:600, color:'var(--app-muted, #64748b)', display:'flex', alignItems:'center', gap:6 }}>
-              Du <input type="date" value={recDu} max={todayStr} onChange={e => setRecDu(e.target.value)}
+              Du <input type="date" value={recDuTmp} max={todayStr} onChange={e => setRecDuTmp(e.target.value)}
                 style={{ fontSize:12, padding:'5px 8px', borderRadius:8, border:'1px solid var(--app-border, #e2e8f0)', background:'var(--app-surface, white)', color:'var(--app-text, #0f172a)' }} />
             </label>
             <label style={{ fontSize:12, fontWeight:600, color:'var(--app-muted, #64748b)', display:'flex', alignItems:'center', gap:6 }}>
-              Au <input type="date" value={recAu} max={todayStr} onChange={e => setRecAu(e.target.value)}
+              Au <input type="date" value={recAuTmp} max={todayStr} onChange={e => setRecAuTmp(e.target.value)}
                 style={{ fontSize:12, padding:'5px 8px', borderRadius:8, border:'1px solid var(--app-border, #e2e8f0)', background:'var(--app-surface, white)', color:'var(--app-text, #0f172a)' }} />
             </label>
+            <button type="button" onClick={appliquerPerso} disabled={!recPersoModifie}
+              style={{ fontSize:12, fontWeight:800, padding:'6px 16px', borderRadius:99, border:'none', transition:'all .15s',
+                cursor:recPersoModifie?'pointer':'default',
+                background:recPersoModifie?'#0d9488':'var(--app-border, #e2e8f0)',
+                color:recPersoModifie?'white':'var(--app-muted, #94a3b8)',
+                boxShadow:recPersoModifie?'0 2px 8px rgba(13,148,136,0.35)':'none' }}>
+              Appliquer →
+            </button>
+            {recPersoModifie && <span style={{ fontSize:11, color:'#d97706', fontWeight:600 }}>Période modifiée — cliquez sur Appliquer</span>}
           </div>
         )}
 
