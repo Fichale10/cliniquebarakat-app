@@ -5,11 +5,11 @@ import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
 import { applyVenteStock } from '../../lib/stock'
 import { exportCSV } from '../../lib/utils'
-import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2, Download } from 'lucide-react'
+import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2, Download, Banknote, Smartphone, Landmark, PenLine } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
-const MODE_ICON = { 'Espèces':'💵', 'Mobile Money':'📱', 'Virement':'🏦', 'Chèque':'🖊️' }
+const MODE_ICON = { 'Espèces':Banknote, 'Mobile Money':Smartphone, 'Virement':Landmark, 'Chèque':PenLine }
 
 function StatutPill({ statut }) {
   const s = STATUT_STYLE[statut] || { bg:'#f8fafc', border:'#e2e8f0', text:'#64748b' }
@@ -448,8 +448,8 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                   onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
 
                   {/* Icône gauche */}
-                  <div style={{ width:40,height:40,borderRadius:12,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,background:isGros?'#fff7ed':'#f0fdfa',border:`1px solid ${isGros?'#fed7aa':'#99f6e4'}` }}>
-                    {isGros?'📦':'🛒'}
+                  <div style={{ width:40,height:40,borderRadius:12,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:isGros?'#fff7ed':'#f0fdfa',border:`1px solid ${isGros?'#fed7aa':'#99f6e4'}` }}>
+                    {isGros?<Package size={18} color="#ea580c" strokeWidth={2.2} />:<ShoppingCart size={18} color="#0d9488" strokeWidth={2.2} />}
                   </div>
 
                   {/* Infos centrales */}
@@ -457,8 +457,8 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                     <div style={{ display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:6 }}>
                       <span style={{ fontWeight:800,fontSize:14,color:'#0f172a' }}>👤 {v.client}</span>
                       <StatutPill statut={v.statut} />
-                      <span style={{ fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:99,background:'#f1f5f9',color:'#64748b',border:'1px solid #e2e8f0' }}>
-                        {MODE_ICON[v.mode]||''} {v.mode}
+                      <span style={{ fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:99,background:'#f1f5f9',color:'#64748b',border:'1px solid #e2e8f0',display:'inline-flex',alignItems:'center',gap:4 }}>
+                        {MODE_ICON[v.mode] ? (() => { const MIc = MODE_ICON[v.mode]; return <MIc size={11} strokeWidth={2.4} /> })() : null} {v.mode}
                       </span>
                       {isGros && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fff7ed',border:'1px solid #fed7aa',color:'#ea580c' }}>📦 Gros</span>}
                       {v.type==='cession' && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#f5f3ff',border:'1px solid #ddd6fe',color:'#7c3aed' }}>🏥 Interne</span>}

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { fmtF } from "../../lib/utils"
 import { venteMarge, ligneCA, ligneCoutAchat, isCession, venteEncaisse } from "../../lib/ventes"
-import { BarChart3 } from 'lucide-react'
+import { BarChart3, Coins, TrendingUp, TrendingDown, Hourglass, Receipt, ShoppingCart } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -123,15 +123,15 @@ function Rapports({ventesHist,depsHist,otrMode,meds=[],tva}){
     {/* KPIs */}
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {[
-        {l:'CA Encaissé',v:mask(ca),c:'green',i:'💰',sub:nbV+' vente(s)'},
-        {l:'Marge brute',v:mask(margeBrute),c:'teal',i:'📈',sub:margePct+'% du CA'+(hasPaFige?'':' (estimée)')},
-        {l:'À crédit',v:mask(credit),c:'orange',i:'⏳',sub:'non payé'},
-        {l:'Dépenses',v:mask(totalD),c:'red',i:'💸',sub:depsP.length+' op.'},
-        {l:benefice>=0?'Bénéfice':'Déficit',v:mask(Math.abs(benefice)),c:benefice>=0?'blue':'red',i:benefice>=0?'📈':'📉',sub:benefice>=0?'Positif ✅':'Attention ⚠️'},
-        {l:'Panier moyen',v:mask(panier),c:'purple',i:'🛒',sub:'par vente'},
+        {l:'CA Encaissé',v:mask(ca),c:'green',i:Coins,ic:'#16a34a',sub:nbV+' vente(s)'},
+        {l:'Marge brute',v:mask(margeBrute),c:'teal',i:TrendingUp,ic:'#0d9488',sub:margePct+'% du CA'+(hasPaFige?'':' (estimée)')},
+        {l:'À crédit',v:mask(credit),c:'orange',i:Hourglass,ic:'#ea580c',sub:'non payé'},
+        {l:'Dépenses',v:mask(totalD),c:'red',i:Receipt,ic:'#dc2626',sub:depsP.length+' op.'},
+        {l:benefice>=0?'Bénéfice':'Déficit',v:mask(Math.abs(benefice)),c:benefice>=0?'blue':'red',i:benefice>=0?TrendingUp:TrendingDown,ic:benefice>=0?'#2563eb':'#dc2626',sub:benefice>=0?'Positif ✓':'Attention ⚠️'},
+        {l:'Panier moyen',v:mask(panier),c:'purple',i:ShoppingCart,ic:'#7c3aed',sub:'par vente'},
       ].map((s,i)=>(
         <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-1"><span className="text-xl">{s.i}</span><span className={"text-xs font-bold text-"+s.c+"-500 uppercase tracking-wide"}>{s.l}</span></div>
+          <div className="flex items-center gap-2 mb-1"><s.i size={17} strokeWidth={2.4} color={s.ic} /><span className={"text-xs font-bold text-"+s.c+"-500 uppercase tracking-wide"}>{s.l}</span></div>
           <div className={"text-xl font-black text-"+s.c+"-700 font-mono"}>{s.v}</div>
           <div className="text-xs text-slate-400 mt-0.5">{s.sub}</div>
         </div>

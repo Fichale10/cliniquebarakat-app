@@ -1,4 +1,4 @@
-import { ClipboardList, Trash2 } from 'lucide-react'
+import { ClipboardList, Trash2, BarChart3, Archive, RefreshCw } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
@@ -636,10 +636,10 @@ function Inventaire(props) {
   const [tab, setTab] = useState('etat')
 
   const TABS = [
-    { id: 'etat',        label: '📊 État du stock' },
-    { id: 'journalier',  label: '📋 Inventaire du jour' },
-    { id: 'historique',  label: '🗂️ Historique' },
-    { id: 'mouvements',  label: '🔁 Mouvements' },
+    { id: 'etat',        icon: BarChart3,     label: 'État du stock' },
+    { id: 'journalier',  icon: ClipboardList, label: 'Inventaire du jour' },
+    { id: 'historique',  icon: Archive,       label: 'Historique' },
+    { id: 'mouvements',  icon: RefreshCw,     label: 'Mouvements' },
   ]
 
   return (
@@ -650,12 +650,14 @@ function Inventaire(props) {
             style={{
               flex: 1, padding: '9px 12px', borderRadius: 10, fontSize: 13,
               fontWeight: tab === t.id ? 800 : 600,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               background: tab === t.id ? 'white' : 'transparent',
               color: tab === t.id ? '#0f766e' : '#64748b',
               border: `1.5px solid ${tab === t.id ? '#e2e8f0' : 'transparent'}`,
               cursor: 'pointer', transition: 'all .15s',
               boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
             }}>
+            <t.icon size={14} strokeWidth={2.4} />
             {t.label}
           </button>
         ))}

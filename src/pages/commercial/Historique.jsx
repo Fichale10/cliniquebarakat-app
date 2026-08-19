@@ -1,4 +1,4 @@
-import { History } from 'lucide-react'
+import { History, Banknote, Smartphone, CreditCard, Landmark, PenLine } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Badge, FilterPeriode, FilterSelect, FilterBar, EmptyState } from '../../components/ui'
@@ -27,7 +27,7 @@ const STATUT_ACHAT = {
   'Annulé':     { bg: '#fef2f2', border: '#fecaca', color: '#dc2626', dot: '#ef4444' },
 }
 
-const MODE_ICON = { Espèces: '💵', 'Mobile Money': '📱', Carte: '💳', Virement: '🏦', Chèque: '📝' }
+const MODE_ICON = { Espèces: Banknote, 'Mobile Money': Smartphone, Carte: CreditCard, Virement: Landmark, Chèque: PenLine }
 
 const PAGE_SIZE = 25
 
@@ -96,7 +96,9 @@ function VenteCard({ e, expanded, onToggle }) {
             </span>
             <StatutPill statut={e.statut} map={STATUT_VENTE} />
             {e.mode && (
-              <span style={{ fontSize: 11, color: '#94a3b8' }}>{MODE_ICON[e.mode] || '💳'} {e.mode}</span>
+              <span style={{ fontSize: 11, color: '#94a3b8', display:'inline-flex', alignItems:'center', gap:4 }}>
+                {(() => { const MIc = MODE_ICON[e.mode] || CreditCard; return <MIc size={11} strokeWidth={2.4} /> })()} {e.mode}
+              </span>
             )}
           </div>
           <div style={{ fontSize: 12, color: '#64748b' }}>

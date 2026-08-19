@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown } from 'lucide-react'
+import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine } from 'lucide-react'
 import { joursAvantRupture, venteEncaisse, venteMarge } from '../lib/ventes'
 import { exportCSV } from '../lib/utils'
 
@@ -212,7 +212,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
   const MED_COLORS     = ['#7c3aed','#2563eb','#0d9488','#d97706','#dc2626']
   const STATUT_COLOR   = { Payé:'#16a34a','À crédit':'#d97706','Partiellement payé':'#2563eb','En attente':'#64748b',Annulé:'#dc2626' }
   const STATUT_BG      = { Payé:'#f0fdf4','À crédit':'#fffbeb','Partiellement payé':'#eff6ff','En attente':'#f8fafc',Annulé:'#fef2f2' }
-  const MODE_ICON      = { Espèces:'💵','Mobile Money':'📱',Virement:'🏦',Chèque:'📝' }
+  const MODE_ICON      = { 'Espèces':Banknote, 'Mobile Money':Smartphone, Virement:Landmark, Chèque:PenLine }
   const speciesColors  = ['#2563eb','#16a34a','#d97706','#7c3aed','#dc2626']
 
   const KPIS = [
@@ -819,9 +819,10 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <div style={{ display:'flex',flexDirection:'column',gap:5 }}>
               {repartitionMode.map(([mode,montant]) => {
                 const pct = totalRepartition>0?Math.round((montant/totalRepartition)*100):0
+                const MIcon = MODE_ICON[mode] || Coins
                 return (
                   <div key={mode} style={{ display:'flex',alignItems:'center',gap:8 }}>
-                    <span style={{ fontSize:13,flexShrink:0 }}>{MODE_ICON[mode]||'💰'}</span>
+                    <MIcon size={14} strokeWidth={2.4} color="#0d9488" style={{ flexShrink:0 }} />
                     <div style={{ flex:1 }}>
                       <div style={{ display:'flex',justifyContent:'space-between',fontSize:11,fontWeight:600,color:'var(--app-text)',marginBottom:2 }}>
                         <span>{mode}</span><span style={{ color:'#0d9488' }}>{pct}%</span>
