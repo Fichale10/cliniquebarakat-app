@@ -22,7 +22,14 @@ const updateSW = registerSW({
     const btn = document.createElement('button')
     btn.textContent = 'Mettre à jour'
     btn.style.cssText = 'background:white;color:#0d9488;font-weight:800;border:none;border-radius:10px;padding:7px 14px;cursor:pointer;font-size:13px'
-    btn.onclick = () => updateSW(true)
+    btn.onclick = async () => {
+      btn.disabled = true
+      btn.textContent = '⏳ Mise à jour…'
+      // Si le service worker ne recharge pas la page lui-même (plusieurs
+      // onglets ouverts, SW bloqué en attente…), on force le rechargement.
+      const failsafe = setTimeout(() => window.location.reload(), 3000)
+      try { await updateSW(true) } catch (e) { clearTimeout(failsafe); window.location.reload() }
+    }
     const later = document.createElement('button')
     later.textContent = 'Plus tard'
     later.style.cssText = 'background:transparent;color:rgba(255,255,255,.8);font-weight:700;border:1px solid rgba(255,255,255,.4);border-radius:10px;padding:7px 12px;cursor:pointer;font-size:13px'
