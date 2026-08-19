@@ -549,17 +549,19 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
       {/* Onglets */}
       <div style={{ display:'flex', gap:'4px', background:'#f1f5f9', borderRadius:'16px', padding:'5px', alignSelf:'flex-start', width:'fit-content' }}>
         {[
-          { id:'caisse',     label:'💰 Caisse',            desc:'Saisie rapide' },
-          { id:'historique', label:'📋 Ventes & Historique', desc:'Gestion complète' },
-          { id:'cloture',    label:'🔒 Clôture',           desc:'Fin de journée' },
+          { id:'caisse',     icon:Coins,         label:'Caisse',              desc:'Saisie rapide' },
+          { id:'historique', icon:ClipboardList, label:'Ventes & Historique', desc:'Gestion complète' },
+          { id:'cloture',    icon:Lock,          label:'Clôture',             desc:'Fin de journée' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '8px 18px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 700,
             fontSize: '13px', transition: 'all .18s',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
             background: tab === t.id ? 'white' : 'transparent',
             color:      tab === t.id ? '#0d9488' : '#64748b',
             boxShadow:  tab === t.id ? '0 1px 8px rgba(0,0,0,0.08)' : 'none',
           }}>
+            <t.icon size={14} strokeWidth={2.4} />
             {t.label}
           </button>
         ))}
@@ -718,18 +720,18 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                       </select>
                       <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
                         <button type="button" onClick={() => adjQte(i,-1)}
-                          style={{ width:'26px', height:'34px', borderRadius:'7px', border:'1.5px solid #e2e8f0', background:'#f8fafc', fontWeight:900, fontSize:'16px', cursor:'pointer', lineHeight:1 }}>−</button>
+                          style={{ width:'38px', height:'38px', borderRadius:'9px', border:'1.5px solid #e2e8f0', background:'#f8fafc', fontWeight:900, fontSize:'19px', cursor:'pointer', lineHeight:1 }}>−</button>
                         <input type="number" min="1" value={l.qte}
                           onChange={e => setQte(i, e.target.value)}
-                          style={{ ...INPUT, width:'50px', textAlign:'center', border: ligneError(i,'qte') ? '1.5px solid #f87171' : '1.5px solid #e2e8f0', padding:'8px 4px' }} />
+                          style={{ ...INPUT, width:'54px', textAlign:'center', fontSize:'15px', fontWeight:700, border: ligneError(i,'qte') ? '1.5px solid #f87171' : '1.5px solid #e2e8f0', padding:'8px 4px' }} />
                         <button type="button" onClick={() => adjQte(i,1)}
-                          style={{ width:'26px', height:'34px', borderRadius:'7px', border:'1.5px solid #e2e8f0', background:'#f8fafc', fontWeight:900, fontSize:'16px', cursor:'pointer', lineHeight:1 }}>+</button>
+                          style={{ width:'38px', height:'38px', borderRadius:'9px', border:'1.5px solid #e2e8f0', background:'#f8fafc', fontWeight:900, fontSize:'19px', cursor:'pointer', lineHeight:1 }}>+</button>
                       </div>
                       <input type="number" value={l.pu}
                         onChange={e => updL(i, { pu: parseFloat(e.target.value) || 0 })}
                         style={{ ...INPUT, border: ligneError(i,'pu') ? '1.5px solid #f87171' : '1.5px solid #e2e8f0' }} />
                       <button type="button" onClick={() => removeLigne(i)}
-                        style={{ width:'28px', height:'28px', borderRadius:'7px', border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer', fontSize:'16px', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+                        style={{ width:'34px', height:'34px', borderRadius:'8px', border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer', fontSize:'17px', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
                     </div>
                     {rowErr && <p style={{ fontSize:'11px', color:'#dc2626', marginTop:'2px', fontWeight:600 }}>{rowErr}</p>}
                     {!rowErr && remiseL > 0 && (
@@ -756,7 +758,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
             {/* Résumé caisse */}
             <div className="app-card p-5" style={{ background:'linear-gradient(135deg,#0f2535,#166534)', color:'white' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'20px' }}>
-                <h3 style={{ fontWeight:800, fontSize:'16px', color:'white', margin:0 }}>💰 Résumé caisse</h3>
+                <h3 style={{ fontWeight:800, fontSize:'16px', color:'white', margin:0, display:'flex', alignItems:'center', gap:7 }}><Coins size={17} color="#4ade80" strokeWidth={2.4} /> Résumé caisse</h3>
                 <div style={{ textAlign:'right' }}>
                   <div style={{ fontSize:'18px', fontWeight:900, fontFamily:"'Space Mono',monospace", color:'#4ade80', lineHeight:1 }}>
                     {nowClock.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}
@@ -781,9 +783,9 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                   <span style={{ fontFamily:"'Space Mono',monospace" }}>{mask(tvaAmt)}</span>
                 </div>
               )}
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:'22px', fontWeight:900, marginBottom:'20px', borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:'12px' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'22px', fontWeight:900, marginBottom:'20px', borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:'12px' }}>
                 <span>TOTAL</span>
-                <span style={{ fontFamily:"'Space Mono',monospace", color:'#4ade80' }}>{mask(totalTTC)}</span>
+                <span style={{ fontFamily:"'Space Mono',monospace", color:'#4ade80', fontSize:'30px', lineHeight:1 }}>{mask(totalTTC)}</span>
               </div>
               {mode !== 'À crédit' && (
                 <div style={{ marginBottom:'12px' }}>
@@ -793,9 +795,9 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 </div>
               )}
               {montantDonne && mode !== 'À crédit' && (
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:'16px', fontWeight:800, marginBottom:'16px', padding:'10px 12px', background:'rgba(74,222,128,0.15)', borderRadius:'9px', border:'1px solid rgba(74,222,128,0.3)' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'16px', fontWeight:800, marginBottom:'16px', padding:'10px 12px', background:'rgba(74,222,128,0.15)', borderRadius:'9px', border:'1px solid rgba(74,222,128,0.3)' }}>
                   <span style={{ color:'rgba(255,255,255,0.8)' }}>Monnaie</span>
-                  <span style={{ color:'#4ade80', fontFamily:"'Space Mono',monospace" }}>{mask(monnaie)}</span>
+                  <span style={{ color:'#4ade80', fontFamily:"'Space Mono',monospace", fontSize:'22px', lineHeight:1 }}>{mask(monnaie)}</span>
                 </div>
               )}
               <button type="button" onClick={enregistrer} disabled={saving || !lignesOk.length}

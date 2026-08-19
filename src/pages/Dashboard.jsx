@@ -373,8 +373,8 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(124,58,237,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
             <p style={{ fontSize:11, fontWeight:700, color:'#7c3aed', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>Répartition<span>→</span></p>
-            <p style={{ fontSize:13, fontWeight:800, color:'#7c3aed', margin:'6px 0 0' }}>💊 Pharmacie · {mask(recStats.encPharma)}</p>
-            <p style={{ fontSize:13, fontWeight:800, color:'#2563eb', margin:'2px 0 0' }}>🩺 Clinique · {mask(recStats.encClinique)}</p>
+            <p style={{ fontSize:13, fontWeight:800, color:'#7c3aed', margin:'6px 0 0', display:'flex', alignItems:'center', gap:5 }}><Pill size={13} strokeWidth={2.5} /> Pharmacie · {mask(recStats.encPharma)}</p>
+            <p style={{ fontSize:13, fontWeight:800, color:'#2563eb', margin:'2px 0 0', display:'flex', alignItems:'center', gap:5 }}><Stethoscope size={13} strokeWidth={2.5} /> Clinique · {mask(recStats.encClinique)}</p>
           </button>
           {showDeps && (
             <>
@@ -418,7 +418,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               <span style={{ fontWeight:600,fontSize:13 }}>{m.nom}</span>
               <span style={{ textAlign:'center',fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:'#dc2626' }}>{m.stock} / {m.seuil}</span>
               <div style={{ display:'flex',gap:6,justifyContent:'center',alignItems:'center',flexWrap:'wrap' }}>
-                <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>🚨 Critique</span>
+                <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}><AlertTriangle size={11} strokeWidth={2.6} /> Critique</span>
                 <button type="button" title={`Commander ${m.nom}${m.fournisseur?` chez ${m.fournisseur}`:''}`}
                   onClick={() => {
                     try { localStorage.setItem('lb_cmd_prefill', JSON.stringify({ produit:m.nom, qte:Math.max((m.seuil||0)*2 - (m.stock||0), 1), pu:m.prixAchat ?? m.prix_achat ?? '', fournisseur:m.fournisseur||'' })) } catch(e) {}
