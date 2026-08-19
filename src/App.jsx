@@ -6,7 +6,7 @@ import { isValidView, DEFAULT_VIEW } from './lib/routes'
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
 import { NavIcon } from './components/ui/AppIcons'
-import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon, LogOut } from 'lucide-react'
+import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon, LogOut, ArrowLeft } from 'lucide-react'
 import { ToastContainer } from './components/Toast'
 import { SkPage } from './components/Skeleton'
 
@@ -825,6 +825,14 @@ useEffect(() => {
           >
             <MenuIcon size={17} strokeWidth={2.2} />
           </button>
+          {view!=='dashboard'&&<button
+            onClick={()=>navigate(-1)}
+            className="no-print header-btn"
+            title="Retour à la page précédente"
+            style={{width:34,height:34}}
+          >
+            <ArrowLeft size={17} strokeWidth={2.4} />
+          </button>}
           <div style={{width:'36px',height:'36px',borderRadius:'12px',background:'linear-gradient(135deg,#0d9488,#14b8a6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'17px',flexShrink:0,boxShadow:'0 2px 10px rgba(13,148,136,0.28)'}}>
             <NavIcon id={view} size={18} color="white" />
           </div>

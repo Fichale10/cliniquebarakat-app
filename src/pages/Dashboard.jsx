@@ -329,7 +329,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
         )}
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:12 }}>
-          <button type="button" onClick={() => setView('caisse')} title="Voir l'historique des ventes"
+          <button type="button" onClick={() => { try { localStorage.setItem('lb_caisse_tab','historique') } catch(e) {}; setView('caisse') }} title="Voir l'historique des ventes"
             style={{ padding:'12px 14px', borderRadius:12, background:'#f0fdf4', border:'1px solid #bbf7d0', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(22,163,74,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -337,7 +337,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <p style={{ fontSize:22, fontWeight:900, color:'#16a34a', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.encaisse)}</p>
             <p style={{ fontSize:10, color:'#15803d', margin:'2px 0 0', opacity:.8 }}>entré en caisse sur la période</p>
           </button>
-          <button type="button" onClick={() => setView('caisse')} title="Voir l'historique des ventes"
+          <button type="button" onClick={() => { try { localStorage.setItem('lb_caisse_tab','historique') } catch(e) {}; setView('caisse') }} title="Voir l'historique des ventes"
             style={{ padding:'12px 14px', borderRadius:12, background:'#eff6ff', border:'1px solid #bfdbfe', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(37,99,235,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>

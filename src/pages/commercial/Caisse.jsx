@@ -16,7 +16,14 @@ const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mul
 const STATUT_COLOR = { Payé:'green', 'À crédit':'orange', 'Partiellement payé':'amber', 'En attente':'yellow', Annulé:'red' }
 
 function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tva, user, sb, logAction, consultations, setConsultations }) {
-  const [tab, setTab] = useState('caisse')
+  // Onglet initial : peut être forcé par une navigation externe (ex. carte Recettes du Dashboard)
+  const [tab, setTab] = useState(() => {
+    try {
+      const t = localStorage.getItem('lb_caisse_tab')
+      if (t) { localStorage.removeItem('lb_caisse_tab'); return t }
+    } catch (e) {}
+    return 'caisse'
+  })
 
   // ── Horloge en temps réel ─────────────────────────────────
   const [nowClock, setNowClock] = useState(new Date())
