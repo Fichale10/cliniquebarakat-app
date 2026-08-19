@@ -8,6 +8,10 @@ import './index.css'
 // ── Mise à jour PWA : bandeau « Nouvelle version disponible » ──
 // Évite que les postes restent sur une ancienne version sans le savoir.
 const updateSW = registerSW({
+  onRegisteredSW(_swUrl, registration) {
+    // Postes ouverts en continu (caisse…) : vérifier une mise à jour toutes les 15 min
+    if (registration) setInterval(() => registration.update().catch(() => {}), 15 * 60 * 1000)
+  },
   onNeedRefresh() {
     if (document.getElementById('pwa-update-banner')) return
     const bar = document.createElement('div')
