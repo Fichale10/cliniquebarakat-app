@@ -329,33 +329,48 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
         )}
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:12 }}>
-          <div style={{ padding:'12px 14px', borderRadius:12, background:'#f0fdf4', border:'1px solid #bbf7d0' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'#15803d', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Encaissé (TTC)</p>
+          <button type="button" onClick={() => setView('caisse')} title="Voir l'historique des ventes"
+            style={{ padding:'12px 14px', borderRadius:12, background:'#f0fdf4', border:'1px solid #bbf7d0', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(22,163,74,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#15803d', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>Encaissé (TTC)<span>→</span></p>
             <p style={{ fontSize:22, fontWeight:900, color:'#16a34a', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.encaisse)}</p>
             <p style={{ fontSize:10, color:'#15803d', margin:'2px 0 0', opacity:.8 }}>entré en caisse sur la période</p>
-          </div>
-          <div style={{ padding:'12px 14px', borderRadius:12, background:'#eff6ff', border:'1px solid #bfdbfe' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>CA facturé (HT)</p>
+          </button>
+          <button type="button" onClick={() => setView('caisse')} title="Voir l'historique des ventes"
+            style={{ padding:'12px 14px', borderRadius:12, background:'#eff6ff', border:'1px solid #bfdbfe', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(37,99,235,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>CA facturé (HT)<span>→</span></p>
             <p style={{ fontSize:22, fontWeight:900, color:'#2563eb', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.facture)}</p>
             <p style={{ fontSize:10, color:'#1d4ed8', margin:'2px 0 0', opacity:.8 }}>{recStats.nb} vente(s) · panier moyen {otrMode ? '•••' : fmtK(recStats.panier)}</p>
-          </div>
-          <div style={{ padding:'12px 14px', borderRadius:12, background:'#faf5ff', border:'1px solid #e9d5ff' }}>
-            <p style={{ fontSize:11, fontWeight:700, color:'#7c3aed', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Répartition</p>
+          </button>
+          <button type="button" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
+            style={{ padding:'12px 14px', borderRadius:12, background:'#faf5ff', border:'1px solid #e9d5ff', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(124,58,237,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#7c3aed', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>Répartition<span>→</span></p>
             <p style={{ fontSize:13, fontWeight:800, color:'#7c3aed', margin:'6px 0 0' }}>💊 Pharmacie · {mask(recStats.encPharma)}</p>
             <p style={{ fontSize:13, fontWeight:800, color:'#2563eb', margin:'2px 0 0' }}>🩺 Clinique · {mask(recStats.encClinique)}</p>
-          </div>
+          </button>
           {showDeps && (
             <>
-              <div style={{ padding:'12px 14px', borderRadius:12, background:'#fef2f2', border:'1px solid #fecaca' }}>
-                <p style={{ fontSize:11, fontWeight:700, color:'#b91c1c', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Dépenses</p>
+              <button type="button" onClick={() => setView('depenses')} title="Voir le détail des dépenses"
+                style={{ padding:'12px 14px', borderRadius:12, background:'#fef2f2', border:'1px solid #fecaca', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(220,38,38,0.18)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'#b91c1c', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>Dépenses<span>→</span></p>
                 <p style={{ fontSize:22, fontWeight:900, color:'#dc2626', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.deps)}</p>
                 <p style={{ fontSize:10, color:'#b91c1c', margin:'2px 0 0', opacity:.8 }}>sorties sur la période</p>
-              </div>
-              <div style={{ padding:'12px 14px', borderRadius:12, background:recStats.net>=0?'#f0fdfa':'#fff7ed', border:`1px solid ${recStats.net>=0?'#99f6e4':'#fed7aa'}` }}>
-                <p style={{ fontSize:11, fontWeight:700, color:recStats.net>=0?'#0f766e':'#c2410c', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Solde net</p>
+              </button>
+              <button type="button" onClick={() => setView('finances')} title="Voir l'état financier"
+                style={{ padding:'12px 14px', borderRadius:12, background:recStats.net>=0?'#f0fdfa':'#fff7ed', border:`1px solid ${recStats.net>=0?'#99f6e4':'#fed7aa'}`, textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(13,148,136,0.18)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+                <p style={{ fontSize:11, fontWeight:700, color:recStats.net>=0?'#0f766e':'#c2410c', textTransform:'uppercase', letterSpacing:'.05em', margin:0, display:'flex', justifyContent:'space-between' }}>Solde net<span>→</span></p>
                 <p style={{ fontSize:22, fontWeight:900, color:recStats.net>=0?'#0d9488':'#ea580c', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{otrMode ? '••••• F' : (recStats.net>=0?'+':'−') + fmtF(Math.abs(recStats.net))}</p>
                 <p style={{ fontSize:10, color:recStats.net>=0?'#0f766e':'#c2410c', margin:'2px 0 0', opacity:.8 }}>encaissé − dépenses</p>
-              </div>
+              </button>
             </>
           )}
         </div>
