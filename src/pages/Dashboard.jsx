@@ -243,7 +243,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
     <div className="dashboard-page">
 
       {/* ══ HEADER ══════════════════════════════════════════════ */}
-      <div style={{ background:'linear-gradient(135deg,#f0fdfa 0%,#e0f2fe 50%,#faf5ff 100%)', borderRadius:20, padding:'24px 28px', marginBottom:20, border:'1px solid rgba(13,148,136,0.12)', position:'relative', overflow:'hidden' }}>
+      <div className="dash-hero" style={{ background:'linear-gradient(135deg,#f0fdfa 0%,#e0f2fe 50%,#faf5ff 100%)', borderRadius:20, padding:'24px 28px', marginBottom:20, border:'1px solid rgba(13,148,136,0.12)', position:'relative', overflow:'hidden' }}>
         {/* Décoration */}
         <div style={{ position:'absolute', top:-40, right:-40, width:180, height:180, borderRadius:'50%', background:'rgba(13,148,136,0.06)', pointerEvents:'none' }} />
         <div style={{ position:'absolute', bottom:-30, right:80, width:120, height:120, borderRadius:'50%', background:'rgba(124,58,237,0.05)', pointerEvents:'none' }} />
@@ -266,7 +266,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               { icon:Calendar,      label:`${rdvsAujourdhui.length} RDV`, color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff' },
               alertesStock.length > 0 && { icon:AlertTriangle, label:`${alertesStock.length} alerte(s)`, color:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
             ].filter(Boolean).map((p,i) => (
-              <span key={i} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:99, fontSize:12, fontWeight:700, background:p.bg, border:`1px solid ${p.border}`, color:p.color, whiteSpace:'nowrap' }}>
+              <span key={i} className="dash-hero-pill" style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:99, fontSize:12, fontWeight:700, background:p.bg, border:`1px solid ${p.border}`, color:p.color, whiteSpace:'nowrap' }}>
                 <p.icon size={13} strokeWidth={2.4} />{p.label}
               </span>
             ))}
@@ -344,7 +344,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
         )}
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:12 }}>
-          <button type="button" onClick={() => { try { localStorage.setItem('lb_caisse_tab','historique'); localStorage.setItem('lb_caisse_range', JSON.stringify(recRange)) } catch(e) {}; setView('caisse') }} title="Voir les ventes de la période"
+          <button type="button" className="rec-card rec-card--green" onClick={() => { try { localStorage.setItem('lb_caisse_tab','historique'); localStorage.setItem('lb_caisse_range', JSON.stringify(recRange)) } catch(e) {}; setView('caisse') }} title="Voir les ventes de la période"
             style={{ padding:'12px 14px', borderRadius:12, background:'#f0fdf4', border:'1px solid #bbf7d0', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(22,163,74,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -352,7 +352,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <p style={{ fontSize:22, fontWeight:900, color:'#16a34a', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.encaisse)}</p>
             <p style={{ fontSize:10, color:'#15803d', margin:'2px 0 0', opacity:.8 }}>entré en caisse sur la période</p>
           </button>
-          <button type="button" onClick={() => { try { localStorage.setItem('lb_caisse_tab','historique'); localStorage.setItem('lb_caisse_range', JSON.stringify(recRange)) } catch(e) {}; setView('caisse') }} title="Voir les ventes de la période"
+          <button type="button" className="rec-card rec-card--blue" onClick={() => { try { localStorage.setItem('lb_caisse_tab','historique'); localStorage.setItem('lb_caisse_range', JSON.stringify(recRange)) } catch(e) {}; setView('caisse') }} title="Voir les ventes de la période"
             style={{ padding:'12px 14px', borderRadius:12, background:'#eff6ff', border:'1px solid #bfdbfe', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(37,99,235,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -360,7 +360,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <p style={{ fontSize:22, fontWeight:900, color:'#2563eb', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.facture)}</p>
             <p style={{ fontSize:10, color:'#1d4ed8', margin:'2px 0 0', opacity:.8 }}>{recStats.nb} vente(s) · panier moyen {otrMode ? '•••' : fmtK(recStats.panier)}</p>
           </button>
-          <button type="button" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
+          <button type="button" className="rec-card rec-card--amber" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
             style={{ padding:'12px 14px', borderRadius:12, background:'#fffbeb', border:'1px solid #fde68a', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(217,119,6,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -368,7 +368,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             <p style={{ fontSize:22, fontWeight:900, color:'#d97706', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.marge)}</p>
             <p style={{ fontSize:10, color:'#b45309', margin:'2px 0 0', opacity:.8 }}>{otrMode || !recStats.facture ? 'ventes payées' : `${Math.round((recStats.marge / recStats.facture) * 100)}% du CA · ventes payées`}</p>
           </button>
-          <button type="button" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
+          <button type="button" className="rec-card rec-card--purple" onClick={() => setView('rapports')} title="Voir les rapports détaillés"
             style={{ padding:'12px 14px', borderRadius:12, background:'#faf5ff', border:'1px solid #e9d5ff', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(124,58,237,0.18)' }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -378,7 +378,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           </button>
           {showDeps && (
             <>
-              <button type="button" onClick={() => setView('depenses')} title="Voir le détail des dépenses"
+              <button type="button" className="rec-card rec-card--red" onClick={() => setView('depenses')} title="Voir le détail des dépenses"
                 style={{ padding:'12px 14px', borderRadius:12, background:'#fef2f2', border:'1px solid #fecaca', textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(220,38,38,0.18)' }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -386,7 +386,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
                 <p style={{ fontSize:22, fontWeight:900, color:'#dc2626', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.deps)}</p>
                 <p style={{ fontSize:10, color:'#b91c1c', margin:'2px 0 0', opacity:.8 }}>sorties sur la période</p>
               </button>
-              <button type="button" onClick={() => setView('finances')} title="Voir l'état financier"
+              <button type="button" className={`rec-card ${recStats.net>=0?'rec-card--teal':'rec-card--orange'}`} onClick={() => setView('finances')} title="Voir l'état financier"
                 style={{ padding:'12px 14px', borderRadius:12, background:recStats.net>=0?'#f0fdfa':'#fff7ed', border:`1px solid ${recStats.net>=0?'#99f6e4':'#fed7aa'}`, textAlign:'left', cursor:'pointer', transition:'transform .12s, box-shadow .12s' }}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(13,148,136,0.18)' }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
@@ -397,40 +397,6 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
             </>
           )}
         </div>
-      </div>
-
-      {/* ══ KPI CARDS ══════════════════════════════════════════ */}
-      <div className="dash-kpi-grid">
-        {KPIS.map((k, i) => (
-          <button key={i} type="button" className="dash-kpi dash-kpi--soft text-left"
-            style={{ '--kpi-accent': k.accent, '--kpi-icon-bg': `${k.accent}1f` }}
-            onClick={() => setView(k.vw)}>
-            <div className="dash-kpi-deco"  aria-hidden />
-            <div className="dash-kpi-deco2" aria-hidden />
-            <div className="dash-kpi-inner">
-              <div>
-                <div className="dash-kpi-val" style={{ color:k.accent }}>{k.val}</div>
-                <div className="dash-kpi-label" style={{ color:'var(--app-muted)' }}>{k.label}</div>
-              </div>
-              <div className="dash-kpi-icon" style={{ fontSize:22 }}><k.icon size={24} color={k.accent} strokeWidth={2.2} /></div>
-            </div>
-            <div className="dash-kpi-foot" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:10, opacity:.9 }}>
-                {k.trend != null ? (
-                  <>
-                    <span style={{ color:k.trend>=0?'#16a34a':'#dc2626', fontWeight:800 }}>
-                      {k.trend>=0?'↑':'↓'} {Math.abs(k.trend)}% vs mois préc.
-                    </span>
-                    {k.subColor && <span style={{ color:k.subColor, fontWeight:700, marginLeft:6 }}>· {k.sub}</span>}
-                  </>
-                ) : (
-                  <span style={{ opacity:.85, color:k.subColor }}>{k.sub}</span>
-                )}
-              </span>
-              <span style={{ color:k.accent, fontWeight:700 }}>Voir →</span>
-            </div>
-          </button>
-        ))}
       </div>
 
       {/* ══ ALERTES ══════════════════════════════════════════════ */}
@@ -496,7 +462,39 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           ))}
         </div>
       )}
-
+      {/* ══ KPI CARDS ══════════════════════════════════ */}
+      <div className="dash-kpi-grid">
+        {KPIS.map((k, i) => (
+          <button key={i} type="button" className="dash-kpi dash-kpi--soft text-left"
+            style={{ '--kpi-accent': k.accent, '--kpi-icon-bg': `${k.accent}1f` }}
+            onClick={() => setView(k.vw)}>
+            <div className="dash-kpi-deco"  aria-hidden />
+            <div className="dash-kpi-deco2" aria-hidden />
+            <div className="dash-kpi-inner">
+              <div>
+                <div className="dash-kpi-val" style={{ color:k.accent }}>{k.val}</div>
+                <div className="dash-kpi-label" style={{ color:'var(--app-muted)' }}>{k.label}</div>
+              </div>
+              <div className="dash-kpi-icon" style={{ fontSize:22 }}><k.icon size={24} color={k.accent} strokeWidth={2.2} /></div>
+            </div>
+            <div className="dash-kpi-foot" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span style={{ fontSize:10, opacity:.9 }}>
+                {k.trend != null ? (
+                  <>
+                    <span style={{ color:k.trend>=0?'#16a34a':'#dc2626', fontWeight:800 }}>
+                      {k.trend>=0?'↑':'↓'} {Math.abs(k.trend)}% vs mois préc.
+                    </span>
+                    {k.subColor && <span style={{ color:k.subColor, fontWeight:700, marginLeft:6 }}>· {k.sub}</span>}
+                  </>
+                ) : (
+                  <span style={{ opacity:.85, color:k.subColor }}>{k.sub}</span>
+                )}
+              </span>
+              <span style={{ color:k.accent, fontWeight:700 }}>Voir →</span>
+            </div>
+          </button>
+        ))}
+      </div>
       {/* ══ ÉCHÉANCES FOURNISSEURS ══════════════════════════════ */}
       {echeancesFournisseurs.length > 0 && (
         <div className="dash-alert-panel" style={{ borderColor:'#fde68a', background:'linear-gradient(135deg,#fffbeb,#fefce8)' }}>
