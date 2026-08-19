@@ -260,6 +260,15 @@ function Register({ onBack, onRegister }) {
                 style={{ width:'100%', padding:'13px', borderRadius:'12px', border:'none', background:'linear-gradient(135deg,#166534,#1d4ed8)', color:'white', fontWeight:800, fontSize:'15px', cursor:'pointer', opacity:loading ? 0.6 : 1 }}>
                 {loading ? '⏳ Envoi…' : '✍️ Envoyer ma demande'}
               </button>
+
+              {/* Retour direct à la connexion (miroir du bouton « Demander un accès ») */}
+              <div style={{ textAlign:'center', marginTop:'16px', paddingTop:'14px', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
+                <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'12px', margin:'0 0 8px' }}>Déjà un compte ?</p>
+                <button onClick={onBack}
+                  style={{ width:'100%', padding:'11px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.15)', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:'14px', cursor:'pointer', transition:'all .15s' }}>
+                  → Se connecter
+                </button>
+              </div>
             </>
           )}
         </div>
