@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown } from 'lucide-react'
-import { joursAvantRupture } from '../lib/ventes'
+import { joursAvantRupture, venteEncaisse } from '../lib/ventes'
 
-function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], rdvs, user, clinique }) {
+function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], depsHist = [], rdvs, user, clinique, tva, otrMode }) {
   const fmtF  = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
   const fmtK  = (v) => v >= 1_000_000 ? `${(v/1_000_000).toFixed(1)}M F` : v >= 1000 ? `${Math.round(v/1000)}k F` : fmtF(v)
+  const mask  = (v) => otrMode ? '••••• F' : fmtF(v)
   const todayStr = new Date().toISOString().split('T')[0]
 
   // ── Salutation dynamique ────────────────────────────────────
@@ -30,6 +31,44 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
   // ── Ventes aujourd'hui ──────────────────────────────────────
   const ventesJour        = ventesReelles.filter(v => v.date === todayStr && v.statut !== 'Annulé')
   const caJour            = ventesJour.reduce((s,v) => s+(v.total||0), 0)
+
+  // ── Recettes par période (filtre jour/semaine/mois/année/perso) ──
+  const [recPeriode, setRecPeriode] = useState('jour')
+  const [recDu, setRecDu]           = useState(todayStr)
+  const [recAu, setRecAu]           = useState(todayStr)
+  const [showDeps, setShowDeps]     = useState(false)
+
+  const recRange = useMemo(() => {
+    const iso = (x) => x.toISOString().split('T')[0]
+    const d = new Date()
+    if (recPeriode === 'jour')    return { du: todayStr, au: todayStr }
+    if (recPeriode === 'semaine') { const s = new Date(d); s.setDate(d.getDate() - ((d.getDay()+6)%7)); return { du: iso(s), au: todayStr } }
+    if (recPeriode === 'mois')    return { du: todayStr.slice(0,8)+'01', au: todayStr }
+    if (recPeriode === 'annee')   return { du: todayStr.slice(0,4)+'-01-01', au: todayStr }
+    const du = recDu || todayStr, au = recAu || todayStr
+    return du <= au ? { du, au } : { du: au, au: du }
+  }, [recPeriode, recDu, recAu, todayStr])
+
+  const recStats = useMemo(() => {
+    const { du, au } = recRange
+    const vs = ventesReelles.filter(v => v.statut !== 'Annulé' && v.date && v.date >= du && v.date <= au)
+    const encaisse    = vs.reduce((s,v) => s + venteEncaisse(v, tva), 0)
+    const facture     = vs.reduce((s,v) => s + (v.total||0), 0)
+    const nb          = vs.length
+    const encClinique = vs.filter(v => v.type === 'clinique').reduce((s,v) => s + venteEncaisse(v, tva), 0)
+    // Période précédente équivalente (même durée, juste avant)
+    const iso = (x) => x.toISOString().split('T')[0]
+    const len  = Math.round((new Date(au) - new Date(du)) / 86400000) + 1
+    const pAu  = new Date(new Date(du).getTime() - 86400000)
+    const pDu  = new Date(pAu.getTime() - (len-1) * 86400000)
+    const prevEnc = ventesReelles
+      .filter(v => v.statut !== 'Annulé' && v.date && v.date >= iso(pDu) && v.date <= iso(pAu))
+      .reduce((s,v) => s + venteEncaisse(v, tva), 0)
+    const trend = prevEnc > 0 ? Math.round(((encaisse - prevEnc) / prevEnc) * 100) : null
+    const deps  = (depsHist||[]).filter(x => x.date && x.date >= du && x.date <= au).reduce((s,x) => s + (x.montant||0), 0)
+    return { encaisse, facture, nb, panier: nb ? Math.round(facture/nb) : 0,
+             encClinique, encPharma: encaisse - encClinique, trend, deps, net: encaisse - deps }
+  }, [ventesHist, depsHist, recRange, tva])
 
   // ── RDV ─────────────────────────────────────────────────────
   const rdvsAll           = rdvs || []
@@ -225,6 +264,86 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               </span>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ══ RECETTES PAR PÉRIODE ═══════════════════════════════ */}
+      <div style={{ background:'var(--app-surface, white)', border:'1px solid var(--app-border, #e2e8f0)', borderRadius:16, padding:'16px 20px', marginBottom:20 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', marginBottom:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ width:30, height:30, borderRadius:9, background:'#f0fdf4', border:'1px solid #bbf7d0', display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
+              <Coins size={15} color="#16a34a" strokeWidth={2.4} />
+            </span>
+            <span style={{ fontWeight:800, fontSize:15, color:'var(--app-text, #0f172a)' }}>Recettes</span>
+            {recStats.trend != null && (
+              <span style={{ fontSize:11, fontWeight:800, padding:'2px 8px', borderRadius:99,
+                background:recStats.trend>=0?'#f0fdf4':'#fef2f2', color:recStats.trend>=0?'#16a34a':'#dc2626',
+                border:`1px solid ${recStats.trend>=0?'#bbf7d0':'#fecaca'}` }}>
+                {recStats.trend>=0?'↑':'↓'} {Math.abs(recStats.trend)}% vs période préc.
+              </span>
+            )}
+          </div>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+            {[['jour',"Aujourd'hui"],['semaine','Semaine'],['mois','Mois'],['annee','Année'],['perso','Personnalisé']].map(([k,label]) => (
+              <button key={k} type="button" onClick={() => setRecPeriode(k)}
+                style={{ fontSize:12, fontWeight:700, padding:'5px 12px', borderRadius:99, cursor:'pointer', transition:'all .15s',
+                  background:recPeriode===k?'#0d9488':'transparent', color:recPeriode===k?'white':'var(--app-muted, #64748b)',
+                  border:`1px solid ${recPeriode===k?'#0d9488':'var(--app-border, #e2e8f0)'}` }}>
+                {label}
+              </button>
+            ))}
+            <button type="button" onClick={() => setShowDeps(p => !p)}
+              style={{ fontSize:12, fontWeight:700, padding:'5px 12px', borderRadius:99, cursor:'pointer', transition:'all .15s',
+                background:showDeps?'#fef2f2':'transparent', color:showDeps?'#dc2626':'var(--app-muted, #64748b)',
+                border:`1px solid ${showDeps?'#fecaca':'var(--app-border, #e2e8f0)'}` }}>
+              {showDeps ? '− Dépenses' : '+ Dépenses'}
+            </button>
+          </div>
+        </div>
+
+        {recPeriode === 'perso' && (
+          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', marginBottom:12 }}>
+            <label style={{ fontSize:12, fontWeight:600, color:'var(--app-muted, #64748b)', display:'flex', alignItems:'center', gap:6 }}>
+              Du <input type="date" value={recDu} max={todayStr} onChange={e => setRecDu(e.target.value)}
+                style={{ fontSize:12, padding:'5px 8px', borderRadius:8, border:'1px solid var(--app-border, #e2e8f0)', background:'var(--app-surface, white)', color:'var(--app-text, #0f172a)' }} />
+            </label>
+            <label style={{ fontSize:12, fontWeight:600, color:'var(--app-muted, #64748b)', display:'flex', alignItems:'center', gap:6 }}>
+              Au <input type="date" value={recAu} max={todayStr} onChange={e => setRecAu(e.target.value)}
+                style={{ fontSize:12, padding:'5px 8px', borderRadius:8, border:'1px solid var(--app-border, #e2e8f0)', background:'var(--app-surface, white)', color:'var(--app-text, #0f172a)' }} />
+            </label>
+          </div>
+        )}
+
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:12 }}>
+          <div style={{ padding:'12px 14px', borderRadius:12, background:'#f0fdf4', border:'1px solid #bbf7d0' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#15803d', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Encaissé (TTC)</p>
+            <p style={{ fontSize:22, fontWeight:900, color:'#16a34a', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.encaisse)}</p>
+            <p style={{ fontSize:10, color:'#15803d', margin:'2px 0 0', opacity:.8 }}>entré en caisse sur la période</p>
+          </div>
+          <div style={{ padding:'12px 14px', borderRadius:12, background:'#eff6ff', border:'1px solid #bfdbfe' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>CA facturé (HT)</p>
+            <p style={{ fontSize:22, fontWeight:900, color:'#2563eb', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.facture)}</p>
+            <p style={{ fontSize:10, color:'#1d4ed8', margin:'2px 0 0', opacity:.8 }}>{recStats.nb} vente(s) · panier moyen {otrMode ? '•••' : fmtK(recStats.panier)}</p>
+          </div>
+          <div style={{ padding:'12px 14px', borderRadius:12, background:'#faf5ff', border:'1px solid #e9d5ff' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#7c3aed', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Répartition</p>
+            <p style={{ fontSize:13, fontWeight:800, color:'#7c3aed', margin:'6px 0 0' }}>💊 Pharmacie · {mask(recStats.encPharma)}</p>
+            <p style={{ fontSize:13, fontWeight:800, color:'#2563eb', margin:'2px 0 0' }}>🩺 Clinique · {mask(recStats.encClinique)}</p>
+          </div>
+          {showDeps && (
+            <>
+              <div style={{ padding:'12px 14px', borderRadius:12, background:'#fef2f2', border:'1px solid #fecaca' }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'#b91c1c', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Dépenses</p>
+                <p style={{ fontSize:22, fontWeight:900, color:'#dc2626', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{mask(recStats.deps)}</p>
+                <p style={{ fontSize:10, color:'#b91c1c', margin:'2px 0 0', opacity:.8 }}>sorties sur la période</p>
+              </div>
+              <div style={{ padding:'12px 14px', borderRadius:12, background:recStats.net>=0?'#f0fdfa':'#fff7ed', border:`1px solid ${recStats.net>=0?'#99f6e4':'#fed7aa'}` }}>
+                <p style={{ fontSize:11, fontWeight:700, color:recStats.net>=0?'#0f766e':'#c2410c', textTransform:'uppercase', letterSpacing:'.05em', margin:0 }}>Solde net</p>
+                <p style={{ fontSize:22, fontWeight:900, color:recStats.net>=0?'#0d9488':'#ea580c', margin:'4px 0 0', fontVariantNumeric:'tabular-nums' }}>{otrMode ? '••••• F' : (recStats.net>=0?'+':'−') + fmtF(Math.abs(recStats.net))}</p>
+                <p style={{ fontSize:10, color:recStats.net>=0?'#0f766e':'#c2410c', margin:'2px 0 0', opacity:.8 }}>encaissé − dépenses</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
