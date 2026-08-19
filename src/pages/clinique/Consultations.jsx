@@ -3,6 +3,7 @@ import { Btn, Field, AutoSuggest, FilterBar, FilterBtns, FilterPeriode, EmptySta
 import { dbInsert, dbUpdate, newId } from '../../lib/db'
 import { venteToDbRow, validateConsultationForm } from '../../lib/validation'
 import { fmtF, fmtK } from '../../lib/ventes'
+import { applyVenteStock } from '../../lib/stock'
 import { Stethoscope, CheckCircle2, Hourglass, BarChart3, Printer } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -111,13 +112,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
   /** Décrémente/restitue le stock CLINIQUE des traitements (delta -1 ou +1) */
   const applyStockTraits = async (traitements, delta) => {
     if (!setMeds) return
-    const updated = meds.map(m => {
-      const t = (traitements||[]).find(x => x.med === m.nom)
-      if (!t) return m
-      const newStock = Math.max(0, (m.stock_clinique||0) + delta*(parseFloat(t.qte)||0))
-      if (sb && m.id) dbUpdate(sb,'medicaments',m.id,{stock_clinique:newStock}).catch(e=>console.warn('[stock consult]',e))
-      return { ...m, stock_clinique:newStock }
-    })
+    const updated = await applyVenteStock(sb, meds, traitements, delta, 'clinique')
     setMeds(updated)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}
   }

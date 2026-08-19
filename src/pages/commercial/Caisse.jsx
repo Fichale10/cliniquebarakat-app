@@ -8,6 +8,7 @@ import {
 import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites, CLIENT_INTERNE, isCession } from '../../lib/ventes'
+import { applyVenteStock } from '../../lib/stock'
 import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
@@ -157,17 +158,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       setVentesHist([vente, ...(ventesHist || [])].slice(0, 500))
 
       if (statut === 'Payé') {
-        const updatedMeds = meds.map(m => {
-          const l = lignesValides.find(x => x.med === m.nom)
-          if (!l) return m
-          const unites = l.qte * (l.mult || 1)
-          const newStock = Math.max(0, (m.stock || 0) - unites)
-          const patch = { stock: newStock }
-          if (achatInterne) patch.stock_clinique = (m.stock_clinique || 0) + unites
-          if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, patch).catch(e => console.warn('[stock]', e))
-          return { ...m, ...patch }
-        })
-        setMeds(updatedMeds)
+        setMeds(await applyVenteStock(sb, meds, lignesValides, -1, achatInterne ? 'cession' : 'detail'))
       }
 
       if (logAction && sb) logAction(sb, user, 'vente_caisse', `${validated.client || 'Comptoir'} — ${fmtF(totalTTC)}${achatInterne ? ' (achat interne clinique)' : ''}`)
@@ -188,14 +179,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       if (sb) await dbDelete(sb, 'ventes', recu.id)
       setVentesHist((ventesHist || []).filter(v => v.id !== recu.id))
       if (recu.statut === 'Payé') {
-        const updatedMeds = meds.map(m => {
-          const l = (recu.lignes || []).find(x => x.med === m.nom)
-          if (!l) return m
-          const newStock = (m.stock || 0) + (l.qte || 0) * (l.mult || 1)
-          if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, { stock: newStock }).catch(e => console.warn('[stock]', e))
-          return { ...m, stock: newStock }
-        })
-        setMeds(updatedMeds)
+        setMeds(await applyVenteStock(sb, meds, recu.lignes || [], +1, recu.type || 'detail'))
       }
       setRecu(null)
     } catch (e) {
@@ -212,14 +196,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       if (sb) await dbDelete(sb, 'ventes', recu.id)
       setVentesHist((ventesHist || []).filter(v => v.id !== recu.id))
       if (recu.statut === 'Payé') {
-        const updatedMeds = meds.map(m => {
-          const l = (recu.lignes || []).find(x => x.med === m.nom)
-          if (!l) return m
-          const newStock = (m.stock || 0) + (l.qte || 0) * (l.mult || 1)
-          if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, { stock: newStock }).catch(e => console.warn('[stock]', e))
-          return { ...m, stock: newStock }
-        })
-        setMeds(updatedMeds)
+        setMeds(await applyVenteStock(sb, meds, recu.lignes || [], +1, recu.type || 'detail'))
       }
       setLignes((recu.lignes || []).map(l => ({ ...EMPTY_LIGNE, ...l, medSearch: l.med || '', showSugg: false })))
       setClient(recu.client || '')
@@ -236,23 +213,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   // ── Historique / Ventes helpers ───────────────────────────
   /** delta -1 = sortie, +1 = restitution — selon le type de vente (detail/gros/clinique/cession) */
   const applyStockDelta = async (lignesV, delta, venteType = 'detail') => {
-    const updates = meds.map(m => {
-      const l = lignesV.find(x => x.med === m.nom)
-      if (!l) return null
-      const unites = (parseInt(l.qte) || 0) * (l.mult || 1)
-      let patch
-      if (venteType === 'clinique') {
-        patch = { stock_clinique: Math.max(0, (m.stock_clinique || 0) + delta * unites) }
-      } else if (venteType === 'cession') {
-        patch = { stock: Math.max(0, (m.stock || 0) + delta * unites), stock_clinique: Math.max(0, (m.stock_clinique || 0) - delta * unites) }
-      } else {
-        patch = { stock: Math.max(0, (m.stock || 0) + delta * unites) }
-      }
-      return { medId: m.id, patch }
-    }).filter(Boolean)
-    if (!updates.length) return
-    await Promise.all(updates.map(({ medId, patch }) => dbUpdate(sb, 'medicaments', medId, patch)))
-    const updatedMeds = meds.map(m => { const u = updates.find(x => x.medId === m.id); return u ? { ...m, ...u.patch } : m })
+    const updatedMeds = await applyVenteStock(sb, meds, lignesV, delta, venteType)
     setMeds(updatedMeds)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updatedMeds)) } catch (e) {}
   }

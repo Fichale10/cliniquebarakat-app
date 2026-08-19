@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Badge, EmptyState } from '../../components/ui'
 import { dbUpdate } from '../../lib/db'
-import { fmtF, venteTTC, venteRestant, ligneUnites } from '../../lib/ventes'
+import { fmtF, venteTTC, venteRestant } from '../../lib/ventes'
+import { applyVenteStock } from '../../lib/stock'
 import { exportCSV, today } from '../../lib/utils'
 import { Coins, Download, MessageCircle } from 'lucide-react'
 
@@ -24,21 +25,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
    *  detail/gros → stock pharmacie · clinique → stock clinique · cession → transfert pharmacie→clinique */
   const decrementStock = async (vente) => {
     if (!setMeds || !vente?.lignes?.length) return
-    const updated = meds.map(m => {
-      const l = vente.lignes.find(x => x.med === m.nom)
-      if (!l) return m
-      const unites = ligneUnites(l)
-      let patch
-      if (vente.type === 'clinique') {
-        patch = { stock_clinique: Math.max(0, (m.stock_clinique||0) - unites) }
-      } else if (vente.type === 'cession') {
-        patch = { stock: Math.max(0, (m.stock||0) - unites), stock_clinique: (m.stock_clinique||0) + unites }
-      } else {
-        patch = { stock: Math.max(0, (m.stock||0) - unites) }
-      }
-      if (sb && m.id) dbUpdate(sb, 'medicaments', m.id, patch).catch(e => console.warn('[stock creance]', e))
-      return { ...m, ...patch }
-    })
+    const updated = await applyVenteStock(sb, meds, vente.lignes, -1, vente.type || 'detail')
     setMeds(updated)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}
   }

@@ -1,7 +1,7 @@
 import { Syringe, Trash2, Coins } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { EmptyState } from '../../components/ui'
-import { dbFetch, dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { dbFetch, dbInsert, dbUpdate, dbDelete, dbAdjustStock, newId } from '../../lib/db'
 import { fmtF, computeTvaAmt } from '../../lib/ventes'
 import { venteToDbRow } from '../../lib/validation'
 
@@ -111,9 +111,10 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
       await dbUpdate(sb,'traitements',t.id,{vente_id:saved.id});
       setTraitements(traitements.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
       if(paye&&m?.id&&setMeds){
-        const newStock=Math.max(0,(m.stock_clinique||0)-(parseFloat(t.qte)||0));
-        await dbUpdate(sb,'medicaments',m.id,{stock_clinique:newStock}).catch(e=>console.warn('[stock]',e));
-        setMeds(meds.map(x=>x.id===m.id?{...x,stock:newStock}:x));
+        const q=parseFloat(t.qte)||0;
+        if(sb)await dbAdjustStock(sb,m.id,0,-q).catch(e=>console.warn('[stock]',e));
+        const newClin=Math.max(0,(m.stock_clinique||0)-q);
+        setMeds(meds.map(x=>x.id===m.id?{...x,stock_clinique:newClin}:x));
       }
     }catch(e){alert('Erreur facturation : '+(e?.message||e));}
   };

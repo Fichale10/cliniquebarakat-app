@@ -3,6 +3,7 @@ import { Btn, Badge, Field, AutoSuggest, FilterBar, FilterSelect, FilterBtns, us
 import { newId } from '../../lib/db'
 import { fmtF } from '../../lib/utils'
 import { venteToDbRow, validateChirurgieForm } from '../../lib/validation'
+import { applyVenteStock } from '../../lib/stock'
 import { Scissors, Trash2 } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -41,13 +42,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
   /** Décrémente/restitue le stock CLINIQUE des produits du bloc */
   const applyStockProduits = async (produits, delta) => {
     if (!setMeds || !produits?.length) return
-    const updated = meds.map(m => {
-      const p = produits.find(x => x.med === m.nom)
-      if (!p) return m
-      const newStock = Math.max(0, (m.stock_clinique||0) + delta*(parseFloat(p.qte)||0))
-      if (sb && m.id) dbUpdate(sb,'medicaments',m.id,{stock_clinique:newStock}).catch(e=>console.warn('[stock chir]',e))
-      return { ...m, stock_clinique:newStock }
-    })
+    const updated = await applyVenteStock(sb, meds, produits, delta, 'clinique')
     setMeds(updated)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updated)) } catch(e) {}
   }

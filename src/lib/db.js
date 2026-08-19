@@ -45,6 +45,12 @@ const runQueueOp = async (sb, op) => {
     ;({ error } = await sb.from(op.table).update(op.updates).eq('id', op.id))
   } else if (op.type === 'delete') {
     ;({ error } = await sb.from(op.table).delete().eq('id', op.id))
+  } else if (op.type === 'adjust_stock') {
+    ;({ error } = await sb.rpc('adjust_stock', {
+      p_id: op.id,
+      p_delta_stock: op.deltaStock || 0,
+      p_delta_clinique: op.deltaClinique || 0,
+    }))
   }
   if (error) throw error
 }
@@ -189,6 +195,23 @@ export const dbUpdate = async (sb, table, id, updates) => {
     return
   }
   enqueue({ type: 'update', table, id, updates })
+}
+
+/** Ajustement ATOMIQUE du stock via la RPC adjust_stock (deltas signés).
+ *  Évite les écrasements concurrents (stock = stock + delta côté serveur)
+ *  et les blocages RLS silencieux (SECURITY DEFINER).
+ *  Nécessite supabase/stock_ajustement.sql. */
+export const dbAdjustStock = async (sb, id, deltaStock = 0, deltaClinique = 0) => {
+  if (!deltaStock && !deltaClinique) return
+  if (navigator.onLine && sb) {
+    const { error } = await withTimeout(
+      sb.rpc('adjust_stock', { p_id: id, p_delta_stock: deltaStock, p_delta_clinique: deltaClinique }),
+    )
+    if (error) throw new Error(formatDbError(error) || 'Ajustement de stock refusé')
+    markSynced('medicaments')
+    return
+  }
+  enqueue({ type: 'adjust_stock', id, deltaStock, deltaClinique })
 }
 
 /** @returns {Promise<'ok'|'queued'>} */

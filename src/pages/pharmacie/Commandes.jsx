@@ -1,7 +1,7 @@
 import { Package, Trash2, Printer, MessageCircle, Pencil } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { fmtF } from '../../lib/utils'
-import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { dbInsert, dbUpdate, dbDelete, dbAdjustStock, newId } from '../../lib/db'
 import { validateCommandeForm } from '../../lib/validation'
 import { Btn, Badge, Field, FormPanel, FormSection, FilterBar, FilterSelect, FilterBtns, FilterPeriode, EmptyState } from '../../components/ui'
 
@@ -113,9 +113,10 @@ function Commandes({ meds = [], setMeds, fournisseurs = [], achatsHist = [], set
           if (!nom || qte <= 0) continue
           const m = updatedMeds.find(x => String(x.nom || '').toLowerCase() === nom.toLowerCase())
           if (m) {
-            const patch = { stock: (m.stock || 0) + qte, ...(pu > 0 ? { prix_achat: pu } : {}) }
             try {
-              await dbUpdate(sb, 'medicaments', m.id, patch)
+              await dbAdjustStock(sb, m.id, qte, 0)
+              if (pu > 0) await dbUpdate(sb, 'medicaments', m.id, { prix_achat: pu })
+              const patch = { stock: (m.stock || 0) + qte, ...(pu > 0 ? { prix_achat: pu } : {}) }
               updatedMeds = updatedMeds.map(x => x.id === m.id ? { ...x, ...patch, ...(pu > 0 ? { prixAchat: pu } : {}) } : x)
             } catch (e) { console.warn('[reception stock]', e?.message || e) }
           } else {

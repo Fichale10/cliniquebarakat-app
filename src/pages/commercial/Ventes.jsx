@@ -3,6 +3,7 @@ import { Btn, Field, AutoSuggest, ValidationBanner, FormPanel, FormSection, Filt
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
 import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
+import { applyVenteStock } from '../../lib/stock'
 import { exportCSV } from '../../lib/utils'
 import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2, Download } from 'lucide-react'
 
@@ -103,12 +104,9 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
   const pagination = usePagination(filtered)
 
-  // ── Gestion stock (unifié : qte × mult du conditionnement) ───
-  const applyStockDelta = async (lignes, delta) => {
-    const updates = meds.map(m => { const l=lignes.find(x=>x.med===m.nom); if(!l) return null; return { medId:m.id, newStock:Math.max(0,(m.stock||0)+delta*ligneUnites(l)) } }).filter(Boolean)
-    if (!updates.length) return
-    await Promise.all(updates.map(({medId,newStock}) => dbUpdate(sb,'medicaments',medId,{stock:newStock})))
-    const updatedMeds = meds.map(m => { const u=updates.find(x=>x.medId===m.id); return u?{...m,stock:u.newStock}:m })
+  // ── Gestion stock (unifié : qte × mult du conditionnement, atomique côté serveur) ───
+  const applyStockDelta = async (lignes, delta, venteType = 'detail') => {
+    const updatedMeds = await applyVenteStock(sb, meds, lignes, delta, venteType)
     setMeds(updatedMeds)
     try { localStorage.setItem('lb_medicaments', JSON.stringify(updatedMeds)) } catch(e) {}
   }
@@ -133,7 +131,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       })
       const saved = await dbInsert(sb,'ventes',row)
       setVentesHist([saved,...ventes].slice(0,500))
-      if (validated.statut==='Payé') await applyStockDelta(validated.lignes,-1)
+      if (validated.statut==='Payé') await applyStockDelta(validated.lignes,-1,form.type||'detail')
       if (logAction&&sb) logAction(sb,user,'vente_added',`${validated.client} — ${fmtF(validated.total)}`)
       setForm({ date:today(), client:'', lignes:[{med:'',medSearch:'',cond:'',qte:1,pu:'',showSugg:false}], mode:'Espèces', statut:'Payé', type:'detail' })
       setFormErrors({}); setValidationMessages([]); setShowForm(false)
@@ -150,8 +148,8 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     const newHist = ventes.map(v => v.id===venteId?{...v,...patch}:v)
     setVentesHist(newHist)
     if (vente?.lignes) {
-      if (newStatut==='Payé') await applyStockDelta(vente.lignes,-1)
-      else if (newStatut==='Annulé'&&vente.statut==='Payé') await applyStockDelta(vente.lignes,+1)
+      if (newStatut==='Payé') await applyStockDelta(vente.lignes,-1,vente.type||'detail')
+      else if (newStatut==='Annulé'&&vente.statut==='Payé') await applyStockDelta(vente.lignes,+1,vente.type||'detail')
     }
   }
   const deleteVente = async (id) => {
@@ -160,7 +158,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     try {
       await dbDelete(sb,'ventes',id)
       setVentesHist(ventes.filter(v=>v.id!==id))
-      if (vente?.statut==='Payé'&&vente.lignes) await applyStockDelta(vente.lignes,+1)
+      if (vente?.statut==='Payé'&&vente.lignes) await applyStockDelta(vente.lignes,+1,vente.type||'detail')
     } catch(e) { alert(e?.message||'Erreur lors de la suppression') }
   }
 
