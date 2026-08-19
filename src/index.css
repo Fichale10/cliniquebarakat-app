@@ -861,6 +861,14 @@ body.dark-mode .four-card--slate .four-card__tag { background: #2a2d3a; color: #
       -webkit-text-fill-color: #fff !important;
     }
     .login-dark-input::placeholder { color: rgba(255,255,255,0.3) !important; }
+    /* Options des <select> : le menu déroulant natif a un fond clair →
+       texte sombre forcé, sinon blanc sur blanc (options invisibles) */
+    select.login-dark-input option {
+      color: #0f172a !important;
+      background: #ffffff !important;
+      -webkit-text-fill-color: #0f172a !important;
+      font-weight: 600;
+    }
     .login-dark-input:-webkit-autofill,
     .login-dark-input:-webkit-autofill:hover,
     .login-dark-input:-webkit-autofill:focus {
