@@ -7,7 +7,7 @@ import {
 } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
-import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites, CLIENT_INTERNE, isCession } from '../../lib/ventes'
+import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, venteEncaisse, ligneUnites, CLIENT_INTERNE, isCession } from '../../lib/ventes'
 import { applyVenteStock } from '../../lib/stock'
 import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil } from 'lucide-react'
 
@@ -446,8 +446,12 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const pagination = usePagination(filtered)
 
   const totalPaye       = ventes.filter(v => v.statut === 'Payé').reduce((s, v) => s + totalTTCV(v), 0)
-  const totalCredit     = ventes.filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
-  const totalCreditGros = ventes.filter(v => v.type === 'gros' && ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
+
+  // ── KPIs de l'onglet historique — harmonisés avec la liste FILTRÉE
+  //    (période du Dashboard, statut, mode, type, recherche…) ──
+  const histoEncaisse   = filtered.filter(v => v.statut !== 'Annulé').reduce((s, v) => s + venteEncaisse(v, tva), 0)
+  const histoCredit     = filtered.filter(v => ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
+  const histoCreditGros = filtered.filter(v => v.type === 'gros' && ['À crédit','Partiellement payé','En attente'].includes(v.statut)).reduce((s, v) => s + Math.max(0, totalTTCV(v) - (v.montant_paye||0)), 0)
 
   // ── KPI du jour (caisse tab) ──────────────────────────
   const ventesJour   = ventes.filter(v => v.date === today() && v.statut !== 'Annulé')
@@ -812,10 +816,10 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { l:'Ventes totales', v: ventes.length,           mod:'stat-tile--blue' },
-              { l:'Encaissé',       v: mask(totalPaye),         mod:'stat-tile--green' },
-              { l:'À recouvrer',    v: mask(totalCredit),       mod:'stat-tile--orange' },
-              { l:'Créances gros',  v: mask(totalCreditGros),   mod:'stat-tile--purple' },
+              { l:'Ventes totales', v: filtered.length,         mod:'stat-tile--blue' },
+              { l:'Encaissé',       v: mask(histoEncaisse),     mod:'stat-tile--green' },
+              { l:'À recouvrer',    v: mask(histoCredit),       mod:'stat-tile--orange' },
+              { l:'Créances gros',  v: mask(histoCreditGros),   mod:'stat-tile--purple' },
             ].map((s, i) => (
               <div key={i} className={`stat-tile ${s.mod}`}>
                 <div className="stat-tile__label">{s.l}</div>
