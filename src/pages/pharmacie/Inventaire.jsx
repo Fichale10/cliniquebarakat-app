@@ -1,5 +1,5 @@
 import { ClipboardList, Trash2 } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
 
@@ -558,7 +558,80 @@ function TabHistorique({ inventaires = [], setInventaires, sb, dbDelete }) {
   )
 }
 
-// ─── Composant principal ─────────────────────────────────────────
+// ─── Onglet 4 : Mouvements de stock (journal serveur automatique) ───
+function TabMouvements({ sb }) {
+  const [rows, setRows] = useState(null)   // null = chargement
+  const [q, setQ]       = useState('')
+
+  useEffect(() => {
+    if (!sb) { setRows([]); return }
+    sb.from('stock_mouvements').select('*').order('created_at', { ascending: false }).limit(300)
+      .then(({ data, error }) => {
+        if (error) { console.warn('[mouvements]', error.message); setRows([]) }
+        else setRows(data || [])
+      })
+  }, [sb])
+
+  const filtered = (rows || []).filter(r => !q || String(r.med_nom||'').toLowerCase().includes(q.toLowerCase()) || String(r.par_email||'').toLowerCase().includes(q.toLowerCase()))
+
+  const Delta = ({ avant, apres }) => {
+    if (avant == null && apres == null) return <span style={{ color:'#94a3b8' }}>–</span>
+    const d = (parseFloat(apres)||0) - (parseFloat(avant)||0)
+    if (!d) return <span style={{ color:'#94a3b8' }}>–</span>
+    return (
+      <span style={{ fontWeight:800, fontFamily:"'Space Mono',monospace", fontSize:12, color: d>0 ? '#16a34a' : '#dc2626' }}>
+        {parseFloat(avant)||0} → {parseFloat(apres)||0} ({d>0?'+':''}{d})
+      </span>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold">🔁 Mouvements de stock</h2>
+          <p className="text-xs text-slate-400">Journal automatique côté serveur — ventes, réceptions, inventaires, annulations, corrections (300 derniers)</p>
+        </div>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Produit ou utilisateur…"
+          style={{ fontSize:13, padding:'8px 12px', borderRadius:10, border:'1px solid #e2e8f0', minWidth:220 }} />
+      </div>
+      {rows === null && <p className="p-5 text-sm text-slate-400 italic">Chargement…</p>}
+      {rows !== null && !filtered.length && (
+        <EmptyState icon="🔁" title="Aucun mouvement" subtitle="Exécutez le script supabase/stock_mouvements.sql puis effectuez une vente ou une réception pour voir le journal se remplir." />
+      )}
+      {filtered.length > 0 && (
+        <div style={{ overflowX:'auto' }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
+                <th className="px-4 py-2">Date</th>
+                <th className="px-4 py-2">Produit</th>
+                <th className="px-4 py-2">Stock pharmacie</th>
+                <th className="px-4 py-2">Stock clinique</th>
+                <th className="px-4 py-2">Par</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(r => (
+                <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50">
+                  <td className="px-4 py-2 whitespace-nowrap text-xs text-slate-500">
+                    {new Date(r.created_at).toLocaleDateString('fr-FR')} {new Date(r.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
+                  </td>
+                  <td className="px-4 py-2 font-semibold">{r.med_nom || '–'}</td>
+                  <td className="px-4 py-2"><Delta avant={r.stock_avant} apres={r.stock_apres} /></td>
+                  <td className="px-4 py-2"><Delta avant={r.clinique_avant} apres={r.clinique_apres} /></td>
+                  <td className="px-4 py-2 text-xs text-slate-500">{r.par_email || '–'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Composant principal ─────────────────────────────────
 function Inventaire(props) {
   const [tab, setTab] = useState('etat')
 
@@ -566,6 +639,7 @@ function Inventaire(props) {
     { id: 'etat',        label: '📊 État du stock' },
     { id: 'journalier',  label: '📋 Inventaire du jour' },
     { id: 'historique',  label: '🗂️ Historique' },
+    { id: 'mouvements',  label: '🔁 Mouvements' },
   ]
 
   return (
@@ -590,6 +664,7 @@ function Inventaire(props) {
       {tab === 'etat'       && <TabEtat       {...props} />}
       {tab === 'journalier' && <TabJournalier {...props} />}
       {tab === 'historique' && <TabHistorique {...props} />}
+      {tab === 'mouvements' && <TabMouvements {...props} />}
     </div>
   )
 }
