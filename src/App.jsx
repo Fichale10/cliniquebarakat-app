@@ -375,6 +375,38 @@ useEffect(() => {
     return () => clearInterval(id);
   }, [sb]);
 
+  // ── Synchro TEMPS RÉEL entre postes (Supabase Realtime) ────────
+  // Une vente ou un mouvement de stock fait sur un poste est reflété
+  // ici en ~1 s, sans attendre le polling de 120 s ni un rechargement.
+  // Nécessite supabase/realtime_tables.sql (publication supabase_realtime).
+  useEffect(() => {
+    if (!sb || !user) return
+    const applyChange = (setter, table, normalize = (r) => r) => (payload) => {
+      setter(prev => {
+        const list = prev || []
+        let next
+        if (payload.eventType === 'DELETE') {
+          const oldId = payload.old?.id
+          if (!oldId) return list
+          next = list.filter(r => String(r.id) !== String(oldId))
+        } else {
+          const row = normalize(payload.new)
+          if (!row?.id) return list
+          const i = list.findIndex(r => String(r.id) === String(row.id))
+          next = i === -1 ? [row, ...list] : list.map((r, j) => (j === i ? { ...r, ...row } : r))
+        }
+        setCache(table, next)
+        return next
+      })
+    }
+    const ch = sb
+      .channel('lb-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ventes' }, applyChange(setVentesHist, 'ventes'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'medicaments' }, applyChange(setMeds, 'medicaments', normalizeMed))
+      .subscribe()
+    return () => { try { sb.removeChannel(ch) } catch (e) {} }
+  }, [user?.email])
+
   // Auth handled by Root component
 
 

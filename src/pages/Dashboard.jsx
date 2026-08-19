@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown } from 'lucide-react'
 import { joursAvantRupture, venteEncaisse, venteMarge } from '../lib/ventes'
+import { exportCSV } from '../lib/utils'
 
 function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], depsHist = [], rdvs, user, clinique, tva, otrMode }) {
   const fmtF  = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
@@ -303,6 +304,19 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
                 background:showDeps?'#fef2f2':'transparent', color:showDeps?'#dc2626':'var(--app-muted, #64748b)',
                 border:`1px solid ${showDeps?'#fecaca':'var(--app-border, #e2e8f0)'}` }}>
               {showDeps ? '− Dépenses' : '+ Dépenses'}
+            </button>
+            <button type="button" title="Exporter les ventes de la période (CSV Excel)"
+              onClick={() => {
+                const { du, au } = recRange
+                const vs = ventesReelles.filter(v => v.statut !== 'Annulé' && v.date && v.date >= du && v.date <= au)
+                if (!vs.length) return alert('Aucune vente sur cette période.')
+                exportCSV(`recettes_${du}_${au}`,
+                  ['Date','Client','Type','Statut','Mode','Total HT','TVA','TTC','Encaissé'],
+                  vs.map(v => [v.date, v.client || 'Comptoir', v.type || 'detail', v.statut, v.mode || '', v.total || 0, v.tva_amt || 0, (v.total||0)+(v.tva_amt||0), venteEncaisse(v, tva)]))
+              }}
+              style={{ fontSize:12, fontWeight:700, padding:'5px 12px', borderRadius:99, cursor:'pointer', transition:'all .15s',
+                background:'transparent', color:'var(--app-muted, #64748b)', border:'1px solid var(--app-border, #e2e8f0)' }}>
+              ⬇ CSV
             </button>
           </div>
         </div>
