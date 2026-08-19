@@ -25,9 +25,15 @@ WHERE al.action IN ('vente_caisse', 'vente_added')
   AND al.details ~* '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
   AND v.id = (substring(al.details from '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'))::uuid;
 
--- 2) Ventes supprimées entre-temps : marquer explicitement
+-- 2) Ventes supprimées entre-temps : on remplace juste l'UUID par un
+--    libellé, en CONSERVANT le montant déjà présent (« UUID — 5 000 F »
+--    devient « Vente comptoir — 5 000 F »)
 UPDATE public.activity_logs
-SET details = 'Vente (supprimée depuis)'
+SET details = regexp_replace(
+                details,
+                '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+                'Vente comptoir'
+              )
 WHERE action IN ('vente_caisse', 'vente_added')
   AND details ~* '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
