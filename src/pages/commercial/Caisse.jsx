@@ -57,6 +57,14 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const [fVStatut, setFVStatut]         = useState('')
   const [fVMode, setFVMode]             = useState('')
   const [fVPeriode, setFVPeriode]       = useState('')
+  // Plage de dates transmise par le Dashboard (carte Recettes) — filtre exact du/au
+  const [fVRange, setFVRange]           = useState(() => {
+    try {
+      const r = localStorage.getItem('lb_caisse_range')
+      if (r) { localStorage.removeItem('lb_caisse_range'); return JSON.parse(r) }
+    } catch (e) {}
+    return null
+  })
   const [fVType, setFVType]             = useState('')
   const [searchV, setSearchV]           = useState('')
   const [venteFormErrors, setVenteFormErrors] = useState({})
@@ -428,6 +436,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     if (fVMode    && v.mode   !== fVMode)   return false
     if (fVType    && (v.type||'detail') !== fVType) return false
     if (fVPeriode && periodeDebut[fVPeriode] && v.date < periodeDebut[fVPeriode]) return false
+    if (fVRange?.du && fVRange?.au && (v.date < fVRange.du || v.date > fVRange.au)) return false
     if (searchV) {
       const q = searchV.toLowerCase()
       if (!v.client.toLowerCase().includes(q) && !JSON.stringify(v.lignes||[]).toLowerCase().includes(q)) return false
@@ -970,9 +979,23 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
               </FormPanel>
             )}
 
+            {fVRange && (
+              <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', margin:'0 16px', padding:'8px 14px', borderRadius:12, background:'#f0fdfa', border:'1px solid #99f6e4' }}>
+                <span style={{ fontSize:12, fontWeight:800, color:'#0f766e' }}>
+                  📅 Recettes du Dashboard — {fVRange.du === fVRange.au
+                    ? `le ${new Date(fVRange.du+'T00:00:00').toLocaleDateString('fr-FR')}`
+                    : `du ${new Date(fVRange.du+'T00:00:00').toLocaleDateString('fr-FR')} au ${new Date(fVRange.au+'T00:00:00').toLocaleDateString('fr-FR')}`}
+                  {' '}· {filtered.length} vente(s)
+                </span>
+                <button type="button" onClick={() => setFVRange(null)}
+                  style={{ fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:99, background:'white', border:'1px solid #99f6e4', color:'#0f766e', cursor:'pointer' }}>
+                  ✕ Retirer le filtre
+                </button>
+              </div>
+            )}
             <FilterBar search={searchV} onSearch={setSearchV} placeholder="🔍 Client, produit…"
-              activeCount={[fVStatut,fVMode,fVPeriode,fVType,searchV].filter(Boolean).length}
-              onReset={() => { setSearchV(''); setFVStatut(''); setFVMode(''); setFVPeriode(''); setFVType('') }}>
+              activeCount={[fVStatut,fVMode,fVPeriode,fVType,searchV,fVRange].filter(Boolean).length}
+              onReset={() => { setSearchV(''); setFVStatut(''); setFVMode(''); setFVPeriode(''); setFVType(''); setFVRange(null) }}>
               <FilterSelect label="📋 Statut"   value={fVStatut}  onChange={setFVStatut}  options={STATUTS.map(s => ({v:s,l:s}))} />
               <FilterSelect label="💳 Paiement" value={fVMode}    onChange={setFVMode}    options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m,l:m}))} />
               <FilterBtns label="Type" options={[{v:'detail',l:'🏪 Détail'},{v:'gros',l:'📦 Gros'}]} value={fVType} onChange={setFVType} colorFn={v => v==='gros' ? 'orange' : 'green'} />
