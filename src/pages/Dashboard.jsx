@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine, Clock, Phone } from 'lucide-react'
+import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine, Clock, Phone, CalendarCheck, CheckCircle2 } from 'lucide-react'
 import { joursAvantRupture, venteEncaisse, venteMarge } from '../lib/ventes'
 import { exportCSV } from '../lib/utils'
 
@@ -659,7 +659,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8 }}>Aujourd'hui</p>
           {rdvsAujourdhui.length === 0 ? (
             <div style={{ textAlign:'center', padding:'14px 0', marginBottom:10 }}>
-              <div style={{ fontSize:28 }}>🎉</div>
+              <div style={{ display:'flex', justifyContent:'center', marginBottom:2 }}><CalendarCheck size={26} color="#5eead4" strokeWidth={1.9} /></div>
               <p style={{ fontSize:12,fontWeight:700,color:'#64748b',marginTop:4 }}>Journée libre — aucun RDV</p>
             </div>
           ) : (
@@ -811,7 +811,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           </>}
 
           {totalCreances===0&&totalDettes===0&&(
-            <div style={{ textAlign:'center',padding:'12px 0' }}><div style={{ fontSize:24,marginBottom:4 }}>🎉</div><p style={{ fontSize:12,color:'var(--app-muted)' }}>Aucune créance ni dette</p></div>
+            <div style={{ textAlign:'center',padding:'12px 0' }}><div style={{ display:'flex',justifyContent:'center',marginBottom:4 }}><CheckCircle2 size={22} color="#86efac" strokeWidth={2} /></div><p style={{ fontSize:12,color:'var(--app-muted)' }}>Aucune créance ni dette</p></div>
           )}
 
           {repartitionMode.length > 0 && <>
