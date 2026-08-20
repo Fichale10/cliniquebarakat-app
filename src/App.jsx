@@ -802,19 +802,21 @@ useEffect(() => {
         {/* ── Pied sidebar ── */}
         <div className="px-3 pb-4" style={{borderTop:'1px solid #e8edf2',paddingTop:'12px',display:'flex',flexDirection:'column',gap:'6px'}}>
           {isAdmin&&<button onClick={toggleOTR}
+            title={otrMode?'Mode OTR actif — cliquez pour désactiver':'Activer le mode OTR (masquer les montants)'}
             style={{width:'100%',padding:'8px 12px',borderRadius:'10px',fontSize:'11px',fontWeight:700,transition:'all .18s',
               display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6,
               background:otrMode?'rgba(245,158,11,0.08)':'transparent',
               border:`1px solid ${otrMode?'rgba(245,158,11,0.3)':'#e2e8f0'}`,
               color:otrMode?'#d97706':'#94a3b8'}}>
             {otrMode?<EyeOff size={13} strokeWidth={2.4}/>:<Eye size={13} strokeWidth={2.4}/>}
-            {otrMode?'Mode OTR actif':'Mode OTR'}
+            {!sidebarCollapsed&&(otrMode?'Mode OTR actif':'Mode OTR')}
           </button>}
           <button onClick={()=>setConfirmLogout(true)}
+            title="Déconnexion"
             style={{width:'100%',padding:'9px 12px',borderRadius:'10px',fontSize:'12px',fontWeight:700,
               background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.15)',
               color:'#ef4444',transition:'all .18s',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
-            <LogOut size={13} strokeWidth={2.4}/> Déconnexion
+            <LogOut size={13} strokeWidth={2.4}/>{!sidebarCollapsed&&' Déconnexion'}
           </button>
         </div>
       </div>
