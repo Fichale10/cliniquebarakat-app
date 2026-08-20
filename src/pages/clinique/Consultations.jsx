@@ -4,7 +4,7 @@ import { dbInsert, dbUpdate, newId } from '../../lib/db'
 import { venteToDbRow, validateConsultationForm } from '../../lib/validation'
 import { fmtF, fmtK } from '../../lib/ventes'
 import { applyVenteStock } from '../../lib/stock'
-import { Stethoscope, CheckCircle2, Hourglass, BarChart3, Printer } from 'lucide-react'
+import { Stethoscope, CheckCircle2, Hourglass, BarChart3, Printer, MessageCircle, Microscope, Pill, PawPrint } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 const EMPTY_TRAIT = { med:'', medSearch:'', qte:1, pu:'', rappel:'', showSugg:false }
@@ -16,10 +16,10 @@ const plusUnAn = (dateStr) => {
 }
 
 const SOAP_CONFIG = [
-  { key:'soap_s', label:'S – Subjectif',      icon:'💬', bg:'#eff6ff', border:'#bfdbfe', title:'#1d4ed8', focus:'#2563eb', hint:'Motif de consultation, plainte du propriétaire' },
-  { key:'soap_o', label:'O – Objectif',        icon:'🔬', bg:'#f0fdf4', border:'#bbf7d0', title:'#16a34a', focus:'#16a34a', hint:"Résultats de l'examen clinique" },
-  { key:'soap_a', label:'A – Diagnostic *',    icon:'🩺', bg:'#fff7ed', border:'#fed7aa', title:'#ea580c', focus:'#ea580c', hint:'Hypothèse(s) diagnostique(s)' },
-  { key:'soap_p', label:'P – Plan thérapeutique', icon:'💊', bg:'#faf5ff', border:'#e9d5ff', title:'#9333ea', focus:'#9333ea', hint:'Traitements, examens complémentaires, suivi' },
+  { key:'soap_s', label:'S – Subjectif',      icon:MessageCircle, bg:'#eff6ff', border:'#bfdbfe', title:'#1d4ed8', focus:'#2563eb', hint:'Motif de consultation, plainte du propriétaire' },
+  { key:'soap_o', label:'O – Objectif',        icon:Microscope, bg:'#f0fdf4', border:'#bbf7d0', title:'#16a34a', focus:'#16a34a', hint:"Résultats de l'examen clinique" },
+  { key:'soap_a', label:'A – Diagnostic *',    icon:Stethoscope, bg:'#fff7ed', border:'#fed7aa', title:'#ea580c', focus:'#ea580c', hint:'Hypothèse(s) diagnostique(s)' },
+  { key:'soap_p', label:'P – Plan thérapeutique', icon:Pill, bg:'#faf5ff', border:'#e9d5ff', title:'#9333ea', focus:'#9333ea', hint:'Traitements, examens complémentaires, suivi' },
 ]
 
 const STATUT_STYLE = {
@@ -68,7 +68,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
     const doseKg = parseFloat(m?.doseMgKg ?? m?.dose_mg_kg) || 0
     const poids  = parseFloat(String(form.poids).replace(',','.')) || 0
     if (!doseKg || !poids) return null
-    return `💡 Dose indicative : ${Math.round(doseKg*poids*10)/10} mg (${poids} kg × ${doseKg} mg/kg)`
+    return `Dose indicative : ${Math.round(doseKg*poids*10)/10} mg (${poids} kg × ${doseKg} mg/kg)`
   }
 
   /** Le produit est-il un vaccin ? (catégorie de la fiche médicament) */
@@ -181,7 +181,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
       // ── Vente liée : le CA consultation entre dans Finances/Créances ──
       if (totalGeneral > 0 && setVentesHist) {
         const lignes = [
-          ...(montantActes > 0 ? [{ med:'🩺 Actes de consultation', cond:'Consultation', qte:1, pu:montantActes, mult:1, pa:0 }] : []),
+          ...(montantActes > 0 ? [{ med:'Actes de consultation', cond:'Consultation', qte:1, pu:montantActes, mult:1, pa:0 }] : []),
           ...traitements.map(t => ({ med:t.med, cond:'Traitement', qte:t.qte, pu:t.pu, pa:t.pa||0, mult:1 })),
         ]
         const venteRow = {
@@ -352,10 +352,10 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
           <div style={{ display:'flex',gap:8,alignItems:'center' }}>
             <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
               style={{ border:'1.5px solid #e2e8f0',borderRadius:10,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#64748b',outline:'none',background:'white' }}>
-              <option value="date_desc">📅 Plus récentes</option>
-              <option value="date_asc">📅 Plus anciennes</option>
-              <option value="montant">💰 Montant décroissant</option>
-              <option value="patient">🐾 Patient A→Z</option>
+                <option value="date_desc">Plus récentes</option>
+                <option value="date_asc">Plus anciennes</option>
+                <option value="montant">Montant décroissant</option>
+                <option value="patient">Patient A→Z</option>
             </select>
             <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle consultation'}</Btn>
           </div>
@@ -364,7 +364,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
         {/* Formulaire */}
         {showForm && (
           <div style={{ background:'linear-gradient(135deg,#eff6ff,#f0fdf4)',borderBottom:'1px solid rgba(37,99,235,0.1)',padding:'20px 24px' }}>
-            <h3 style={{ fontWeight:800,color:'#1d4ed8',fontSize:15,marginBottom:16,display:'flex',alignItems:'center',gap:8 }}>🩺 Nouvelle consultation SOAP</h3>
+            <h3 style={{ fontWeight:800,color:'#1d4ed8',fontSize:15,marginBottom:16,display:'flex',alignItems:'center',gap:8 }}><Stethoscope size={15} color="#1d4ed8" strokeWidth={2.3} /> Nouvelle consultation SOAP</h3>
 
             {/* Vitaux */}
             <div style={{ background:'white',borderRadius:14,padding:'16px',marginBottom:16,border:'1px solid #e2e8f0' }}>
@@ -388,10 +388,10 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
 
             {/* SOAP boxes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-              {SOAP_CONFIG.map(({ key, label, icon, bg, border, title, focus, hint }) => (
+              {SOAP_CONFIG.map(({ key, label, icon:Icon, bg, border, title, focus, hint }) => (
                 <div key={key} style={{ borderRadius:14,padding:'14px',background:bg,border:`2px solid ${border}` }}>
                   <div style={{ display:'flex',alignItems:'center',gap:7,marginBottom:6 }}>
-                    <span style={{ fontSize:16 }}>{icon}</span>
+                    <Icon size={15} color={title} strokeWidth={2.3} />
                     <span style={{ fontSize:12,fontWeight:900,color:title,textTransform:'uppercase',letterSpacing:'.05em' }}>{label}</span>
                     {key==='soap_a' && <span style={{ fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:99,background:title+'22',color:title }}>Requis</span>}
                   </div>
@@ -407,7 +407,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
             {/* Traitements administrés */}
             <div style={{ background:'white',borderRadius:14,padding:'16px',marginBottom:16,border:'1px solid #e2e8f0' }}>
               <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10 }}>
-                <p style={{ fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>💉 Traitements administrés <span style={{ textTransform:'none',fontWeight:400 }}>(quantité × prix unitaire, stock décompté)</span></p>
+                <p style={{ fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>Traitements administrés <span style={{ textTransform:'none',fontWeight:400 }}>(quantité × prix unitaire, stock décompté)</span></p>
                 <button type="button" onClick={addT}
                   style={{ fontSize:12,fontWeight:700,padding:'5px 12px',borderRadius:9,background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488',cursor:'pointer' }}>+ Ajouter</button>
               </div>
@@ -457,7 +457,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                     {hint && <p style={{ fontSize:11,color:'#0d9488',marginTop:3,paddingLeft:2 }}>{hint}</p>}
                     {isVaccin(t) && (
                       <div style={{ display:'flex',alignItems:'center',gap:8,marginTop:4,paddingLeft:2 }}>
-                        <span style={{ fontSize:11,fontWeight:700,color:'#9333ea' }}>💉 Rappel vaccinal le</span>
+                        <span style={{ fontSize:11,fontWeight:700,color:'#9333ea' }}>Rappel vaccinal le</span>
                         <input type="date" value={t.rappel||''} onChange={e=>updT(i,{rappel:e.target.value})}
                           style={{ border:'1.5px solid #e9d5ff',borderRadius:8,padding:'4px 8px',fontSize:12,outline:'none',background:'#faf5ff',color:'#6b21a8' }} />
                         <span style={{ fontSize:10,color:'#94a3b8' }}>inscrit au carnet du patient</span>
@@ -486,7 +486,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
         )}
 
         {/* Filtres */}
-        <FilterBar search={searchC} onSearch={setSearchC} placeholder="🔍 Patient, propriétaire, diagnostic…"
+        <FilterBar search={searchC} onSearch={setSearchC} placeholder="Patient, propriétaire, diagnostic…"
           activeCount={[fCStatut,fCPeriode,searchC].filter(Boolean).length}
           onReset={()=>{setSearchC('');setFCStatut('');setFCPeriode('')}}>
           <FilterBtns options={[{v:'Payé',l:'✅ Payé'},{v:'En attente',l:'⏳ En attente'}]} value={fCStatut} onChange={setFCStatut} colorFn={v=>v==='Payé'?'green':'amber'} />
@@ -516,21 +516,21 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                   {/* Infos */}
                   <div style={{ flex:1,minWidth:0 }}>
                     <div style={{ display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:5 }}>
-                      <span style={{ fontWeight:800,fontSize:14,color:'#0f172a' }}>🐾 {c.patient}</span>
+                      <span style={{ fontWeight:800,fontSize:14,color:'#0f172a',display:'inline-flex',alignItems:'center',gap:5 }}><PawPrint size={13} color="#64748b" strokeWidth={2.4} />{c.patient}</span>
                       <span style={{ fontSize:12,color:'#64748b' }}>· {c.proprio}</span>
                       <StatutPill statut={c.statut} />
                     </div>
                     {/* Vitaux chips */}
                     {(c.temperature||c.fc||c.poids) && (
                       <div style={{ display:'flex',gap:5,flexWrap:'wrap',marginBottom:6 }}>
-                        {c.poids       && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#f8fafc',border:'1px solid #e2e8f0',color:'#475569' }}>⚖️ {c.poids}</span>}
-                        {c.temperature && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626' }}>🌡️ {c.temperature}</span>}
-                        {c.fc          && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#eff6ff',border:'1px solid #bfdbfe',color:'#2563eb' }}>❤️ {c.fc}</span>}
+                        {c.poids       && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#f8fafc',border:'1px solid #e2e8f0',color:'#475569' }}>{c.poids}</span>}
+                        {c.temperature && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626' }}>{c.temperature}</span>}
+                        {c.fc          && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#eff6ff',border:'1px solid #bfdbfe',color:'#2563eb' }}>FC {c.fc}</span>}
                       </div>
                     )}
                     {/* Diagnostic preview */}
-                    <p style={{ fontSize:13,fontWeight:700,color:'#ea580c',marginBottom:3 }}>🩺 {c.soap_a}</p>
-                    {!isExp && c.soap_p && <p style={{ fontSize:11,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>💊 {c.soap_p.substring(0,80)}{c.soap_p.length>80?'…':''}</p>}
+                    <p style={{ fontSize:13,fontWeight:700,color:'#ea580c',marginBottom:3 }}>{c.soap_a}</p>
+                    {!isExp && c.soap_p && <p style={{ fontSize:11,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{c.soap_p.substring(0,80)}{c.soap_p.length>80?'…':''}</p>}
                   </div>
 
                   {/* Montant + actions */}
@@ -556,10 +556,10 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                 {isExp && (
                   <div style={{ padding:'0 20px 18px 76px',background:'#fafcff',borderTop:'1px solid #f1f5f9' }}>
                     <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:10,marginTop:14 }}>
-                      {SOAP_CONFIG.map(({ key, label, icon, bg, border, title }) => c[key] && (
+                      {SOAP_CONFIG.map(({ key, label, icon:Icon, bg, border, title }) => c[key] && (
                         <div key={key} style={{ borderRadius:12,padding:'12px',background:bg,border:`1.5px solid ${border}` }}>
                           <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:8 }}>
-                            <span style={{ fontSize:15 }}>{icon}</span>
+                            <Icon size={14} color={title} strokeWidth={2.3} />
                             <span style={{ fontSize:10,fontWeight:900,color:title,textTransform:'uppercase',letterSpacing:'.06em' }}>{label}</span>
                           </div>
                           <p style={{ fontSize:13,color:'#1e293b',lineHeight:1.6,whiteSpace:'pre-wrap' }}>{c[key]}</p>
@@ -569,10 +569,10 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                     {/* Traitements administrés */}
                     {(c.traitements||[]).length > 0 && (
                       <div style={{ marginTop:12,padding:'12px 14px',borderRadius:12,background:'white',border:'1px solid #f1f5f9' }}>
-                        <p style={{ fontSize:11,fontWeight:800,color:'#0d9488',marginBottom:8 }}>💉 Traitements administrés</p>
+                        <p style={{ fontSize:11,fontWeight:800,color:'#0d9488',marginBottom:8 }}>Traitements administrés</p>
                         {(c.traitements||[]).map((t,i) => (
                           <div key={i} style={{ display:'flex',justifyContent:'space-between',fontSize:12,padding:'4px 0',borderBottom:'1px solid #f8fafc' }}>
-                            <span>💊 {t.med} <span style={{ color:'#94a3b8' }}>× {t.qte}</span></span>
+                            <span>{t.med} <span style={{ color:'#94a3b8' }}>× {t.qte}</span></span>
                             <span style={{ fontFamily:'monospace',fontWeight:700,color:'#0d9488' }}>{fmtF((parseFloat(t.qte)||0)*(parseFloat(t.pu)||0))}</span>
                           </div>
                         ))}
@@ -581,9 +581,9 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
                     {/* Résumé vitaux en expanded */}
                     {(c.temperature||c.fc||c.poids) && (
                       <div style={{ marginTop:12,padding:'10px 14px',borderRadius:12,background:'white',border:'1px solid #f1f5f9',display:'flex',gap:16,flexWrap:'wrap' }}>
-                        <span style={{ fontSize:11,fontWeight:700,color:'#64748b' }}>📋 Vitaux :</span>
+                        <span style={{ fontSize:11,fontWeight:700,color:'#64748b' }}>Vitaux :</span>
                         {c.poids       && <span style={{ fontSize:12,color:'#475569' }}>⚖️ Poids : <strong>{c.poids}</strong></span>}
-                        {c.temperature && <span style={{ fontSize:12,color:'#dc2626' }}>🌡️ Temp. : <strong>{c.temperature}</strong></span>}
+                        {c.temperature && <span style={{ fontSize:12,color:'#dc2626' }}>Temp. : <strong>{c.temperature}</strong></span>}
                         {c.fc          && <span style={{ fontSize:12,color:'#2563eb' }}>❤️ FC : <strong>{c.fc}</strong></span>}
                       </div>
                     )}

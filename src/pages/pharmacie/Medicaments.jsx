@@ -252,11 +252,11 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
             </div>
             <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
               style={{ border:'1.5px solid #e2e8f0',borderRadius:10,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#64748b',outline:'none',background:'white' }}>
-              <option value="nom">🔤 Nom A→Z</option>
-              <option value="stock_asc">📉 Stock croissant</option>
-              <option value="stock_desc">📈 Stock décroissant</option>
+                <option value="nom">Nom A→Z</option>
+                <option value="stock_asc">Stock croissant</option>
+                <option value="stock_desc">Stock décroissant</option>
               <option value="perem">⏰ Péremption</option>
-              <option value="prix_desc">💰 Prix décroissant</option>
+                <option value="prix_desc">Prix décroissant</option>
             </select>
             <Btn onClick={showForm ? handleCloseForm : startAdd}>
               {showForm ? '✕ Annuler' : '+ Nouveau médicament'}
@@ -268,7 +268,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
         {showForm && (
           <div style={{ background:'linear-gradient(135deg,#eff6ff,#f5f3ff)',borderBottom:'1px solid rgba(37,99,235,0.12)',padding:'20px 24px' }}>
             <h3 style={{ fontWeight:800,color:'#1d4ed8',fontSize:15,marginBottom:16,display:'flex',alignItems:'center',gap:8 }}>
-              {formMode==='edit'?'✏️ Modifier le médicament':'💊 Nouveau médicament'}
+              {formMode==='edit'?'Modifier le médicament':'Nouveau médicament'}
             </h3>
             {pending && <DupWarning dups={dups} entity="médicament" onOk={commitSave} onCancel={handleCloseForm} />}
             <ValidationBanner messages={validationMessages} onDismiss={()=>setValidationMessages([])} />
@@ -397,9 +397,9 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
 
         {/* Filtres */}
         <div style={{ padding:'12px 20px',borderBottom:'1px solid #f8fafc',display:'flex',flexWrap:'wrap',gap:8,alignItems:'center' }}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Nom, catégorie, référence…"
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nom, catégorie, référence…"
             style={{ flex:'1 1 180px',minWidth:150,padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:13,outline:'none' }} />
-          <FilterBtns label="Stock" options={[{v:'critique',l:'🚨 Critique'},{v:'ok',l:'✓ OK'}]} value={fStock} onChange={setFStock} colorFn={v=>v==='critique'?'red':'green'} />
+          <FilterBtns label="Stock" options={[{v:'critique',l:'Critique'},{v:'ok',l:'✓ OK'}]} value={fStock} onChange={setFStock} colorFn={v=>v==='critique'?'red':'green'} />
           <FilterBtns label="Péremption" options={[{v:'expire',l:'☠️ Expiré'},{v:'proche',l:'⏰ < 30j'}]} value={fPerem} onChange={setFPerem} colorFn={()=>'amber'} />
           {activeFilters > 0 && (
             <button onClick={resetFilters} style={{ padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:12,fontWeight:700,background:'white',color:'#64748b',cursor:'pointer' }}>
@@ -443,7 +443,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                         <div style={{ display:'flex',alignItems:'center',gap:6,marginBottom:4 }}>
                           <span style={{ fontSize:13,fontWeight:800,fontFamily:'monospace',color:crit?'#dc2626':'#0f172a' }}>{m.stock}{(m.stock_clinique||0)>0&&<span style={{ fontSize:10,fontWeight:600,color:'#2563eb' }}> +{m.stock_clinique} clin.</span>}</span>
                           <span style={{ fontSize:10,color:'#94a3b8' }}>{m.unite}</span>
-                          {crit && <span style={{ fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>🚨</span>}
+                          {crit && <span style={{ fontSize:10,fontWeight:700,padding:'1px 6px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}><AlertTriangle size={10} strokeWidth={2.6} style={{display:'inline'}} /></span>}
                         </div>
                         <div style={{ height:4,borderRadius:99,background:'#f1f5f9',overflow:'hidden' }}>
                           <div style={{ height:'100%',width:`${stockPct}%`,borderRadius:99,background:crit?'#ef4444':stockPct<50?'#f59e0b':'#22c55e',transition:'width .4s' }} />
@@ -483,7 +483,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
             </table>
             {!filtered.length && (
               <div style={{ textAlign:'center',padding:'48px 24px',color:'#94a3b8' }}>
-                <div style={{ fontSize:40,marginBottom:8 }}>💊</div>
+                <div style={{ marginBottom:8, display:'flex', justifyContent:'center' }}><Pill size={36} color="#cbd5e1" strokeWidth={1.8} /></div>
                 <p style={{ fontWeight:700,color:'#475569' }}>Aucun médicament trouvé</p>
                 <p style={{ fontSize:13,marginTop:4 }}>Ajustez les filtres ou ajoutez un médicament.</p>
               </div>
@@ -553,7 +553,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                       {ps==='expired'  && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>☠️ Expiré</span>}
                       {ps==='critical' && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>⏰ {j}j</span>}
                       {ps==='warning'  && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a',fontWeight:700,flexShrink:0 }}>⚠️ {j}j</span>}
-                      {crit && ps!=='expired' && ps!=='critical' && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>🚨 Critique</span>}
+                      {crit && ps!=='expired' && ps!=='critical' && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>Critique</span>}
                     </div>
                   </div>
                 </div>
@@ -561,7 +561,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
             })}
             {!filtered.length && (
               <div style={{ gridColumn:'1/-1',textAlign:'center',padding:'48px 24px',color:'#94a3b8' }}>
-                <div style={{ fontSize:40,marginBottom:8 }}>💊</div>
+                <div style={{ marginBottom:8, display:'flex', justifyContent:'center' }}><Pill size={36} color="#cbd5e1" strokeWidth={1.8} /></div>
                 <p style={{ fontWeight:700,color:'#475569' }}>Aucun médicament trouvé</p>
               </div>
             )}

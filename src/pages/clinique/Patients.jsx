@@ -1,4 +1,4 @@
-import { PawPrint, Sparkles, AlertTriangle, BarChart3, Stethoscope, Pencil, Trash2 } from 'lucide-react'
+import { PawPrint, Sparkles, AlertTriangle, BarChart3, Stethoscope, Pencil, Trash2, Phone } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, DupWarning, ValidationBanner, FormSection, FilterBtns, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbDelete, dbUpdate, newId } from '../../lib/db'
@@ -177,9 +177,9 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
               style={{ border:'1.5px solid #e2e8f0',borderRadius:10,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#64748b',outline:'none',background:'white' }}>
-              <option value="recent">🕐 Plus récents</option>
-              <option value="nom">🔤 Par nom</option>
-              <option value="espece">🐾 Par espèce</option>
+                <option value="recent">Plus récents</option>
+                <option value="nom">Par nom</option>
+                <option value="espece">Par espèce</option>
             </select>
             <Btn onClick={() => { setShowForm(!showForm); if(showForm){setForm(emptyForm());setFormErrors({});setValMsgs([])} }}>
               {showForm ? '✕ Annuler' : '+ Nouveau patient'}
@@ -265,8 +265,8 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
             <FormSection label="Informations médicales" icon={<Stethoscope size={14} />} color="teal">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="⚠️ Allergies connues"    value={form.allergies}   onChange={f('allergies')}   error={formErrors.allergies}   placeholder="ex: Pénicilline…" />
-                <Field label="📋 Antécédents médicaux" value={form.antecedents} onChange={f('antecedents')} error={formErrors.antecedents} placeholder="ex: Stérilisation 2024…" />
-                <Field label="📷 Photo URL (optionnel)" value={form.photo}      onChange={f('photo')}       error={formErrors.photo}       placeholder="https://…" className="md:col-span-2" />
+                <Field label="Antécédents médicaux" value={form.antecedents} onChange={f('antecedents')} error={formErrors.antecedents} placeholder="ex: Stérilisation 2024…" />
+                <Field label="Photo URL (optionnel)" value={form.photo}      onChange={f('photo')}       error={formErrors.photo}       placeholder="https://…" className="md:col-span-2" />
               </div>
             </FormSection>
 
@@ -278,7 +278,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
 
         {/* Barre de recherche & filtres */}
         <div style={{ padding:'12px 20px', borderBottom:'1px solid #f8fafc', display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Nom, propriétaire, espèce, race…"
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nom, propriétaire, espèce, race…"
             style={{ flex:'1 1 200px',minWidth:160,padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:13,outline:'none' }} />
           <FilterBtns options={[{v:'oui',l:'⚠️ Avec allergies'},{v:'non',l:'✓ Sans allergies'}]} value={fAllergies} onChange={setFAllergies} colorFn={v=>v==='oui'?'red':'green'} />
           {activeFilters > 0 && (
@@ -318,17 +318,17 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                       <span style={{ fontSize:15,fontWeight:800,color:'#0f172a' }}>{p.nom}</span>
                       <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:s.pill,color:s.text,border:`1px solid ${s.border}` }}>{p.espece}</span>
                       <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0' }}>{p.sexe==='M'?'♂ Mâle':'♀ Femelle'}</span>
-                      {p.allergies && <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>⚠️ Allergie</span>}
-                      {prochainVaccin && <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0' }}>💉 Vaccin J-{Math.round((new Date(prochainVaccin.prochain)-new Date())/86400000)}</span>}
+                      {p.allergies && <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>Allergie</span>}
+                      {prochainVaccin && <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0' }}>Vaccin J-{Math.round((new Date(prochainVaccin.prochain)-new Date())/86400000)}</span>}
                     </div>
                     <div style={{ fontSize:12,color:'#64748b',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' }}>
                       {p.race && <span style={{ fontWeight:600 }}>{p.race}</span>}
                       {p.age && <span>· {p.age}</span>}
-                      {p.poids && <span>· ⚖️ {p.poids}</span>}
-                      {p.couleur && <span>· 🎨 {p.couleur}</span>}
+                      {p.poids && <span>· {p.poids}</span>}
+                      {p.couleur && <span>· {p.couleur}</span>}
                     </div>
                     <div style={{ fontSize:12,color:'#94a3b8',marginTop:2 }}>
-                      👤 {p.proprio || '—'}{p.tel ? ` · 📞 ${p.tel}` : ''}
+                      {p.proprio || '—'}{p.tel ? ` · ${p.tel}` : ''}
                     </div>
                   </div>
 
@@ -339,7 +339,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                         style={{ width:30,height:30,borderRadius:8,background:'#f0fdf4',border:'1px solid #bbf7d0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,textDecoration:'none',transition:'all .12s' }}
                         onMouseEnter={e=>{e.currentTarget.style.background='#dcfce7'}}
                         onMouseLeave={e=>{e.currentTarget.style.background='#f0fdf4'}}>
-                        📞
+                        <Phone size={13} color="#16a34a" strokeWidth={2.4} />
                       </a>
                     )}
                     <button onClick={() => startEdit(p)}
@@ -370,13 +370,13 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                       )}
                       {p.antecedents && (
                         <div style={{ background:'#f8fafc',borderRadius:12,padding:'10px 14px',border:'1px solid #f1f5f9',gridColumn:'1/-1' }}>
-                          <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:4 }}>📋 Antécédents médicaux</p>
+                          <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:4 }}>Antécédents médicaux</p>
                           <p style={{ fontSize:13,color:'#475569' }}>{p.antecedents}</p>
                         </div>
                       )}
                       {p.created_at && (
                         <div style={{ background:'#f8fafc',borderRadius:12,padding:'10px 14px',border:'1px solid #f1f5f9' }}>
-                          <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:4 }}>📅 Enregistré le</p>
+                          <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:4 }}>Enregistré le</p>
                           <p style={{ fontSize:13,color:'#475569' }}>{new Date(p.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</p>
                         </div>
                       )}
@@ -384,17 +384,17 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                         <div style={{ background:'#f8fafc',borderRadius:12,padding:'10px 14px',border:'1px solid #f1f5f9' }}>
                           <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:4 }}>Caractéristiques</p>
                           {p.poids   && <p style={{ fontSize:13,color:'#475569' }}>⚖️ Poids : <strong>{p.poids}</strong></p>}
-                          {p.couleur && <p style={{ fontSize:13,color:'#475569' }}>🎨 Couleur : <strong>{p.couleur}</strong></p>}
+                          {p.couleur && <p style={{ fontSize:13,color:'#475569' }}>Couleur : <strong>{p.couleur}</strong></p>}
                         </div>
                       )}
                     </div>
                     {vaccins.length > 0 && (
                       <div style={{ marginTop:10 }}>
-                        <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8 }}>💉 Vaccinations</p>
+                        <p style={{ fontSize:10,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8 }}>Vaccinations</p>
                         <div style={{ display:'flex',flexWrap:'wrap',gap:6 }}>
                           {vaccins.map((v,vi) => (
                             <span key={vi} style={{ fontSize:11,padding:'4px 10px',borderRadius:99,background:'#f0fdf4',color:'#166534',border:'1px solid #bbf7d0',fontWeight:600 }}>
-                              💉 {v.nom} · {v.date}{v.prochain?` (rappel: ${v.prochain})`:''}
+                              {v.nom} · {v.date}{v.prochain?` (rappel: ${v.prochain})`:''}
                             </span>
                           ))}
                         </div>
@@ -424,7 +424,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
                       <Field label="Propriétaire" value={editForm.proprio} onChange={ef('proprio')} placeholder="Propriétaire" />
                       <Field label="Téléphone"    value={editForm.tel}    onChange={ef('tel')}     placeholder="+228…" />
                       <Field label="⚠️ Allergies"  value={editForm.allergies}   onChange={ef('allergies')}   placeholder="Allergies…" className="md:col-span-2" />
-                      <Field label="📋 Antécédents" value={editForm.antecedents} onChange={ef('antecedents')} placeholder="Antécédents…" className="md:col-span-2" />
+                      <Field label="Antécédents" value={editForm.antecedents} onChange={ef('antecedents')} placeholder="Antécédents…" className="md:col-span-2" />
                     </div>
                     <div style={{ display:'flex',gap:8 }}>
                       <Btn color="brand" onClick={saveEdit} disabled={savingEdit}>{savingEdit?'⏳ Enregistrement…':'✓ Enregistrer'}</Btn>
