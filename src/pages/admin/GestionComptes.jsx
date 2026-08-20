@@ -215,7 +215,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
     {/* ── Demandes en attente ── */}
     {pending.length>0&&<div className="app-card overflow-hidden">
       <div className="p-4 flex items-center gap-3" style={{background:'linear-gradient(135deg,rgba(251,146,60,0.1),rgba(239,68,68,0.08))'}}>
-        <span className="text-2xl">🔔</span>
+        <span style={{ width:34, height:34, borderRadius:'50%', background:'#fff7ed', border:'1px solid #fed7aa', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><ShieldCheck size={17} color="#ea580c" strokeWidth={2.3} /></span>
         <div><h3 className="font-bold text-orange-700">{pending.length} demande(s) d'accès en attente</h3>
         <p className="text-xs text-orange-500">Ces comptes attendent votre approbation</p></div>
       </div>
@@ -303,7 +303,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
         </div>
         <div className="flex gap-2 mt-4">
           <button onClick={()=>setStep(1)} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">← Retour</button>
-          <Btn onClick={addCompte} disabled={creating}>{creating ? '⏳ Création…' : '✓ Créer le compte'}</Btn>
+          <Btn onClick={addCompte} disabled={creating}>{creating ? 'Création…' : '✓ Créer le compte'}</Btn>
           <button onClick={cancelForm} className="px-4 py-2 text-sm text-red-400 hover:text-red-600">Annuler</button>
         </div>
       </div>}
@@ -323,7 +323,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-slate-900">{c.nom}</p>
                     {isMe&&<span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Vous</span>}
-                    {c.pending&&<span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">⏳ En attente</span>}
+                    {c.pending&&<span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">En attente</span>}
                   </div>
                   <p className="text-sm text-slate-500">{c.email}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -340,11 +340,11 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
                 {isFullAdmin&&<>
                 <button onClick={()=>{setEditId(editId===c.id&&editRole===null?null:c.id);setEditRole(c.role);setEditPw('');}}
                   className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-semibold transition-all text-left">
-                  🎭 Changer rôle
+                  Changer rôle
                 </button>
                 <button onClick={()=>{setEditId(editId===c.id&&editRole!==null?null:c.id);setEditRole(null);setEditPw('');}}
                   className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold transition-all">
-                  🔑 Mot de passe
+                  Mot de passe
                 </button>
                 {!isMe&&<button onClick={()=>toggleActif(c.id)}
                   className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all ${c.actif?'bg-red-50 hover:bg-red-100 text-red-600':'bg-green-50 hover:bg-green-100 text-green-600'}`}>
@@ -385,7 +385,7 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
               <div className="flex gap-2">
                 <input type="password" className="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-green-400 outline-none"
                   placeholder="Nouveau mot de passe (min. 6 car.)" value={editPw} onChange={e=>setEditPw(e.target.value)}/>
-                <Btn onClick={()=>savePw(c.id)} sm title="Envoyer un lien de réinitialisation par email">✉️ Envoyer lien</Btn>
+                <Btn onClick={()=>savePw(c.id)} sm title="Envoyer un lien de réinitialisation par email">Envoyer le lien</Btn>
                 <button onClick={()=>setEditId(null)} className="text-slate-400 px-2">✕</button>
               </div>
             </div>}

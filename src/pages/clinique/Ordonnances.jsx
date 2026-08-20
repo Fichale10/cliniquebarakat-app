@@ -1,4 +1,4 @@
-import { FileText, Printer, Trash2 } from 'lucide-react'
+import { FileText, Printer, Trash2, Pill, PawPrint, Calendar } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, FilterBar, FilterSelect, usePagination, Pagination, EmptyState, AutoSuggest } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -57,7 +57,7 @@ function OrdPrint({ o }) {
           <tbody>
             {(o.lignes||[]).map((l,i)=>(
               <tr key={i} style={{ borderBottom:'1px solid #f1f5f9',background:i%2===0?'white':'#fafbfc' }}>
-                <td style={{ padding:'10px',fontSize:13,fontWeight:600 }}>💊 {l.med}</td>
+                <td style={{ padding:'10px',fontSize:13,fontWeight:600 }}>{l.med}</td>
                 <td style={{ padding:'10px',fontSize:12,color:'#374151' }}>{l.dose}</td>
                 <td style={{ padding:'10px',fontSize:12,color:'#374151' }}>{l.duree}</td>
                 <td style={{ padding:'10px',fontSize:12,fontWeight:600,color:'#0d9488',fontFamily:'monospace' }}>{l.qte}</td>
@@ -183,14 +183,14 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon:'📝', label:'Total ordonnances',    value:kpis.total,       sub:`${kpis.ceMois} ce mois-ci`,              color:'#0d9488' },
-          { icon:'💊', label:'Médicaments prescrits', value:kpis.totalLignes, sub:`moyenne ${(kpis.totalLignes/Math.max(1,kpis.total)).toFixed(1)} / ordonnance`, color:'#2563eb' },
-          { icon:'🐾', label:'Espèces traitées',     value:kpis.especes,     sub:'espèces différentes',                    color:'#9333ea' },
-          { icon:'📅', label:'Ce mois',              value:kpis.ceMois,      sub:new Date().toLocaleString('fr-FR',{month:'long',year:'numeric'}), color:'#16a34a' },
+          { icon:FileText, label:'Total ordonnances',    value:kpis.total,       sub:`${kpis.ceMois} ce mois-ci`,              color:'#0d9488' },
+          { icon:Pill, label:'Médicaments prescrits', value:kpis.totalLignes, sub:`moyenne ${(kpis.totalLignes/Math.max(1,kpis.total)).toFixed(1)} / ordonnance`, color:'#2563eb' },
+          { icon:PawPrint, label:'Espèces traitées',     value:kpis.especes,     sub:'espèces différentes',                    color:'#9333ea' },
+          { icon:Calendar, label:'Ce mois',              value:kpis.ceMois,      sub:new Date().toLocaleString('fr-FR',{month:'long',year:'numeric'}), color:'#16a34a' },
         ].map((k,i) => (
           <div key={i} style={{ background:'white',borderRadius:16,padding:'14px 16px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center' }}><k.icon size={16} color={k.color} strokeWidth={2.3} /></div>
               <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
             </div>
             <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -202,12 +202,12 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
       {/* Top médicaments prescrits */}
       {topMeds.length > 0 && (
         <div style={{ background:'white',borderRadius:16,padding:'16px 20px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize:12,fontWeight:800,color:'#64748b',marginBottom:12 }}>💊 Médicaments les plus prescrits</p>
+          <p style={{ fontSize:12,fontWeight:800,color:'#64748b',marginBottom:12 }}>Médicaments les plus prescrits</p>
           <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
             {topMeds.map(([med,count],i) => (
               <div key={i} style={{ display:'flex',alignItems:'center',gap:7,padding:'7px 12px',borderRadius:12,background:'#f0fdfa',border:'1px solid #99f6e4' }}>
                 <span style={{ fontSize:10,fontWeight:900,color:'#94a3b8' }}>#{i+1}</span>
-                <span style={{ fontSize:13,fontWeight:700,color:'#0d9488' }}>💊 {med}</span>
+                <span style={{ fontSize:13,fontWeight:700,color:'#0d9488' }}>{med}</span>
                 <span style={{ fontSize:11,fontWeight:900,padding:'1px 7px',borderRadius:99,background:'#0d9488',color:'white' }}>{count}×</span>
               </div>
             ))}
@@ -225,10 +225,10 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
           <div style={{ display:'flex',gap:8,alignItems:'center',flexWrap:'wrap' }}>
             <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
               style={{ border:'1.5px solid #e2e8f0',borderRadius:10,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#64748b',outline:'none',background:'white' }}>
-              <option value="date_desc">📅 Plus récentes</option>
-              <option value="date_asc">📅 Plus anciennes</option>
-              <option value="patient">🐾 Patient A→Z</option>
-              <option value="nb_meds">💊 + de médicaments</option>
+                <option value="date_desc">Plus récentes</option>
+                <option value="date_asc">Plus anciennes</option>
+                <option value="patient">Patient A→Z</option>
+                <option value="nb_meds">+ de médicaments</option>
             </select>
             <Btn onClick={() => setShowForm(v=>!v)}>{showForm ? '✕ Annuler' : '+ Nouvelle ordonnance'}</Btn>
           </div>
@@ -289,8 +289,8 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                     <select style={{ border:'1.5px solid #e2e8f0',borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',fontFamily:'Outfit,sans-serif',background:'white' }}
                       value={l.med} onChange={e=>updLigne(i,'med',e.target.value)}>
                       <option value="">— Médicament —</option>
-                      {meds.map(m => <option key={m.id} value={m.nom}>{m.nom}{m.stock<=m.seuil?' ⚠️':''}</option>)}
-                      <option value="Autre">✏️ Autre</option>
+                      {meds.map(m => <option key={m.id} value={m.nom}>{m.nom}{m.stock<=m.seuil?' (stock bas)':''}</option>)}
+                      <option value="Autre">Autre…</option>
                     </select>
                     <input style={{ border:'1.5px solid #e2e8f0',borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',fontFamily:'Outfit,sans-serif',background:'white' }}
                       placeholder="ex: 1 cp 2x/jour" value={l.dose} onChange={e=>updLigne(i,'dose',e.target.value)} />
@@ -327,7 +327,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
             </div>
 
             <Btn color="brand" onClick={addOrd} disabled={saving}>
-              {saving ? '⏳ Enregistrement…' : "✓ Créer l'ordonnance"}
+              {saving ? 'Enregistrement…' : "✓ Créer l'ordonnance"}
             </Btn>
           </div>
         )}
@@ -354,10 +354,10 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
         )}
 
         {/* Filtres */}
-        <FilterBar search={search} onSearch={setSearch} placeholder="🔍 Patient, propriétaire, médicament…"
+        <FilterBar search={search} onSearch={setSearch} placeholder="Patient, propriétaire, médicament…"
           activeCount={[fEspece,search].filter(Boolean).length}
           onReset={()=>{ setSearch(''); setFEspece('') }}>
-          <FilterSelect label="🐾 Espèce" value={fEspece} onChange={setFEspece} options={especes.map(e=>({v:e,l:e}))} />
+          <FilterSelect label="Espèce" value={fEspece} onChange={setFEspece} options={especes.map(e=>({v:e,l:e}))} />
           <span style={{ fontSize:11,color:'#94a3b8',marginLeft:'auto' }}>{filtered.length}/{ordonnances.length}</span>
         </FilterBar>
 
@@ -389,7 +389,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                   {/* Infos */}
                   <div style={{ flex:1,minWidth:0 }}>
                     <div style={{ display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:5 }}>
-                      <span style={{ fontSize:14,fontWeight:800,color:'#0f172a' }}>🐾 {o.patient}</span>
+                      <span style={{ fontSize:14,fontWeight:800,color:'#0f172a',display:'inline-flex',alignItems:'center',gap:5 }}><PawPrint size={13} color="#64748b" strokeWidth={2.4} />{o.patient}</span>
                       <span style={{ fontSize:12,color:'#64748b' }}>· {o.proprio}</span>
                       {o.espece && (
                         <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:ec.bg,border:`1px solid ${ec.border}`,color:ec.text }}>{o.espece}</span>
@@ -400,7 +400,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                     <div style={{ display:'flex',gap:5,flexWrap:'wrap' }}>
                       {(o.lignes||[]).filter(l=>l.med).slice(0,3).map((l,i) => (
                         <span key={i} style={{ fontSize:11,padding:'3px 8px',borderRadius:8,background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488',fontWeight:600 }}>
-                          💊 {l.med}
+                          {l.med}
                         </span>
                       ))}
                       {nbMeds > 3 && <span style={{ fontSize:11,padding:'3px 8px',borderRadius:8,background:'#f1f5f9',color:'#64748b' }}>+{nbMeds-3}</span>}
@@ -442,7 +442,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                         <tbody>
                           {(o.lignes||[]).filter(l=>l.med).map((l,i)=>(
                             <tr key={i} style={{ borderBottom:'1px solid #f0fdfa',background:i%2===0?'white':'#f8fffe' }}>
-                              <td style={{ padding:'9px 12px',fontSize:13,fontWeight:700,color:'#0d9488' }}>💊 {l.med}</td>
+                              <td style={{ padding:'9px 12px',fontSize:13,fontWeight:700,color:'#0d9488' }}>{l.med}</td>
                               <td style={{ padding:'9px 12px',fontSize:12,color:'#374151' }}>{l.dose||'—'}</td>
                               <td style={{ padding:'9px 12px',fontSize:12,color:'#374151' }}>{l.duree||'—'}</td>
                               <td style={{ padding:'9px 12px',fontSize:13,fontWeight:700,fontFamily:'monospace',color:'#0f172a' }}>{l.qte||'—'}</td>
@@ -455,7 +455,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                     {/* Note */}
                     {o.note && (
                       <div style={{ marginTop:10,padding:'10px 14px',borderRadius:12,background:'#fffbeb',border:'1px solid #fde68a' }}>
-                        <p style={{ fontSize:11,fontWeight:700,color:'#92400e',marginBottom:4 }}>📌 Observations</p>
+                        <p style={{ fontSize:11,fontWeight:700,color:'#92400e',marginBottom:4 }}>Observations</p>
                         <p style={{ fontSize:13,color:'#374151' }}>{o.note}</p>
                       </div>
                     )}
@@ -464,14 +464,14 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
                     {o.veterinaire && (
                       <div style={{ marginTop:8,display:'flex',alignItems:'center',gap:8 }}>
                         <span style={{ fontSize:11,color:'#94a3b8',fontWeight:700 }}>Prescrit par :</span>
-                        <span style={{ fontSize:12,fontWeight:700,color:'#0d9488' }}>🩺 {o.veterinaire}</span>
+                        <span style={{ fontSize:12,fontWeight:700,color:'#0d9488' }}>Dr {o.veterinaire}</span>
                       </div>
                     )}
 
                     {/* Confirmation suppression */}
                     {confirmDel===o.id && (
                       <div style={{ marginTop:12,padding:'10px 14px',borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10 }}>
-                        <p style={{ fontSize:13,color:'#dc2626',fontWeight:700 }}>⚠️ Supprimer cette ordonnance ?</p>
+                        <p style={{ fontSize:13,color:'#dc2626',fontWeight:700 }}>Supprimer cette ordonnance ?</p>
                         <div style={{ display:'flex',gap:6,flexShrink:0 }}>
                           <button onClick={()=>deleteOrd(o.id)}
                             style={{ padding:'6px 12px',background:'#dc2626',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer' }}>Confirmer</button>

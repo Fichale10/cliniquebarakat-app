@@ -6,15 +6,19 @@ import { Btn, Field, AutoSuggest, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
 const TYPE_DOT = {
-  Consultation:       '🔵',
-  Vaccination:        '🟢',
-  Chirurgie:          '🟣',
-  Urgence:            '🔴',
-  'Contrôle post-op': '🟠',
-  Echographie:        '🩵',
-  Détartrage:         '🟡',
-  Autre:              '⚪',
+  Consultation:       '#2563eb',
+  Vaccination:        '#16a34a',
+  Chirurgie:          '#9333ea',
+  Urgence:            '#dc2626',
+  'Contrôle post-op': '#ea580c',
+  Echographie:        '#06b6d4',
+  Détartrage:         '#eab308',
+  Autre:              '#94a3b8',
 }
+/** Pastille de couleur d'un type de RDV */
+const TypeDot = ({ type, size = 12 }) => (
+  <span style={{ width:size, height:size, borderRadius:'50%', background:TYPE_DOT[type] || '#94a3b8', display:'inline-block', flexShrink:0 }} />
+)
 
 const STATUT_STYLE = {
   Confirmé:     'bg-teal-50 text-teal-800 border-teal-200',
@@ -182,7 +186,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
             border: '1px solid #99f6e4',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
           }}>
-            {TYPE_DOT[r.type] || '🐾'}
+            <TypeDot type={r.type} size={14} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
@@ -209,7 +213,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
           <div style={{ borderTop: '1px solid #f1f5f9', padding: '14px 16px', background: '#fafbfc' }}>
             {r.note && (
               <p className="text-xs text-slate-600 mb-3 bg-white rounded-lg px-3 py-2 border border-slate-100">
-                📌 {r.note}
+                Note — {r.note}
               </p>
             )}
             <div className="flex flex-wrap gap-2">
@@ -226,11 +230,11 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
                   </button>
                   <button type="button" onClick={() => sendWhatsApp(r)}
                     className="rdv-action-btn" style={{ flex: '1 1 90px', border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#16a34a' }}>
-                    📲 Rappel WA
+                    Rappel WhatsApp
                   </button>
                   <button type="button" onClick={() => openEdit(r)}
                     className="rdv-action-btn" style={{ flex: '1 1 90px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb' }}>
-                    ✏️ Modifier
+                    Modifier
                   </button>
                   <button type="button" onClick={() => updateStatut(r.id, 'Annulé')}
                     className="rdv-action-btn" style={{ border: '1px solid #fecaca', background: '#fff5f5', color: '#ef4444' }}>
@@ -273,7 +277,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
       {/* Alerte RDV en retard */}
       {pastRdvs.length > 0 && (
         <div className="app-card p-4 flex items-center gap-3" style={{ borderLeft: '4px solid #f59e0b', background: '#fffbeb' }}>
-          <span style={{ fontSize: 22 }}>⚠️</span>
+          <span style={{ fontSize: 22 }}>⚠</span>
           <div>
             <p className="font-bold text-amber-800 text-sm">{pastRdvs.length} RDV passé(s) non clôturé(s)</p>
             <p className="text-xs text-amber-600">Ces rendez-vous sont dépassés sans statut Terminé ou Annulé.</p>
@@ -291,10 +295,10 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
       <div className="app-card p-4">
         <h3 className="font-bold text-sm text-slate-500 uppercase tracking-wide mb-3">Types de rendez-vous</h3>
         <div className="flex flex-wrap gap-2">
-          {Object.entries(TYPE_DOT).map(([type, dot]) => (
+          {Object.keys(TYPE_DOT).map((type) => (
             <span key={type}
               className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-700">
-              {dot} {type}
+              <TypeDot type={type} size={9} /> {type}
             </span>
           ))}
         </div>
@@ -317,7 +321,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
           <div id="rdv-form-anchor" className="p-5 border-b"
             style={{ background: 'linear-gradient(135deg,#f0fdfa,#f5fffe)', borderBottomColor: 'rgba(13,148,136,0.15)' }}>
             <h3 className="font-bold mb-4" style={{ color: '#0f766e' }}>
-              {editId ? '✏️ Modifier le rendez-vous' : '✚ Nouveau rendez-vous'}
+              {editId ? 'Modifier le rendez-vous' : '+ Nouveau rendez-vous'}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Field label="Date *"  value={form.date}  onChange={f('date')}  type="date" />
@@ -357,7 +361,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
             </div>
             <div className="mt-4 flex gap-2">
               <Btn color="brand" onClick={saveRDV} disabled={saving}>
-                {saving ? '⏳ Enregistrement…' : (editId ? '✓ Mettre à jour' : '✓ Enregistrer le RDV')}
+                {saving ? 'Enregistrement…' : (editId ? '✓ Mettre à jour' : '✓ Enregistrer le RDV')}
               </Btn>
               <Btn color="default" onClick={closeForm}>Annuler</Btn>
             </div>
@@ -369,7 +373,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
           <input
             value={filters.search}
             onChange={flt('search')}
-            placeholder="🔍 Rechercher patient, proprio…"
+            placeholder="Rechercher patient, proprio…"
             className="flex-1 min-w-[180px] text-sm px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-teal-400 bg-white"
           />
           <select value={filters.type} onChange={flt('type')}
@@ -402,7 +406,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
           {/* Aujourd'hui */}
           <div>
             <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2 text-base">
-              📍 Aujourd'hui
+              Aujourd'hui
               <span className="text-sm font-medium text-slate-400">{today()}</span>
               {todayRdvs.length > 0 && (
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full"
@@ -427,7 +431,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
           {futureRdvs.length > 0 && (
             <div>
               <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2 text-base">
-                📆 À venir
+                À venir
                 <span className="text-xs font-medium text-slate-400">{futureRdvs.length} RDV</span>
               </h3>
               <div className="space-y-5">
