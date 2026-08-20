@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Badge, PrintBtn } from '../../components/ui'
+import { FolderOpen, AlertTriangle } from 'lucide-react'
+import { Badge, PrintBtn, EmptyState } from '../../components/ui'
 
 function Dossiers({patients}){
   const [sel,setSel]=useState(null);
@@ -26,7 +27,7 @@ function Dossiers({patients}){
       </div>
     </div>
     <div className="lg:col-span-2">
-      {!pat?<div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] p-12 text-center flex flex-col items-center justify-center" style={{minHeight:'400px'}}><div className="text-6xl mb-4">📋</div><h3 className="text-xl font-bold text-slate-700">Sélectionnez un patient</h3></div>
+      {!pat?<div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] flex flex-col items-center justify-center" style={{minHeight:'400px'}}><EmptyState icon={FolderOpen} title="Sélectionnez un patient" subtitle="Choisissez un patient dans la liste pour consulter son dossier médical." /></div>
       :<div id="dossier-print" className="space-y-4">
         <div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] p-5">
           <div className="flex items-center justify-between mb-4">
@@ -42,9 +43,9 @@ function Dossiers({patients}){
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[['Âge',pat.age||'–'],['Poids',pat.poids||'–'],['Couleur',pat.couleur||'–']].map(([l,v],i)=><div key={i} className="bg-slate-50 rounded-xl p-3 text-center"><div className="text-xs font-bold text-slate-400 uppercase mb-1">{l}</div><div className="font-bold">{v}</div></div>)}
-            {pat.allergies&&<div className="bg-red-50 rounded-xl p-3 text-center border border-red-200"><div className="text-xs font-bold text-red-500 uppercase mb-1">⚠️ Allergies</div><div className="font-bold text-red-700 text-sm">{pat.allergies}</div></div>}
+            {pat.allergies&&<div className="bg-red-50 rounded-xl p-3 text-center border border-red-200"><div className="text-xs font-bold text-red-500 uppercase mb-1 flex items-center justify-center gap-1"><AlertTriangle size={11} strokeWidth={2.5} /> Allergies</div><div className="font-bold text-red-700 text-sm">{pat.allergies}</div></div>}
           </div>
-          {pat.antecedents&&<div className="mt-3 bg-amber-50 rounded-xl p-3 border border-amber-200"><span className="text-xs font-bold text-amber-600">📋 Antécédents : </span><span className="text-sm">{pat.antecedents}</span></div>}
+          {pat.antecedents&&<div className="mt-3 bg-amber-50 rounded-xl p-3 border border-amber-200"><span className="text-xs font-bold text-amber-600">Antécédents : </span><span className="text-sm">{pat.antecedents}</span></div>}
         </div>
         <div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] p-5">
           <h3 className="font-bold text-lg mb-4">Historique médical</h3>
