@@ -1,4 +1,4 @@
-import { Settings, Trash2 } from 'lucide-react'
+import { Settings, Trash2, Building2, Users, Coins, Lock, Save } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { ROLES } from '../../lib/roles'
 import { fmtF } from '../../lib/utils'
@@ -49,8 +49,8 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
     <div className="app-card">
       <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2"><Settings size={20} color="#0d9488" strokeWidth={2.3} /> Paramètres</h2></div>
       <div className="flex border-b overflow-x-auto">
-        {[{k:'clinique',l:'🏥 Ma clinique'},{k:'equipe',l:'👥 Mon équipe'},{k:'tva',l:'💰 TVA & Taxes'},{k:'securite',l:'🔒 Sécurité & Données'}].map(t=>(
-          <button key={t.k} onClick={()=>setTab(t.k)} className={`px-5 py-3 font-semibold text-sm border-b-2 transition-all whitespace-nowrap ${tab===t.k?'border-green-600 text-green-700':'border-transparent text-slate-500 hover:text-slate-700'}`}>{t.l}</button>
+        {[{k:'clinique',l:'Ma clinique',i:Building2},{k:'equipe',l:'Mon équipe',i:Users},{k:'tva',l:'TVA & Taxes',i:Coins},{k:'securite',l:'Sécurité & Données',i:Lock}].map(t=>(
+          <button key={t.k} onClick={()=>setTab(t.k)} className={`px-5 py-3 font-semibold text-sm border-b-2 transition-all whitespace-nowrap inline-flex items-center gap-1.5 ${tab===t.k?'border-green-600 text-green-700':'border-transparent text-slate-500 hover:text-slate-700'}`}><t.i size={14} strokeWidth={2.3} />{t.l}</button>
         ))}
       </div>
 
@@ -71,12 +71,12 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
         </div>
 
         <div className="bg-white border-2 border-slate-200 rounded-xl p-4">
-          <p className="font-bold text-slate-800 mb-1">💾 Sauvegarde des données</p>
+          <p className="font-bold text-slate-800 mb-1">Sauvegarde des données</p>
           <p className="text-sm text-slate-500 mb-3">Télécharge un fichier JSON contenant toutes vos données (patients, ventes, stock, clients, dépenses…). À conserver régulièrement en lieu sûr (clé USB, Drive…).</p>
           <button onClick={exportAll}
             className="px-5 py-2.5 rounded-xl font-bold text-white transition-all"
             style={{background:'linear-gradient(135deg,#166534,#1d4ed8)'}}>
-            💾 Exporter toutes les données (JSON)
+            Exporter toutes les données (JSON)
           </button>
           <p className="text-xs text-slate-400 mt-2">Astuce : faites cet export au moins une fois par semaine, après la clôture.</p>
         </div>
@@ -85,7 +85,7 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
       {/* TVA tab */}
       {tab==='tva'&&<div className="p-6 space-y-5">
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <h3 className="font-bold text-amber-800 mb-1">⚠️ TVA & Obligations fiscales</h3>
+          <h3 className="font-bold text-amber-800 mb-1">TVA & Obligations fiscales</h3>
           <p className="text-sm text-amber-700">Configurez ici si vos prix sont assujettis à la TVA. Une fois activée, la TVA sera calculée et affichée sur toutes vos factures et reçus.</p>
         </div>
         {/* Toggle TVA */}
@@ -138,19 +138,19 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
           ))}
         </div>
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-2">
-          <p className="text-sm font-semibold text-green-800 mb-1">📋 Aperçu en-tête des documents imprimés :</p>
+          <p className="text-sm font-semibold text-green-800 mb-1">Aperçu en-tête des documents imprimés :</p>
           <p className="font-black text-green-900">{clinique.nom||'La Barakat'}</p>
           <p className="text-sm text-green-700">{clinique.sousTitre||'Pharmacie et Clinique Vétérinaire'}</p>
           {clinique.adresse&&<p className="text-xs text-green-600">{clinique.adresse}, {clinique.ville}</p>}
           {clinique.tel&&<p className="text-xs text-green-600">Tél : {clinique.tel}</p>}
         </div>
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-          💡 Ces informations apparaîtront automatiquement sur toutes vos factures, ordonnances et consentements imprimés.
+          Ces informations apparaîtront automatiquement sur toutes vos factures, ordonnances et consentements imprimés.
         </div>
         <div className="flex items-center gap-3">
           <button onClick={handleSaveClinique} disabled={savingCli}
             className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all">
-            {savingCli?'⏳ Enregistrement…':'💾 Enregistrer'}
+            {savingCli?'Enregistrement…':'Enregistrer'}
           </button>
           {savedMsg==='clinique'&&<span className="text-sm font-bold text-green-600">✓ Enregistré — synchronisé sur tous les appareils</span>}
         </div>
@@ -185,12 +185,12 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
           </div>)}
         </div>
         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
-          💡 Les membres actifs avec un nom renseigné apparaîtront automatiquement dans les menus déroulants (tâches, RDV, chirurgies, consentements…)
+          Les membres actifs avec un nom renseigné apparaîtront automatiquement dans les menus déroulants (tâches, RDV, chirurgies, consentements…)
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button onClick={handleSaveEquipe} disabled={savingEq}
             className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all">
-            {savingEq?'⏳ Enregistrement…':'💾 Enregistrer l\'équipe'}
+            {savingEq?'Enregistrement…':'Enregistrer l\'équipe'}
           </button>
           {savedMsg==='equipe'&&<span className="text-sm font-bold text-green-600">✓ Enregistré — synchronisé sur tous les appareils</span>}
         </div>

@@ -89,17 +89,17 @@ function MonProfil({ user }) {
     {/* Changer mot de passe */}
     <div className="app-card">
       <div className="p-5 border-b border-slate-100">
-        <h3 className="font-bold text-lg flex items-center gap-2">🔑 Changer mon mot de passe</h3>
+        <h3 className="font-bold text-lg flex items-center gap-2">Changer mon mot de passe</h3>
         <p className="text-sm text-slate-400 mt-0.5">Géré par Supabase Auth — aucune donnée locale</p>
       </div>
       <div className="p-6 space-y-4">
         {msg&&<div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold ${msg.type==='success'?'bg-green-50 border border-green-200 text-green-700':'bg-red-50 border border-red-200 text-red-700'}`}>
-          {msg.type==='success'?'✅':'⚠️'} {msg.text}
+          {msg.type==='success'?'✓':'⚠'} {msg.text}
         </div>}
         <Field label="Mot de passe actuel" value={pwActuel} onChange={e=>setPwActuel(e.target.value)} type="password" placeholder="Votre mot de passe actuel"/>
         <Field label="Nouveau mot de passe" value={pwNew} onChange={e=>setPwNew(e.target.value)} type="password" placeholder="Minimum 6 caractères"/>
         <Field label="Confirmer le nouveau mot de passe" value={pwConfirm} onChange={e=>setPwConfirm(e.target.value)} type="password" placeholder="Répétez le nouveau mot de passe"/>
-        <Btn onClick={changerMDP} disabled={saving} className="w-full justify-center">{saving ? '⏳ Enregistrement…' : '🔑 Modifier le mot de passe'}</Btn>
+        <Btn onClick={changerMDP} disabled={saving} className="w-full justify-center">{saving ? 'Enregistrement…' : 'Modifier le mot de passe'}</Btn>
       </div>
     </div>
   </div>;
