@@ -1,14 +1,16 @@
 // ─── Système de rôles ──────────────────────────────────────────
+import { Crown, Shield, Stethoscope, User, Pill, Microscope, ShoppingCart } from 'lucide-react'
+
 export const ROLES = {
-  admin:       { label: 'Administrateur', color: '#d97706', bg: 'rgba(217,119,6,0.15)',   icon: '👑' },
-  admin2: {  label: 'Admin secondaire', color: '#0ea5e9',  bg: 'rgba(14,165,233,0.15)', icon: '🛡️' },
-  veterinaire: { label: 'Vétérinaire',    color: '#2563eb', bg: 'rgba(37,99,235,0.15)',   icon: '🩺' },
+  admin:       { label: 'Administrateur', color: '#d97706', bg: 'rgba(217,119,6,0.15)',   icon: Crown },
+  admin2: {  label: 'Admin secondaire', color: '#0ea5e9',  bg: 'rgba(14,165,233,0.15)', icon: Shield },
+  veterinaire: { label: 'Vétérinaire',    color: '#2563eb', bg: 'rgba(37,99,235,0.15)',   icon: Stethoscope },
   // Alias (historique) : certains comptes ont été créés avec le rôle "utilisateur"
   // et attendaient les mêmes droits que "veterinaire".
-  utilisateur: { label: 'Utilisateur',    color: '#2563eb', bg: 'rgba(37,99,235,0.15)',   icon: '👤' },
-  pharmacien:  { label: 'Pharmacien',     color: '#16a34a', bg: 'rgba(22,163,74,0.15)',   icon: '💊' },
-  technicien:  { label: 'Technicien',     color: '#0891b2', bg: 'rgba(8,145,178,0.15)',   icon: '🔬' },
-  caissier:    { label: 'Caissier',       color: '#7c3aed', bg: 'rgba(124,58,237,0.15)',  icon: '🛒' },
+  utilisateur: { label: 'Utilisateur',    color: '#2563eb', bg: 'rgba(37,99,235,0.15)',   icon: User },
+  pharmacien:  { label: 'Pharmacien',     color: '#16a34a', bg: 'rgba(22,163,74,0.15)',   icon: Pill },
+  technicien:  { label: 'Technicien',     color: '#0891b2', bg: 'rgba(8,145,178,0.15)',   icon: Microscope },
+  caissier:    { label: 'Caissier',       color: '#7c3aed', bg: 'rgba(124,58,237,0.15)',  icon: ShoppingCart },
 }
 
 export const ROLE_ACCESS = {

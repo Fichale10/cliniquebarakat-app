@@ -1,4 +1,4 @@
-import { ShieldCheck, Trash2 } from 'lucide-react'
+import { ShieldCheck, Trash2, Crown, Shield, Stethoscope, Pill, Microscope, ShoppingCart } from 'lucide-react'
 import { useState } from 'react'
 import { sb } from '../../lib/supabase'
 import { ROLES } from '../../lib/roles'
@@ -224,9 +224,9 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
           <div>
             <p className="font-bold text-slate-800">{c.nom}</p>
             <p className="text-sm text-slate-500">{c.email}</p>
-            <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',
+            <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',display:'inline-flex',alignItems:'center',gap:4,
               background:ROLES[c.role]?.bg||'#f1f5f9',color:ROLES[c.role]?.color||'#64748b'}}>
-              {ROLES[c.role]?.icon} {ROLES[c.role]?.label||c.role}
+              {(() => { const RIcon = ROLES[c.role]?.icon; return RIcon ? <RIcon size={11} strokeWidth={2.4} /> : null })()} {ROLES[c.role]?.label||c.role}
             </span>
           </div>
           <div className="flex gap-2">
@@ -281,17 +281,17 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
             <label className="text-xs font-bold text-slate-600 mb-2 block">Rôle *</label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                {r:'admin',      icon:'👑',  label:'Administrateur',    desc:'Accès complet à tout le système',                         color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
-                {r:'admin2',     icon:'🛡️', label:'Admin secondaire',  desc:'Accès complet sauf gestion des comptes',                  color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
-                {r:'veterinaire',icon:'🩺',  label:'Vétérinaire',       desc:'Patients, consultations, ordonnances, RDV, chirurgies',   color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
-                {r:'pharmacien', icon:'💊',  label:'Pharmacien',        desc:'Médicaments, stock, ventes, caisse, commandes',           color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
-                {r:'technicien', icon:'🔬',  label:'Technicien',        desc:'Patients, préparations, inventaire, tâches, agenda',      color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'},
-                {r:'caissier',   icon:'🛒',  label:'Caissier',          desc:'Ventes, facturation, créances, caisse',                   color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
+                {r:'admin',      icon:Crown,  label:'Administrateur',    desc:'Accès complet à tout le système',                         color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
+                {r:'admin2',     icon:Shield, label:'Admin secondaire',  desc:'Accès complet sauf gestion des comptes',                  color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
+                {r:'veterinaire',icon:Stethoscope,  label:'Vétérinaire',       desc:'Patients, consultations, ordonnances, RDV, chirurgies',   color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
+                {r:'pharmacien', icon:Pill,  label:'Pharmacien',        desc:'Médicaments, stock, ventes, caisse, commandes',           color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
+                {r:'technicien', icon:Microscope,  label:'Technicien',        desc:'Patients, préparations, inventaire, tâches, agenda',      color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'},
+                {r:'caissier',   icon:ShoppingCart,  label:'Caissier',          desc:'Ventes, facturation, créances, caisse',                   color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
               ].map(opt=>(
                 <div key={opt.r} onClick={()=>patchForm({role:opt.r})}
                   style={{cursor:'pointer',borderRadius:12,padding:'12px',border:`2px solid ${form.role===opt.r?opt.border:'#e2e8f0'}`,background:form.role===opt.r?opt.bg:'var(--app-surface)',transition:'all .15s'}}>
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                    <span style={{fontSize:18}}>{opt.icon}</span>
+                    <opt.icon size={17} color={opt.color} strokeWidth={2.2} />
                     <span style={{fontWeight:700,fontSize:13,color:form.role===opt.r?opt.color:'#334155'}}>{opt.label}</span>
                     {form.role===opt.r&&<span style={{marginLeft:'auto',color:'#16a34a',fontSize:14}}>✓</span>}
                   </div>
@@ -327,8 +327,8 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
                   </div>
                   <p className="text-sm text-slate-500">{c.email}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${c.role==='admin'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-700'}`}>
-                      {ROLES[c.role]?.icon} {ROLES[c.role]?.label}
+                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${c.role==='admin'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-700'}`}>
+                      {(() => { const RIcon = ROLES[c.role]?.icon; return RIcon ? <RIcon size={11} strokeWidth={2.4} /> : null })()} {ROLES[c.role]?.label}
                     </span>
                     <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${c.actif?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>
                       {c.actif?'✓ Actif':'✕ Inactif'}
@@ -359,16 +359,16 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
               <p className="text-sm font-bold text-amber-800 mb-2">Changer le rôle de {c.nom} :</p>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {[
-                  {r:'admin',      icon:'👑',  label:'Administrateur',   color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
-                  {r:'admin2',     icon:'🛡️', label:'Admin secondaire', color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
-                  {r:'veterinaire',icon:'🩺',  label:'Vétérinaire',      color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
-                  {r:'pharmacien', icon:'💊',  label:'Pharmacien',       color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
-                  {r:'technicien', icon:'🔬',  label:'Technicien',       color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'},
-                  {r:'caissier',   icon:'🛒',  label:'Caissier',         color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
+                  {r:'admin',      icon:Crown,  label:'Administrateur',   color:'#d97706', bg:'#fffbeb', border:'#fde68a'},
+                  {r:'admin2',     icon:Shield, label:'Admin secondaire', color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
+                  {r:'veterinaire',icon:Stethoscope,  label:'Vétérinaire',      color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'},
+                  {r:'pharmacien', icon:Pill,  label:'Pharmacien',       color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0'},
+                  {r:'technicien', icon:Microscope,  label:'Technicien',       color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'},
+                  {r:'caissier',   icon:ShoppingCart,  label:'Caissier',         color:'#7c3aed', bg:'#faf5ff', border:'#e9d5ff'},
                 ].map(opt=>(
                   <div key={opt.r} onClick={()=>setEditRole(opt.r)}
                     style={{cursor:'pointer',padding:'10px 12px',borderRadius:10,border:`2px solid ${editRole===opt.r?opt.border:'#e2e8f0'}`,background:editRole===opt.r?opt.bg:'white',display:'flex',alignItems:'center',gap:8,transition:'all .15s'}}>
-                    <span style={{fontSize:16}}>{opt.icon}</span>
+                    <opt.icon size={15} color={opt.color} strokeWidth={2.2} />
                     <span style={{fontWeight:700,fontSize:12,color:editRole===opt.r?opt.color:'#475569'}}>{opt.label}</span>
                     {editRole===opt.r&&<span style={{marginLeft:'auto',color:'#16a34a',fontSize:14}}>✓</span>}
                   </div>
@@ -399,15 +399,15 @@ function GestionComptes({ comptes, setComptes, currentUser, reloadComptes }) {
       <h3 style={{fontWeight:800,color:'#92400e',marginBottom:16,fontSize:14,display:'flex',alignItems:'center',gap:8}}>ℹ️ Récapitulatif des accès par rôle</h3>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}}>
         {[
-          {icon:'👑', role:'Administrateur',   color:'#d97706', bg:'#fff7ed', items:['Tous les modules','Comptes utilisateurs','Finances & rapports','Paramètres clinique']},
-          {icon:'🛡️',role:'Admin secondaire',  color:'#7c3aed', bg:'#faf5ff', items:['Tous les modules','Approbation des inscriptions','Finances & rapports','Paramètres']},
-          {icon:'🩺', role:'Vétérinaire',       color:'#2563eb', bg:'#eff6ff', items:['Patients & dossiers','Consultations & RDV','Ordonnances','Chirurgies & hospitalisation']},
-          {icon:'💊', role:'Pharmacien',        color:'#16a34a', bg:'#f0fdf4', items:['Médicaments & stock','Ventes & caisse','Commandes fournisseurs','Ordonnances']},
-          {icon:'🔬', role:'Technicien',        color:'#0891b2', bg:'#ecfeff', items:['Patients (consultation)','Médicaments & inventaire','Lots & préparations','Tâches & agenda']},
-          {icon:'🛒', role:'Caissier',          color:'#7c3aed', bg:'#faf5ff', items:['Ventes & facturation','Créances clients','Caisse','Historique ventes']},
+          {icon:Crown, role:'Administrateur',   color:'#d97706', bg:'#fff7ed', items:['Tous les modules','Comptes utilisateurs','Finances & rapports','Paramètres clinique']},
+          {icon:Shield,role:'Admin secondaire',  color:'#7c3aed', bg:'#faf5ff', items:['Tous les modules','Approbation des inscriptions','Finances & rapports','Paramètres']},
+          {icon:Stethoscope, role:'Vétérinaire',       color:'#2563eb', bg:'#eff6ff', items:['Patients & dossiers','Consultations & RDV','Ordonnances','Chirurgies & hospitalisation']},
+          {icon:Pill, role:'Pharmacien',        color:'#16a34a', bg:'#f0fdf4', items:['Médicaments & stock','Ventes & caisse','Commandes fournisseurs','Ordonnances']},
+          {icon:Microscope, role:'Technicien',        color:'#0891b2', bg:'#ecfeff', items:['Patients (consultation)','Médicaments & inventaire','Lots & préparations','Tâches & agenda']},
+          {icon:ShoppingCart, role:'Caissier',          color:'#7c3aed', bg:'#faf5ff', items:['Ventes & facturation','Créances clients','Caisse','Historique ventes']},
         ].map((r,i)=>(
           <div key={i} style={{background:r.bg,borderRadius:14,padding:'12px 14px',border:`1px solid ${r.color}22`}}>
-            <p style={{fontWeight:800,marginBottom:10,fontSize:13,color:r.color,display:'flex',alignItems:'center',gap:6}}><span>{r.icon}</span>{r.role}</p>
+            <p style={{fontWeight:800,marginBottom:10,fontSize:13,color:r.color,display:'flex',alignItems:'center',gap:6}}><r.icon size={14} color={r.color} strokeWidth={2.3} />{r.role}</p>
             <ul style={{listStyle:'none',padding:0,margin:0,display:'flex',flexDirection:'column',gap:5}}>
               {r.items.map((item,j)=>(
                 <li key={j} style={{fontSize:11,color:'#475569',display:'flex',alignItems:'center',gap:6}}>

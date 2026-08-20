@@ -45,7 +45,7 @@ function JournalActivite({user}){
   const fmt=d=>{try{return new Date(d).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch{return d;}};
 
   const actionColor={'connexion':'#16a34a','deconnexion':'#dc2626'};
-  const roleInfo=r=>ROLES[r]||{label:r,icon:'👤',color:'#64748b'};
+  const roleInfo=r=>ROLES[r]||{label:r,icon:null,color:'#64748b'};
 
   return <div className="app-page space-y-5">
     <div className="app-card p-5" id="journal-print">
@@ -71,7 +71,7 @@ function JournalActivite({user}){
           <select value={filterRole} onChange={e=>setFilterRole(e.target.value)}
             className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-green-400">
             <option value="">Tous les rôles</option>
-            {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
+            {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
           </select>
         </div>
       </div>
@@ -99,8 +99,8 @@ function JournalActivite({user}){
                   <div style={{fontSize:'11px',color:'#94a3b8'}}>{l.user_email}</div>
                 </td>
                 <td style={{padding:'10px 14px'}}>
-                  <span style={{fontSize:'11px',fontWeight:700,padding:'3px 8px',borderRadius:'999px',background:ri.bg||'#f1f5f9',color:ri.color||'#64748b'}}>
-                    {ri.icon} {ri.label}
+                  <span style={{fontSize:'11px',fontWeight:700,padding:'3px 8px',borderRadius:'999px',display:'inline-flex',alignItems:'center',gap:4,background:ri.bg||'#f1f5f9',color:ri.color||'#64748b'}}>
+                    {ri.icon ? <ri.icon size={11} strokeWidth={2.4} /> : null} {ri.label}
                   </span>
                 </td>
                 <td style={{padding:'10px 14px'}}>

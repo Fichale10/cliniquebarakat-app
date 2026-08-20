@@ -68,8 +68,8 @@ function MonProfil({ user }) {
           <div>
             <h2 className="text-xl font-black text-slate-900">{user?.name}</h2>
             <p className="text-slate-500 text-sm">{user?.email}</p>
-            <span className="mt-1 inline-block text-xs font-bold px-2.5 py-1 rounded-full" style={{background:roleInfo.bg,color:roleInfo.color}}>
-              {roleInfo.icon} {roleInfo.label}
+            <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{background:roleInfo.bg,color:roleInfo.color}}>
+              {roleInfo.icon && <roleInfo.icon size={11} strokeWidth={2.4} />} {roleInfo.label}
             </span>
           </div>
         </div>
