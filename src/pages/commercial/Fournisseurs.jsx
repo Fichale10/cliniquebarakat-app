@@ -471,7 +471,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
             <select value={fSpec} onChange={e => setFSpec(e.target.value)}
               style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fSpec?'#0f172a':'#94a3b8', outline:'none' }}>
               <option value="">Toutes spécialités</option>
-              {SPECIALITES.map(s => <option key={s} value={s}>{specStyle(s).icon} {s}</option>)}
+              {SPECIALITES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <select value={fActif} onChange={e => setFActif(e.target.value)}
               style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fActif?'#0f172a':'#94a3b8', outline:'none' }}>
@@ -672,8 +672,8 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
                       <button type="button" onClick={() => setExpV(isExp?null:d.id)}
                         style={{ width:'100%',background:'none',border:'none',cursor:'pointer',textAlign:'left',padding:'14px 16px',display:'flex',alignItems:'center',gap:14 }}>
                         {/* Logo fournisseur */}
-                        <div style={{ width:40,height:40,borderRadius:12,background:specStyle(d.specialite).bg,border:`1.5px solid ${specStyle(d.specialite).border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0 }}>
-                          {specStyle(d.specialite).icon}
+                        <div style={{ width:40,height:40,borderRadius:12,background:specStyle(d.specialite).bg,border:`1.5px solid ${specStyle(d.specialite).border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                          {(() => { const st = specStyle(d.specialite); const SIcon = st.icon; return SIcon ? <SIcon size={19} color={st.text} strokeWidth={2.1} /> : null })()}
                         </div>
 
                         {/* Infos */}
