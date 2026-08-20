@@ -1,4 +1,4 @@
-import { ListChecks, Trash2 } from 'lucide-react'
+import { ListChecks, Trash2, ClipboardList, Zap, CheckCircle2, Wrench, Package, Phone, SprayCan, FileText, Syringe, Pin } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Badge, Field, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
@@ -9,8 +9,8 @@ const PRIORITES  = ['Haute', 'Normale', 'Basse']
 const CATEGORIES = ['Préparation','Stock','Rappels','Entretien','Administratif','Soins','Autre']
 const COLS       = ['À faire', 'En cours', 'Terminé']
 const PRIO_COLOR = { Haute: 'red', Normale: 'blue', Basse: 'slate' }
-const COL_ICON   = { 'À faire': '📋', 'En cours': '⚡', 'Terminé': '✅' }
-const CAT_ICON   = { Préparation:'🔧', Stock:'📦', Rappels:'📞', Entretien:'🧹', Administratif:'📝', Soins:'💉', Autre:'📌' }
+const COL_ICON   = { 'À faire': ClipboardList, 'En cours': Zap, 'Terminé': CheckCircle2 }
+const CAT_ICON   = { Préparation:Wrench, Stock:Package, Rappels:Phone, Entretien:SprayCan, Administratif:FileText, Soins:Syringe, Autre:Pin }
 
 const EMPTY_FORM = { titre:'', membres:[], priorite:'Normale', statut:'À faire', echeance: today(), categorie:'Autre' }
 
@@ -207,8 +207,8 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
               return (
                 <div key={col} className="rounded-2xl p-4" style={{ background: col === 'Terminé' ? '#f0fdf4' : col === 'En cours' ? '#fefce8' : '#f8fafc', border: '1px solid', borderColor: col === 'Terminé' ? '#bbf7d0' : col === 'En cours' ? '#fde68a' : '#e2e8f0' }}>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold text-sm" style={{ color: col === 'Terminé' ? '#15803d' : col === 'En cours' ? '#b45309' : '#475569' }}>
-                      {COL_ICON[col]} {col}
+                    <h3 className="font-bold text-sm flex items-center gap-1.5" style={{ color: col === 'Terminé' ? '#15803d' : col === 'En cours' ? '#b45309' : '#475569' }}>
+                      {(() => { const CIcon = COL_ICON[col]; return CIcon ? <CIcon size={15} strokeWidth={2.4} /> : null })()} {col}
                     </h3>
                     <Badge color={col === 'À faire' ? 'slate' : col === 'En cours' ? 'yellow' : 'green'}>{colTaches.length}</Badge>
                   </div>
@@ -217,8 +217,8 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
                     {colTaches.map(t => (
                       <div key={t.id} className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="text-sm font-semibold leading-snug">
-                            {CAT_ICON[t.categorie] || '📌'} {t.titre}
+                          <p className="text-sm font-semibold leading-snug flex items-start gap-1.5">
+                            {(() => { const TIcon = CAT_ICON[t.categorie] || Pin; return <TIcon size={14} color="#64748b" strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} /> })()} <span>{t.titre}</span>
                           </p>
                           <Badge color={PRIO_COLOR[t.priorite]}>{t.priorite}</Badge>
                         </div>
