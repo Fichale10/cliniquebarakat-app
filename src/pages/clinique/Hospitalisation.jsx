@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Trash2, BedDouble } from 'lucide-react'
+import { Trash2, BedDouble, PawPrint } from 'lucide-react'
 import { Btn, Badge, Field, AutoSuggest, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
@@ -178,7 +178,14 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
                   cursor: occ ? 'pointer' : 'default',
                   boxShadow: isSelected ? '0 0 0 3px rgba(13,148,136,0.2)' : undefined,
                 }}>
-                <div className="text-2xl mb-1">{occ ? '🐾' : '🟩'}</div>
+                <div className="mb-1.5 flex justify-center">
+                  <span style={{ width: 34, height: 34, borderRadius: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    background: occ ? (isSelected ? '#ccfbf1' : '#ffedd5') : '#dcfce7' }}>
+                    {occ
+                      ? <PawPrint size={17} color={isSelected ? '#0d9488' : '#ea580c'} strokeWidth={2.2} />
+                      : <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#16a34a' }} />}
+                  </span>
+                </div>
                 <div className="font-bold text-sm">{cage}</div>
                 {occ
                   ? <div className="text-xs font-semibold truncate mt-0.5" style={{ color: '#c2410c' }}>{occ.patient}</div>
@@ -198,7 +205,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
             style={{ background: 'linear-gradient(135deg,#fff7ed,#fffbf5)' }}>
             <div>
               <h3 className="font-bold text-lg flex items-center gap-2">
-                🐾 {sel.patient}
+                <PawPrint size={18} color="#ea580c" strokeWidth={2.3} /> {sel.patient}
                 <Badge color="orange">Cage {sel.cage}</Badge>
                 <Badge color={sel.statut === 'Hospitalisé' ? 'blue' : 'green'}>{sel.statut}</Badge>
               </h3>
