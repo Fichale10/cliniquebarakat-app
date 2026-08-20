@@ -1,4 +1,4 @@
-import { FileSignature } from 'lucide-react'
+import { FileSignature, Scissors, Feather, Syringe, BedDouble, FileText } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 const today = () => new Date().toISOString().split('T')[0];
 import {
@@ -35,7 +35,7 @@ function Consentements({patients,equipe=[]}){
       <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2"><FileSignature size={20} color="#2563eb" strokeWidth={2.3} /> Consentements éclairés</h2></div>
       <div className="p-5">
         <div className="flex gap-2 mb-5 flex-wrap">
-          {Object.entries(TEMPLATES).map(([k,v])=><button key={k} onClick={()=>{setType(k);setGenerated(false);}} className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${type===k?'border-blue-500 bg-blue-50 text-blue-700':'border-slate-200 text-slate-600 hover:border-slate-300'}`}>{k==='chirurgie'?'🔬 Chirurgie':k==='euthanasie'?'🕊️ Euthanasie':k==='anesthesie'?'💉 Anesthésie':'🏥 Hospitalisation'}</button>)}
+          {Object.entries(TEMPLATES).map(([k,v])=>{const TIcon=k==='chirurgie'?Scissors:k==='euthanasie'?Feather:k==='anesthesie'?Syringe:BedDouble;const lbl=k==='chirurgie'?'Chirurgie':k==='euthanasie'?'Euthanasie':k==='anesthesie'?'Anesthésie':'Hospitalisation';return <button key={k} onClick={()=>{setType(k);setGenerated(false);}} className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all inline-flex items-center gap-1.5 ${type===k?'border-blue-500 bg-blue-50 text-blue-700':'border-slate-200 text-slate-600 hover:border-slate-300'}`}><TIcon size={15} strokeWidth={2.2} /> {lbl}</button>;})}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           <div><label className="text-xs font-bold text-slate-600 mb-1 block">Patient</label>
@@ -50,14 +50,14 @@ function Consentements({patients,equipe=[]}){
           <Field label="Risques spécifiques (optionnel)" value={form.risques} onChange={f('risques')} placeholder="Laisser vide pour utiliser le modèle standard" className="md:col-span-2"/>
         </div>
         <Field label="Note complémentaire" value={form.note} onChange={f('note')} rows={2} placeholder="Informations supplémentaires…"/>
-        <div className="mt-4"><Btn onClick={()=>{if(!form.proprio)return alert('Propriétaire requis');setGenerated(true);}}>📄 Générer le formulaire</Btn></div>
+        <div className="mt-4"><Btn onClick={()=>{if(!form.proprio)return alert('Propriétaire requis');setGenerated(true);}}><span style={{display:'inline-flex',alignItems:'center',gap:'6px'}}><FileText size={15} strokeWidth={2.3} /> Générer le formulaire</span></Btn></div>
       </div>
     </div>
 
     {generated&&<div id="consent-print" className="bg-white rounded-2xl shadow-sm border-2 border-slate-300 overflow-hidden">
       <div className="p-4 border-b flex items-center justify-between bg-slate-50 no-print">
         <h3 className="font-bold text-slate-700">Aperçu du formulaire</h3>
-        <PrintBtn zoneId="consent-print" label="🖨 Imprimer le formulaire"/>
+        <PrintBtn zoneId="consent-print" label="Imprimer le formulaire"/>
       </div>
       {/* Document imprimable */}
       <div className="p-10">
