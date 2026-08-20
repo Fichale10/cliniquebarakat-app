@@ -435,6 +435,9 @@ function Root() {
 
   // ── Login ─────────────────────────────────────────────────
   const doLogin = async (email, pw) => {
+    if (!navigator.onLine) {
+      return { ok: false, msg: '📡 Pas de connexion internet — vérifiez le réseau (Wi-Fi ou données mobiles).' }
+    }
     try {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw })
 
@@ -442,6 +445,9 @@ function Root() {
         // Messages d'erreur lisibles en français
         if (error.message.includes('Invalid login')) return { ok: false, msg: 'Email ou mot de passe incorrect.' }
         if (error.message.includes('Email not confirmed')) return { ok: false, msg: 'Veuillez confirmer votre email.' }
+        if (/fetch|network|offline|timeout|connection/i.test(error.message)) {
+          return { ok: false, msg: '📡 Serveur injoignable — vérifiez votre connexion internet et réessayez.' }
+        }
         return { ok: false, msg: error.message }
       }
 
