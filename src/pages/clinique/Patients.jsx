@@ -438,7 +438,7 @@ function Patients({ patients, setPatients, clients, user, sb, logAction }) {
           })}
 
           {!filtered.length && (
-            <EmptyState icon="🐾" title="Aucun patient trouvé" subtitle="Ajoutez le premier patient ou modifiez les filtres." />
+            <EmptyState icon={PawPrint} title="Aucun patient trouvé" subtitle="Ajoutez le premier patient ou modifiez les filtres." />
           )}
         </div>
 

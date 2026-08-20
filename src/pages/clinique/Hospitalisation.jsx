@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, BedDouble } from 'lucide-react'
 import { Btn, Badge, Field, AutoSuggest, EmptyState } from '../../components/ui'
 import { newId } from '../../lib/db'
 
@@ -394,7 +394,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
         </div>
       )}
 
-      {hospitalisations.length === 0 && <div className="app-card"><EmptyState icon="🏥" title="Aucune hospitalisation" subtitle="Hospitalisez un patient pour suivre ses soins et ses constantes." /></div>}
+      {hospitalisations.length === 0 && <div className="app-card"><EmptyState icon={BedDouble} title="Aucune hospitalisation" subtitle="Hospitalisez un patient pour suivre ses soins et ses constantes." /></div>}
     </div>
   )
 }

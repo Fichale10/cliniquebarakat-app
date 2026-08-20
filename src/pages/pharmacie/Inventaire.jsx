@@ -1,4 +1,4 @@
-import { ClipboardList, Trash2, BarChart3, Archive, RefreshCw } from 'lucide-react'
+import { ClipboardList, Trash2, BarChart3, Archive, RefreshCw, Pill, Calendar } from 'lucide-react'
 import { useState, useMemo, useEffect, Fragment } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
@@ -517,7 +517,7 @@ function TabHistorique({ inventaires = [], setInventaires, sb, dbDelete }) {
   return (
     <div className="space-y-3">
       {!sorted.length && (
-        <EmptyState icon="📅" title="Aucun inventaire clôturé"
+        <EmptyState icon={Calendar} title="Aucun inventaire clôturé"
           subtitle="Les inventaires journaliers apparaîtront ici après la première clôture." />
       )}
       {sorted.map(inv => (
@@ -635,7 +635,7 @@ function TabMouvements({ sb }) {
       </div>
       {rows === null && <p className="p-5 text-sm text-slate-400 italic">Chargement…</p>}
       {rows !== null && !filtered.length && (
-        <EmptyState icon="🔁" title="Aucun mouvement" subtitle="Exécutez le script supabase/stock_mouvements.sql puis effectuez une vente ou une réception pour voir le journal se remplir." />
+        <EmptyState icon={RefreshCw} title="Aucun mouvement" subtitle="Exécutez le script supabase/stock_mouvements.sql puis effectuez une vente ou une réception pour voir le journal se remplir." />
       )}
       {filtered.length > 0 && (
         <div style={{ overflowX:'auto' }}>

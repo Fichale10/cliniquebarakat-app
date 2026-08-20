@@ -552,7 +552,7 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
             )
           })}
           {!filtered.length && (
-            <EmptyState icon="🛒" title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />
+            <EmptyState icon={ShoppingCart} title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />
           )}
         </div>
 

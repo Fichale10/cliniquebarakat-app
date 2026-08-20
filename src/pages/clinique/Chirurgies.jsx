@@ -357,7 +357,7 @@ function Chirurgies({ patients, equipe = [], chirurgies = [], setChirurgies, sb,
           </table>
         </div>
 
-        {!filtered.length && <EmptyState icon="🔬" title="Aucun acte chirurgical" subtitle="Enregistrez les actes chirurgicaux réalisés à la clinique." />}
+        {!filtered.length && <EmptyState icon={Scissors} title="Aucun acte chirurgical" subtitle="Enregistrez les actes chirurgicaux réalisés à la clinique." />}
 
         <Pagination {...pagination} />
       </div>

@@ -242,7 +242,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
                 </tr>
               ))}
               {!factures.length && (
-                <tr><td colSpan={8}><EmptyState icon="📄" title="Aucune facture" subtitle="Émettez votre première facture client." /></td></tr>
+                <tr><td colSpan={8}><EmptyState icon={Receipt} title="Aucune facture" subtitle="Émettez votre première facture client." /></td></tr>
               )}
             </tbody>
           </table>

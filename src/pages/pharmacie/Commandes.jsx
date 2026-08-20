@@ -347,7 +347,7 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
         </FilterBar>
 
         <div className="divide-y">
-          {!cmdFiltered.length && <EmptyState icon="📦" title="Aucune commande enregistrée" subtitle="Créez une commande fournisseur pour réapprovisionner votre stock." />}
+          {!cmdFiltered.length && <EmptyState icon={Package} title="Aucune commande enregistrée" subtitle="Créez une commande fournisseur pour réapprovisionner votre stock." />}
           {cmdFiltered.map(c => (
             <div key={c.id}>
               <div className="p-5 hover:bg-slate-50 cursor-pointer" onClick={() => setExp(exp === c.id ? null : c.id)}>

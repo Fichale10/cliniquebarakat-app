@@ -1,4 +1,4 @@
-import { Syringe, Trash2, Coins } from 'lucide-react'
+import { Syringe, Trash2, Coins, Pill } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { EmptyState } from '../../components/ui'
 import { dbFetch, dbInsert, dbUpdate, dbDelete, dbAdjustStock, newId } from '../../lib/db'
@@ -253,7 +253,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
 
       <div className="divide-y">
         {loading&&<div style={{padding:'24px',textAlign:'center',color:'#94a3b8',fontSize:13}}>Chargement…</div>}
-        {!loading&&!filtered.length&&<EmptyState icon="💊" title={filter==='actifs'?'Aucun traitement actif':filter==='termines'?'Aucun traitement terminé':'Aucun traitement enregistré'} subtitle="Les traitements en cours de suivi apparaîtront ici." />}
+        {!loading&&!filtered.length&&<EmptyState icon={Pill} title={filter==='actifs'?'Aucun traitement actif':filter==='termines'?'Aucun traitement terminé':'Aucun traitement enregistré'} subtitle="Les traitements en cours de suivi apparaîtront ici." />}
         {filtered.map(t=>{
           const pat=patients.find(p=>p.nom===t.patient);
           const jRestants=t.fin?Math.round((new Date(t.fin)-new Date())/86400000):null;

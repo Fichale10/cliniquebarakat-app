@@ -207,7 +207,7 @@ ${d.notes ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-ra
         )}
 
         <div className="divide-y">
-          {!devis.length && <EmptyState icon="📋" title="Aucun devis pour le moment" subtitle="Créez un devis pour un client et suivez sa conversion en facture." />}
+          {!devis.length && <EmptyState icon={FileSpreadsheet} title="Aucun devis pour le moment" subtitle="Créez un devis pour un client et suivez sa conversion en facture." />}
           {devis.map(d => (
             <div key={d.id} className="p-5 hover:bg-slate-50">
               <div className="flex items-start justify-between gap-4">

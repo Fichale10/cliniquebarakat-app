@@ -1,4 +1,7 @@
-export function EmptyState({ icon = '📋', title, subtitle, action }) {
+import { ClipboardList } from 'lucide-react'
+
+export function EmptyState({ icon: Icon = ClipboardList, title, subtitle, action }) {
+  const isComponent = typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null)
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -14,7 +17,7 @@ export function EmptyState({ icon = '📋', title, subtitle, action }) {
         fontSize: 34, marginBottom: 18,
         boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
       }}>
-        {icon}
+        {isComponent ? <Icon size={32} color="#64748b" strokeWidth={1.8} /> : Icon}
       </div>
 
       {/* Titre */}

@@ -486,7 +486,7 @@ function Ordonnances({ patients, meds, ordonnances = [], setOrdonnances, sb, dbI
             )
           })}
 
-          {!filtered.length && <EmptyState icon="📝" title="Aucune ordonnance" subtitle="Rédigez une ordonnance lors de vos consultations." />}
+          {!filtered.length && <EmptyState icon={FileText} title="Aucune ordonnance" subtitle="Rédigez une ordonnance lors de vos consultations." />}
         </div>
 
         <Pagination {...pagination} />

@@ -592,7 +592,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
               </div>
             )
           })}
-          {!cFiltered.length && <EmptyState icon="🩺" title="Aucune consultation" subtitle="Les consultations enregistrées apparaîtront ici." />}
+          {!cFiltered.length && <EmptyState icon={Stethoscope} title="Aucune consultation" subtitle="Les consultations enregistrées apparaîtront ici." />}
         </div>
 
         <Pagination {...pagination} />

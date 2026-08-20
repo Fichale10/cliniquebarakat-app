@@ -393,7 +393,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
 
           {!filtered.length && (
             <div style={{ gridColumn:'1/-1' }}>
-              <EmptyState icon="👥" title="Aucun client trouvé" subtitle="Ajoutez votre premier client ou affinez votre recherche." />
+              <EmptyState icon={Users} title="Aucun client trouvé" subtitle="Ajoutez votre premier client ou affinez votre recherche." />
             </div>
           )}
         </div>

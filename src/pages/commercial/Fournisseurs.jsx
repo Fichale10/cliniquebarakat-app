@@ -494,7 +494,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
           </div>
 
           {filtered.length === 0 ? (
-            <EmptyState icon="🏭" title="Aucun fournisseur trouvé" subtitle="Ajoutez vos fournisseurs pour gérer vos approvisionnements." />
+            <EmptyState icon={Factory} title="Aucun fournisseur trouvé" subtitle="Ajoutez vos fournisseurs pour gérer vos approvisionnements." />
           ) : (
             <div style={{ padding:16, display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
               {filtered.map(f => {

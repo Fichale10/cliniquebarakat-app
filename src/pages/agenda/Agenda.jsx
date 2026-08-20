@@ -456,7 +456,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
           )}
 
           {filteredRdvs.length === 0 && (
-            <EmptyState icon="📅" title="Aucun rendez-vous" subtitle={hasFilters ? 'Essayez d\'autres filtres.' : 'Planifiez votre premier rendez-vous.'} />
+            <EmptyState icon={Calendar} title="Aucun rendez-vous" subtitle={hasFilters ? 'Essayez d\'autres filtres.' : 'Planifiez votre premier rendez-vous.'} />
           )}
         </div>
       </div>

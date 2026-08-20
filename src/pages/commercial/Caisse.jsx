@@ -1096,7 +1096,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
 
             <div className="p-4 space-y-2">
               {!pagination.pageItems.length && (
-                <EmptyState icon="🛒" title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />
+                <EmptyState icon={ShoppingCart} title="Aucune vente" subtitle="Enregistrez votre première vente depuis la caisse." />
               )}
               {pagination.pageItems.map(v => {
                 const isExp = expandedVId === v.id

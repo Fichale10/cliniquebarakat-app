@@ -4,7 +4,7 @@ import { dbUpdate } from '../../lib/db'
 import { fmtF, venteTTC, venteRestant } from '../../lib/ventes'
 import { applyVenteStock } from '../../lib/stock'
 import { exportCSV, today } from '../../lib/utils'
-import { Coins, Download, MessageCircle } from 'lucide-react'
+import { Coins, Download, MessageCircle, CheckCircle2 } from 'lucide-react'
 
 function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, setConsultations, meds = [], setMeds, clients = [] }) {
   const mask  = v => otrMode ? '••••• F' : fmtF(v)
@@ -118,7 +118,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
           </button>
         </div>
 
-        {!listeClients.length && <EmptyState icon="✅" title="Aucune créance en attente" subtitle="Tous vos clients sont à jour — félicitations !" />}
+        {!listeClients.length && <EmptyState icon={CheckCircle2} title="Aucune créance en attente" subtitle="Tous vos clients sont à jour — félicitations !" />}
 
         <div className="divide-y">
           {listeClients.map(c => (

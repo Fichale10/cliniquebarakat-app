@@ -287,7 +287,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
           </div>
         </div>
 
-        {taches.length === 0 && <EmptyState icon="✅" title="Aucune tâche créée" subtitle="Organisez votre équipe en créant votre première tâche." />}
+        {taches.length === 0 && <EmptyState icon={ListChecks} title="Aucune tâche créée" subtitle="Organisez votre équipe en créant votre première tâche." />}
       </div>
     </div>
   )
