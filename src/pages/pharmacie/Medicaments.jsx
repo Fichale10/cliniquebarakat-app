@@ -321,7 +321,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                         style={{ width:'100%',border:'1.5px solid #bfdbfe',borderRadius:9,padding:'7px 10px',fontSize:13,outline:'none',background:'white',marginBottom:8 }} />
                       <div style={{ display:'flex',gap:6 }}>
                         <button type="button" onClick={saveQuickFour} disabled={!quickFourNom.trim()||savingFour}
-                          style={{ padding:'6px 12px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer' }}>{savingFour?'⏳':'✓ Créer'}</button>
+                          style={{ padding:'6px 12px',background:'#2563eb',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer' }}>{savingFour?'…':'✓ Créer'}</button>
                         <button type="button" onClick={()=>{setShowQuickFour(false);setQuickFourNom('')}}
                           style={{ padding:'6px 10px',color:'#64748b',background:'none',border:'none',fontSize:12,cursor:'pointer' }}>Annuler</button>
                       </div>
@@ -367,7 +367,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
 
             <div style={{ marginTop:16,paddingTop:16,borderTop:'1px solid rgba(37,99,235,0.1)',display:'flex',gap:8 }}>
               <Btn onClick={handlePrimarySave} disabled={saving}>
-                {saving?'⏳ Enregistrement…':formMode==='edit'?'✓ Enregistrer les modifications':'✓ Ajouter le médicament'}
+                {saving?'Enregistrement…':formMode==='edit'?'✓ Enregistrer les modifications':'✓ Ajouter le médicament'}
               </Btn>
               <button onClick={handleCloseForm} style={{ padding:'8px 14px',borderRadius:10,fontSize:12,fontWeight:700,background:'none',border:'none',color:'#64748b',cursor:'pointer' }}>Annuler</button>
             </div>
@@ -400,7 +400,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nom, catégorie, référence…"
             style={{ flex:'1 1 180px',minWidth:150,padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:13,outline:'none' }} />
           <FilterBtns label="Stock" options={[{v:'critique',l:'Critique'},{v:'ok',l:'✓ OK'}]} value={fStock} onChange={setFStock} colorFn={v=>v==='critique'?'red':'green'} />
-          <FilterBtns label="Péremption" options={[{v:'expire',l:'☠️ Expiré'},{v:'proche',l:'⏰ < 30j'}]} value={fPerem} onChange={setFPerem} colorFn={()=>'amber'} />
+          <FilterBtns label="Péremption" options={[{v:'expire',l:'Expiré'},{v:'proche',l:'< 30j'}]} value={fPerem} onChange={setFPerem} colorFn={v=>v==='expire'?'red':'amber'} />
           {activeFilters > 0 && (
             <button onClick={resetFilters} style={{ padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:12,fontWeight:700,background:'white',color:'#64748b',cursor:'pointer' }}>
               ✕ Effacer ({activeFilters})
@@ -454,9 +454,9 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                         {m.peremption ? (
                           <div>
                             <div style={{ fontSize:11,fontWeight:700,color:ps==='expired'?'#dc2626':ps==='critical'?'#ef4444':ps==='warning'?'#d97706':'#64748b' }}>{m.peremption}</div>
-                            {ps==='expired'  && <span style={{ fontSize:10,padding:'1px 7px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700 }}>☠️ Expiré</span>}
+                            {ps==='expired'  && <span style={{ fontSize:10,padding:'1px 7px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700 }}>Expiré</span>}
                             {ps==='critical' && <span style={{ fontSize:10,padding:'1px 7px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700 }}>⏰ {j}j</span>}
-                            {ps==='warning'  && <span style={{ fontSize:10,padding:'1px 7px',borderRadius:99,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a',fontWeight:700 }}>⚠️ {j}j</span>}
+                            {ps==='warning'  && <span style={{ fontSize:10,padding:'1px 7px',borderRadius:99,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a',fontWeight:700 }}>{j}j</span>}
                             {ps==='ok'       && <span style={{ fontSize:10,padding:'1px 7px',borderRadius:99,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',fontWeight:700 }}>✓ {j}j</span>}
                           </div>
                         ) : <span style={{ color:'#cbd5e1',fontSize:11 }}>–</span>}
@@ -550,9 +550,9 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
                     {/* Footer */}
                     <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:8,borderTop:'1px solid #f1f5f9' }}>
                       <span style={{ fontSize:11,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1 }}>{m.fournisseur||'–'}</span>
-                      {ps==='expired'  && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>☠️ Expiré</span>}
+                      {ps==='expired'  && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>Expiré</span>}
                       {ps==='critical' && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>⏰ {j}j</span>}
-                      {ps==='warning'  && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a',fontWeight:700,flexShrink:0 }}>⚠️ {j}j</span>}
+                      {ps==='warning'  && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a',fontWeight:700,flexShrink:0 }}>{j}j</span>}
                       {crit && ps!=='expired' && ps!=='critical' && <span style={{ fontSize:10,padding:'2px 8px',borderRadius:99,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',fontWeight:700,flexShrink:0 }}>Critique</span>}
                     </div>
                   </div>
