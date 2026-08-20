@@ -117,15 +117,33 @@ class ScreenErrorBoundary extends Component {
   componentDidCatch(error, info) {
     // Help debug: log in the console and show a user-friendly message
     console.error('[ScreenErrorBoundary]', error, info)
+    // Chunk introuvable après un nouveau déploiement (hash obsolète) :
+    // recharger automatiquement une fois pour récupérer la nouvelle version.
+    const msg = error?.message || ''
+    if (/dynamically imported module|Loading chunk|Failed to fetch dynamically/i.test(msg)) {
+      const last = Number(sessionStorage.getItem('lb_chunk_reload') || 0)
+      if (Date.now() - last > 30000) {
+        sessionStorage.setItem('lb_chunk_reload', String(Date.now()))
+        window.location.reload()
+      }
+    }
   }
 
   render() {
     if (this.state.hasError) {
       const msg = this.state.error?.message || String(this.state.error || 'Erreur inconnue')
+      const isChunk = /dynamically imported module|Loading chunk|Failed to fetch dynamically/i.test(msg)
       return (
         <div className="screen-error-boundary p-6 rounded-[14px] border">
-          <div className="font-black mb-1.5">Erreur d'affichage</div>
-          <div className="text-[13px] leading-snug whitespace-pre-wrap screen-error-boundary__msg">{msg}</div>
+          <div className="font-black mb-1.5">{isChunk ? 'Nouvelle version disponible' : "Erreur d'affichage"}</div>
+          <div className="text-[13px] leading-snug whitespace-pre-wrap screen-error-boundary__msg">
+            {isChunk ? "L'application a été mise à jour. Rechargez la page pour continuer." : msg}
+          </div>
+          <button onClick={() => window.location.reload()}
+            className="mt-3 px-4 py-2 rounded-[10px] font-bold text-[13px] text-white border-0 cursor-pointer"
+            style={{ background: '#166534' }}>
+            Recharger la page
+          </button>
         </div>
       )
     }
