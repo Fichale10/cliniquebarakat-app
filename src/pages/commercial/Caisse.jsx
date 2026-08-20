@@ -8,8 +8,9 @@ import {
 import { dbInsert, dbUpdate, dbDelete, dbFetch, newId } from '../../lib/db'
 import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, venteEncaisse, ligneUnites, CLIENT_INTERNE, isCession } from '../../lib/ventes'
+import { exportCSV } from '../../lib/utils'
 import { applyVenteStock } from '../../lib/stock'
-import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil } from 'lucide-react'
+import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil, Copy, Download } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
@@ -39,6 +40,8 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   const [achatInterne, setAchatInterne] = useState(false)
   const [mode, setMode]                 = useState('Espèces')
   const [note, setNote]                 = useState('')
+  const [remisePct, setRemisePct]       = useState('')
+  const [acompte, setAcompte]           = useState('')
   const [recu, setRecu]                 = useState(null)
   const [montantDonne, setMontantDonne] = useState('')
   const [saving, setSaving]             = useState(false)
@@ -153,28 +156,33 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     setLignes([{ ...EMPTY_LIGNE }])
     setPosDate(today())
     setClient(''); setNote(''); setMontantDonne(''); setAchatInterne(false)
+    setRemisePct(''); setAcompte('')
     setFormErrors({}); setValidationMessages([])
   }
 
-  const lignesOk = lignes.filter(l => l.med && (l.qte || 0) > 0)
-  const total    = lignesOk.reduce((s, l) => s + (l.pu || 0) * (l.qte || 0), 0)
-  const tvaAmt   = tva?.active ? Math.round(total * (tva.taux / 100)) : 0
-  const totalTTC = total + tvaAmt
-  const monnaie  = montantDonne ? Math.max(0, (parseFloat(montantDonne) || 0) - totalTTC) : 0
+  const lignesOk  = lignes.filter(l => l.med && (l.qte || 0) > 0)
+  const sousTotal = lignesOk.reduce((s, l) => s + (l.pu || 0) * (l.qte || 0), 0)
+  const remiseAmt = Math.min(sousTotal, Math.round(sousTotal * (Math.min(100, Math.max(0, parseFloat(remisePct) || 0)) / 100)))
+  const total     = sousTotal - remiseAmt
+  const tvaAmt    = tva?.active ? Math.round(total * (tva.taux / 100)) : 0
+  const totalTTC  = total + tvaAmt
+  const acompteNum = mode === 'À crédit' ? Math.min(totalTTC, Math.max(0, Math.round(parseFloat(acompte) || 0))) : 0
+  const monnaie   = montantDonne ? Math.max(0, (parseFloat(montantDonne) || 0) - totalTTC) : 0
 
   const enregistrer = async () => {
     const checked = validateCaisseForm({ client: achatInterne ? CLIENT_INTERNE : client, mode, note, lignes }, meds)
     if (!checked.ok) { setFormErrors(checked.fieldErrors); setValidationMessages(checked.messages); return }
     const { data: validated } = checked
     const lignesValides = validated.lignes
-    const statut = validated.mode === 'À crédit' ? 'À crédit' : 'Payé'
+    const statut = validated.mode !== 'À crédit' ? 'Payé' : (acompteNum > 0 ? 'Partiellement payé' : 'À crédit')
 
     const row = venteToDbRow({
       id: newId(), date: posDate || today(),
       client: validated.client, lignes: lignesValides,
       total, statut, mode: validated.mode,
       note: validated.note, tvaAmt,
-      montant_paye: statut === 'Payé' ? totalTTC : 0,
+      remise: remiseAmt,
+      montant_paye: statut === 'Payé' ? totalTTC : acompteNum,
       caissier: user?.name || '—',
       type: achatInterne ? 'cession' : 'detail',
     })
@@ -369,6 +377,8 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       <div class="sub-row"><span>Sous-total HT</span><span>${fmt(v.total)} F</span></div>
       <div class="sub-row"><span>TVA (${tva?.taux || 18}%)</span><span>${fmt(tvaVal)} F</span></div>` : ''
     const noteHtml = v.note ? `<div class="note">📝 ${v.note}</div>` : ''
+    const remiseHtml = (v.remise || 0) > 0 ? `
+      <div class="sub-row"><span>Remise accordée</span><span>−${fmt(v.remise)} F</span></div>` : ''
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reçu ${numRecu}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -418,6 +428,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   </div>
   <div class="section-title">Articles</div>
   ${lignesHtml}
+  ${remiseHtml}
   ${tvaHtml}
   <div class="total-box">
     <span class="total-label">TOTAL TTC</span>
@@ -800,6 +811,18 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 ))}
                 {!lignesOk.length && <p style={{ color:'rgba(255,255,255,0.4)', fontSize:'13px', textAlign:'center' }}>Aucun article</p>}
               </div>
+              {/* Remise globale */}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'13px', marginBottom:'8px', color:'rgba(255,255,255,0.7)' }}>
+                <span>Remise (%)</span>
+                <input type="number" min="0" max="100" value={remisePct} onChange={e => setRemisePct(e.target.value)} placeholder="0"
+                  style={{ width:70, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, padding:'5px 8px', color:'white', fontWeight:700, textAlign:'right', outline:'none', fontFamily:"'Space Mono',monospace" }} />
+              </div>
+              {remiseAmt > 0 && (
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', marginBottom:'8px', color:'#fbbf24', fontWeight:700 }}>
+                  <span>Remise accordée</span>
+                  <span style={{ fontFamily:"'Space Mono',monospace" }}>−{mask(remiseAmt)}</span>
+                </div>
+              )}
               {tva?.active && (
                 <div style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', marginBottom:'8px', color:'rgba(255,255,255,0.7)' }}>
                   <span>TVA ({tva.taux}%)</span>
@@ -810,6 +833,18 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 <span>TOTAL</span>
                 <span style={{ fontFamily:"'Space Mono',monospace", color:'#4ade80', fontSize:'30px', lineHeight:1 }}>{mask(totalTTC)}</span>
               </div>
+              {mode === 'À crédit' && (
+                <div style={{ marginBottom:'12px' }}>
+                  <label style={{ fontSize:'11px', fontWeight:700, color:'rgba(255,255,255,0.5)', letterSpacing:'.08em', display:'block', marginBottom:'5px' }}>ACOMPTE VERSÉ (optionnel)</label>
+                  <input type="number" min="0" value={acompte} onChange={e => setAcompte(e.target.value)} placeholder="0"
+                    style={{ width:'100%', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'9px', padding:'10px 12px', fontSize:'16px', fontWeight:700, color:'white', outline:'none', fontFamily:"'Space Mono',monospace" }} />
+                  {acompteNum > 0 && (
+                    <p style={{ fontSize:'12px', color:'#fbbf24', fontWeight:700, marginTop:'6px' }}>
+                      Restant dû après acompte : {mask(totalTTC - acompteNum)} — vente « Partiellement payée »
+                    </p>
+                  )}
+                </div>
+              )}
               {mode !== 'À crédit' && (
                 <div style={{ marginBottom:'12px' }}>
                   <label style={{ fontSize:'11px', fontWeight:700, color:'rgba(255,255,255,0.5)', letterSpacing:'.08em', display:'block', marginBottom:'5px' }}>MONTANT DONNÉ</label>
@@ -865,7 +900,19 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 <h2 className="text-xl font-bold flex items-center gap-2"><ShoppingCart size={20} color="#ea580c" strokeWidth={2.3} /> Ventes & Historique</h2>
                 <p className="text-xs text-slate-400 mt-0.5">{ventes.length} vente(s) au total</p>
               </div>
-              <Btn onClick={() => setShowVenteForm(!showVenteForm)}>{showVenteForm ? '✕ Annuler' : '+ Nouvelle vente'}</Btn>
+              <div style={{ display:'flex', gap:8 }}>
+                <button type="button" title="Exporter les ventes filtrées (CSV Excel)"
+                  onClick={() => {
+                    if (!filtered.length) return alert('Aucune vente à exporter avec ces filtres.')
+                    exportCSV(`ventes_${today()}`,
+                      ['N°','Date','Client','Type','Statut','Mode','Total HT','Remise','TVA','TTC','Encaissé','Caissier'],
+                      filtered.map(v => [v.num||'', v.date, v.client||'Comptoir', v.type||'detail', v.statut, v.mode||'', v.total||0, v.remise||0, v.tva_amt||0, totalTTCV(v), venteEncaisse(v, tva), v.caissier||'']))
+                  }}
+                  style={{ padding:'8px 14px', borderRadius:10, fontSize:13, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#475569', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
+                  <Download size={14} strokeWidth={2.4} /> CSV
+                </button>
+                <Btn onClick={() => setShowVenteForm(!showVenteForm)}>{showVenteForm ? '✕ Annuler' : '+ Nouvelle vente'}</Btn>
+              </div>
             </div>
 
             {showVenteForm && (
@@ -1035,6 +1082,16 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
               <FilterSelect label="💳 Paiement" value={fVMode}    onChange={setFVMode}    options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m,l:m}))} />
               <FilterBtns label="Type" options={[{v:'detail',l:'🏪 Détail'},{v:'gros',l:'📦 Gros'}]} value={fVType} onChange={setFVType} colorFn={v => v==='gros' ? 'orange' : 'green'} />
               <FilterPeriode value={fVPeriode} onChange={setFVPeriode} />
+              {/* Plage de dates libre (du → au) */}
+              <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <input type="date" value={fVRange?.du || ''} max={today()}
+                  onChange={e => { const v = e.target.value; setFVRange(v ? { du: v, au: (fVRange?.au && fVRange.au >= v) ? fVRange.au : v } : null) }}
+                  style={{ fontSize:12, padding:'6px 8px', borderRadius:9, border:'1px solid #e2e8f0' }} />
+                <span style={{ fontSize:11, color:'#94a3b8' }}>→</span>
+                <input type="date" value={fVRange?.au || ''} max={today()}
+                  onChange={e => { const v = e.target.value; if (!v) return setFVRange(null); setFVRange({ du: (fVRange?.du && fVRange.du <= v) ? fVRange.du : v, au: v }) }}
+                  style={{ fontSize:12, padding:'6px 8px', borderRadius:9, border:'1px solid #e2e8f0' }} />
+              </div>
             </FilterBar>
 
             <div className="p-4 space-y-2">
@@ -1106,6 +1163,13 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                         {/* Actions */}
                         <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:12 }}>
                           <button onClick={() => imprimerRecu(v)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#475569', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}><Printer size={12} strokeWidth={2.4} /> Imprimer</button>
+                          <button onClick={() => {
+                            setLignes((v.lignes || []).map(l => ({ ...EMPTY_LIGNE, ...l, medSearch: l.med || '', showSugg: false })))
+                            setClient(isCession(v) ? '' : (v.client || ''))
+                            setMode(v.mode && v.mode !== '–' ? v.mode : 'Espèces')
+                            setNote(''); setRecu(null); setTab('caisse')
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #bfdbfe', background:'#eff6ff', color:'#2563eb', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}><Copy size={12} strokeWidth={2.4} /> Dupliquer</button>
                           {v.statut !== 'Payé' && v.statut !== 'Annulé' && <>
                             <button onClick={() => handleStatut(v.id,'Payé')} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #bbf7d0', background:'#f0fdf4', color:'#16a34a', cursor:'pointer' }}>✓ Marquer Payé</button>
                             <button onClick={() => handleStatut(v.id,'Annulé')} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer' }}>✕ Annuler</button>

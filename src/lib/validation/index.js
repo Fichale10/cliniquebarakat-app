@@ -234,6 +234,7 @@ export function venteToDbRow(row) {
     note: row.note ?? '',
     tva_amt: row.tva_amt ?? row.tvaAmt ?? 0,
     montant_paye: row.montant_paye ?? row.montantPaye ?? 0,
+    remise: row.remise ?? 0,
     caissier: row.caissier ?? '',
     type: row.type ?? 'detail',
   }
