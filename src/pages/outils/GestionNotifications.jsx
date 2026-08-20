@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react'
+import { Bell, AlertTriangle, Calendar, Send, FlaskConical, Clock, Pencil, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
 
 function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
@@ -79,7 +79,7 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
   },[]);
 
   const statusColor={granted:'#16a34a',denied:'#dc2626',requesting:'#d97706',unsupported:'#64748b',idle:'#94a3b8'};
-  const statusLabel={granted:'✅ Activées',denied:'❌ Refusées (modifier dans les paramètres du navigateur)',requesting:'⏳ En attente…',unsupported:'⚠️ Non supporté par ce navigateur',idle:'Non activées'};
+  const statusLabel={granted:'Activées',denied:'Refusées — modifier dans les paramètres du navigateur',requesting:'En attente…',unsupported:'Non supporté par ce navigateur',idle:'Non activées'};
 
   return <div className="app-page max-w-3xl space-y-5">
     {/* Statut */}
@@ -91,12 +91,12 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
           <div style={{fontSize:'12px',color:'#64748b',marginTop:'3px'}}>Les notifications apparaissent même lorsque l'application est en arrière-plan</div>
         </div>
         {!pushEnabled&&<button onClick={demanderPermission}
-          style={{padding:'10px 20px',borderRadius:'10px',background:'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer',whiteSpace:'nowrap'}}>
-          🔔 Activer les notifications
+          style={{padding:'10px 20px',borderRadius:'10px',background:'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:'7px'}}>
+          <Bell size={15} strokeWidth={2.4} /> Activer les notifications
         </button>}
-        {pushEnabled&&<button onClick={()=>envoyerTest('🧪 Test La Barakat','Notification de test envoyée avec succès !')}
-          style={{padding:'10px 20px',borderRadius:'10px',background:'#166534',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer'}}>
-          🧪 Envoyer un test
+        {pushEnabled&&<button onClick={()=>envoyerTest('Test — La Barakat','Notification de test envoyée avec succès !')}
+          style={{padding:'10px 20px',borderRadius:'10px',background:'#166534',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:'7px'}}>
+          <FlaskConical size={15} strokeWidth={2.4} /> Envoyer un test
         </button>}
       </div>
     </div>
@@ -104,32 +104,32 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
     {/* Alertes en temps réel */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="app-card p-4">
-        <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">🚨 Stocks critiques ({alertesStock.length})</h3>
+        <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2"><AlertTriangle size={15} color="#dc2626" strokeWidth={2.4} /> Stocks critiques ({alertesStock.length})</h3>
         {alertesStock.length===0
-          ? <p className="text-sm text-slate-400 text-center py-4">✅ Tous les stocks sont OK</p>
+          ? <p className="text-sm text-slate-400 text-center py-4 flex items-center justify-center gap-1.5"><CheckCircle2 size={15} color="#16a34a" strokeWidth={2.3} /> Tous les stocks sont OK</p>
           : <div className="space-y-2">
               {alertesStock.map(m=><div key={m.id} style={{display:'flex',justifyContent:'space-between',padding:'8px 10px',borderRadius:'9px',background:'#fef2f2',border:'1px solid #fecaca'}}>
                 <span style={{fontSize:'13px',fontWeight:600,color:'#991b1b'}}>{m.nom}</span>
                 <span style={{fontSize:'12px',color:'#dc2626',fontFamily:"'Space Mono',monospace",fontWeight:700}}>{m.stock}/{m.seuil}</span>
               </div>)}
               {pushEnabled&&<button onClick={()=>envoyerTest('🚨 Stock critique — La Barakat',`${alertesStock.length} médicament(s) en rupture : ${alertesStock.map(m=>m.nom).join(', ')}`)}
-                style={{width:'100%',marginTop:'8px',padding:'8px',borderRadius:'8px',background:'#dc2626',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer'}}>
-                📤 Envoyer alerte maintenant
+                style={{width:'100%',marginTop:'8px',padding:'8px',borderRadius:'8px',background:'#dc2626',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+                <Send size={13} strokeWidth={2.4} /> Envoyer alerte maintenant
               </button>}
             </div>}
       </div>
       <div className="app-card p-4">
-        <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">📅 RDV aujourd'hui ({rdvsAujourdhui.length})</h3>
+        <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2"><Calendar size={15} color="#2563eb" strokeWidth={2.4} /> RDV aujourd'hui ({rdvsAujourdhui.length})</h3>
         {rdvsAujourdhui.length===0
-          ? <p className="text-sm text-slate-400 text-center py-4">📭 Aucun RDV aujourd'hui</p>
+          ? <p className="text-sm text-slate-400 text-center py-4">Aucun RDV aujourd'hui</p>
           : <div className="space-y-2">
               {rdvsAujourdhui.slice(0,4).map((r,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 10px',borderRadius:'9px',background:'#eff6ff',border:'1px solid #bfdbfe'}}>
                 <span style={{fontSize:'13px',fontWeight:600,color:'#1e40af'}}>{r.patient}</span>
                 <span style={{fontSize:'12px',color:'#2563eb',fontFamily:"'Space Mono',monospace",fontWeight:700}}>{r.heure}</span>
               </div>)}
               {pushEnabled&&<button onClick={()=>envoyerTest('📅 RDV du jour — La Barakat',`${rdvsAujourdhui.length} RDV aujourd'hui. Premier : ${rdvsAujourdhui[0]?.heure} — ${rdvsAujourdhui[0]?.patient}`)}
-                style={{width:'100%',marginTop:'8px',padding:'8px',borderRadius:'8px',background:'#2563eb',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer'}}>
-                📤 Envoyer rappel RDV
+                style={{width:'100%',marginTop:'8px',padding:'8px',borderRadius:'8px',background:'#2563eb',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+                <Send size={13} strokeWidth={2.4} /> Envoyer rappel RDV
               </button>}
             </div>}
       </div>
@@ -137,15 +137,15 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
 
     {/* Programmer des notifications */}
     <div className="app-card p-5">
-      <h3 className="font-bold text-base mb-4 flex items-center gap-2">⏰ Notifications programmées</h3>
+      <h3 className="font-bold text-base mb-4 flex items-center gap-2"><Clock size={17} color="#d97706" strokeWidth={2.3} /> Notifications programmées</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div>
           <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Type</label>
           <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}
             style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none'}}>
-            <option value="stock">🚨 Alerte stock</option>
-            <option value="rdv">📅 Rappel RDV</option>
-            <option value="custom">✏️ Message custom</option>
+            <option value="stock">Alerte stock</option>
+            <option value="rdv">Rappel RDV</option>
+            <option value="custom">Message personnalisé</option>
           </select>
         </div>
         <div>
@@ -167,7 +167,8 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
       {schedules.length>0&&<div className="space-y-2">
         {schedules.map(s=><div key={s.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',borderRadius:'9px',background:'#f8fafc',border:'1px solid #e2e8f0'}}>
           <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-            <span style={{fontSize:'20px'}}>{s.type==='stock'?'🚨':s.type==='rdv'?'📅':'✏️'}</span>
+            {(()=>{const TIcon=s.type==='stock'?AlertTriangle:s.type==='rdv'?Calendar:Pencil;const tc=s.type==='stock'?'#dc2626':s.type==='rdv'?'#2563eb':'#7c3aed';
+              return <span style={{width:'32px',height:'32px',borderRadius:'9px',background:tc+'18',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><TIcon size={16} color={tc} strokeWidth={2.3} /></span>;})()}
             <div>
               <div style={{fontSize:'13px',fontWeight:600,color:'#1e293b'}}>{s.type==='stock'?'Alerte stock critique':s.type==='rdv'?'Rappel RDV du jour':s.message}</div>
               <div style={{fontSize:'11px',color:'#94a3b8'}}>Chaque jour à {s.heure}</div>
