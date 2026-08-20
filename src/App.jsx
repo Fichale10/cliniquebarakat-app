@@ -6,7 +6,7 @@ import { isValidView, DEFAULT_VIEW } from './lib/routes'
 // UI Components
 import { Btn, Badge, Field, DupWarning, AutoSuggest, FilterBtns, FilterBar, FilterSelect, FilterPeriode, Interdit } from './components/ui'
 import { NavIcon } from './components/ui/AppIcons'
-import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon, LogOut, ArrowLeft } from 'lucide-react'
+import { Search, Bell, RotateCw, Moon, Sun, Settings as SettingsIcon, Menu as MenuIcon, LogOut, ArrowLeft, Eye, EyeOff, User as UserIcon, Lock as LockIcon } from 'lucide-react'
 import { ToastContainer } from './components/Toast'
 import { SkPage } from './components/Skeleton'
 
@@ -787,7 +787,7 @@ useEffect(() => {
                           : active
                             ? <span className="sidebar-active-dot"/>
                             : item.admin
-                              ? <span style={{marginLeft:'auto',fontSize:'10px',opacity:.25}}>🔒</span>
+                              ? <LockIcon size={10} strokeWidth={2.4} style={{marginLeft:'auto',opacity:.3}}/>
                               : null
                       )}
                     </button>
@@ -803,16 +803,18 @@ useEffect(() => {
         <div className="px-3 pb-4" style={{borderTop:'1px solid #e8edf2',paddingTop:'12px',display:'flex',flexDirection:'column',gap:'6px'}}>
           {isAdmin&&<button onClick={toggleOTR}
             style={{width:'100%',padding:'8px 12px',borderRadius:'10px',fontSize:'11px',fontWeight:700,transition:'all .18s',
+              display:'inline-flex',alignItems:'center',justifyContent:'center',gap:6,
               background:otrMode?'rgba(245,158,11,0.08)':'transparent',
               border:`1px solid ${otrMode?'rgba(245,158,11,0.3)':'#e2e8f0'}`,
               color:otrMode?'#d97706':'#94a3b8'}}>
-            {otrMode?'🙈 Mode OTR actif':'👁️ Mode OTR'}
+            {otrMode?<EyeOff size={13} strokeWidth={2.4}/>:<Eye size={13} strokeWidth={2.4}/>}
+            {otrMode?'Mode OTR actif':'Mode OTR'}
           </button>}
           <button onClick={()=>setConfirmLogout(true)}
             style={{width:'100%',padding:'9px 12px',borderRadius:'10px',fontSize:'12px',fontWeight:700,
               background:'rgba(239,68,68,0.05)',border:'1px solid rgba(239,68,68,0.15)',
               color:'#ef4444',transition:'all .18s',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
-            🔒 Déconnexion
+            <LogOut size={13} strokeWidth={2.4}/> Déconnexion
           </button>
         </div>
       </div>
@@ -851,7 +853,7 @@ useEffect(() => {
     <main className="flex-1 flex flex-col overflow-hidden">
       {/* OTR Mode banner */}
       {otrMode&&<div className="flex items-center justify-between px-5 py-2 text-xs font-bold no-print" style={{background:'linear-gradient(135deg,#ea580c,#dc2626)',color:'white'}}>
-        <div className="flex items-center gap-2"><span>🙈</span><span>MODE OTR ACTIVÉ — Données financières sensibles masquées</span></div>
+        <div className="flex items-center gap-2"><EyeOff size={14} strokeWidth={2.4}/><span>MODE OTR ACTIVÉ — Données financières sensibles masquées</span></div>
         <button onClick={toggleOTR} className="underline hover:no-underline">Désactiver</button>
       </div>}
       {/* Status bar (offline / sync pending) */}
@@ -970,18 +972,18 @@ useEffect(() => {
           >
             <button
               onClick={()=>{setView('monprofil');setUserMenuOpen(false);setSidebarOpen(false);}}
-              style={{width:'100%',padding:'10px 12px',borderRadius:12,border:'1px solid var(--app-border)',background:'transparent',cursor:'pointer',fontWeight:800,color:'var(--app-text)',textAlign:'left'}}
+              style={{width:'100%',padding:'10px 12px',borderRadius:12,border:'1px solid var(--app-border)',background:'transparent',cursor:'pointer',fontWeight:800,color:'var(--app-text)',textAlign:'left',display:'flex',alignItems:'center',gap:8}}
             >
-              👤 Mon profil
+              <UserIcon size={14} strokeWidth={2.4}/> Mon profil
             </button>
             <button
               onClick={()=>{
                 setUserMenuOpen(false);
                 setConfirmLogout(true);
               }}
-              style={{width:'100%',padding:'10px 12px',borderRadius:12,border:'1px solid rgba(239,68,68,0.35)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontWeight:900,color:'rgba(239,68,68,0.95)',textAlign:'left',marginTop:8}}
+              style={{width:'100%',padding:'10px 12px',borderRadius:12,border:'1px solid rgba(239,68,68,0.35)',background:'rgba(239,68,68,0.08)',cursor:'pointer',fontWeight:900,color:'rgba(239,68,68,0.95)',textAlign:'left',marginTop:8,display:'flex',alignItems:'center',gap:8}}
             >
-              🔒 Déconnexion
+              <LogOut size={14} strokeWidth={2.4}/> Déconnexion
             </button>
           </div>}
           {/* Notifs */}

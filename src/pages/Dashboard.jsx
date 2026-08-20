@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine } from 'lucide-react'
+import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine, Clock, Phone } from 'lucide-react'
 import { joursAvantRupture, venteEncaisse, venteMarge } from '../lib/ventes'
 import { exportCSV } from '../lib/utils'
 
@@ -436,7 +436,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
               <div key={`${m.id}-p`} className="dash-alert-row">
                 <span style={{ fontWeight:600,fontSize:13 }}>{m.nom}</span>
                 <span style={{ textAlign:'center',fontSize:13,color:'#d97706' }}>{m.peremption}</span>
-                <div style={{ textAlign:'center' }}><span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a' }}>⏰ {j}j restants</span></div>
+                <div style={{ textAlign:'center' }}><span style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a' }}><Clock size={11} strokeWidth={2.6}/>{j}j restants</span></div>
               </div>
             )
           })}
@@ -510,12 +510,12 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           </div>
           {echeancesFournisseurs.map((e, i) => (
             <div key={i} className="dash-alert-row" style={{ gridTemplateColumns:'1.4fr 1fr 1fr' }}>
-              <span style={{ fontWeight:600,fontSize:13 }}>🏭 {e.fournisseur} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {e.num||''}</span></span>
+              <span style={{ fontWeight:600,fontSize:13,display:'inline-flex',alignItems:'center',gap:6 }}><Factory size={13} color="#d97706" strokeWidth={2.3}/>{e.fournisseur} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {e.num||''}</span></span>
               <span style={{ textAlign:'center',fontSize:12,color:'#64748b' }}>solde dû : <strong style={{ color:'#d97706' }}>{fmtF(e.solde)}</strong></span>
               <div style={{ textAlign:'center' }}>
                 {e.jours < 0
-                  ? <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>⚠️ Retard {Math.abs(e.jours)}j</span>
-                  : <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a' }}>⏰ J-{e.jours}</span>}
+                  ? <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>Retard {Math.abs(e.jours)}j</span>
+                  : <span style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fffbeb',color:'#d97706',border:'1px solid #fde68a' }}><Clock size={11} strokeWidth={2.6}/>J-{e.jours}</span>}
               </div>
             </div>
           ))}
@@ -537,8 +537,8 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           </div>
           {rappelsVaccins.map((r, i) => (
             <div key={i} className="dash-alert-row" style={{ gridTemplateColumns:'1.4fr 1fr 1fr' }}>
-              <span style={{ fontWeight:600,fontSize:13 }}>🐾 {r.patient} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {r.vaccin}</span></span>
-              <span style={{ textAlign:'center',fontSize:12,color:'#64748b' }}>{r.proprio}{r.tel ? ` · 📞 ${r.tel}` : ''}</span>
+              <span style={{ fontWeight:600,fontSize:13,display:'inline-flex',alignItems:'center',gap:6 }}><PawPrint size={13} color="#9333ea" strokeWidth={2.3}/>{r.patient} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {r.vaccin}</span></span>
+              <span style={{ textAlign:'center',fontSize:12,color:'#64748b' }}>{r.proprio}{r.tel ? ` · ${r.tel}` : ''}</span>
               <div style={{ textAlign:'center',display:'flex',gap:6,justifyContent:'center',alignItems:'center' }}>
                 {r.jours < 0
                   ? <span style={{ fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca' }}>⚠️ Retard {Math.abs(r.jours)}j</span>

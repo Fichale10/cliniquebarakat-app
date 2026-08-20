@@ -1,9 +1,11 @@
-function FilterBar({ search, onSearch, placeholder = '🔍 Rechercher…', children, activeCount = 0, onReset }) {
+import { Search } from 'lucide-react'
+
+function FilterBar({ search, onSearch, placeholder = 'Rechercher…', children, activeCount = 0, onReset }) {
   return (
     <div className="filter-bar px-4 py-3 border-b border-slate-100 space-y-2.5 bg-slate-50/50">
       <div className="flex gap-2 items-center">
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" style={{ display:'flex' }}><Search size={15} strokeWidth={2.4} /></span>
           <input
             style={{ borderRadius: '12px', border: '1.5px solid #e2e8f0', transition: 'border-color .15s, box-shadow .15s' }}
             className="w-full pl-9 pr-8 py-2.5 text-sm outline-none bg-white focus:border-teal-400"
