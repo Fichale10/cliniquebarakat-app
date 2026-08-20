@@ -1,4 +1,4 @@
-import { Calendar, Pencil, Trash2 } from 'lucide-react'
+import { Calendar, Pencil, Trash2, CalendarCheck, AlertTriangle } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import AgendaCalendrier from './AgendaCalendrier'
 import RappelsPanel from './RappelsPanel'
@@ -277,7 +277,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
       {/* Alerte RDV en retard */}
       {pastRdvs.length > 0 && (
         <div className="app-card p-4 flex items-center gap-3" style={{ borderLeft: '4px solid #f59e0b', background: '#fffbeb' }}>
-          <span style={{ fontSize: 22 }}>⚠</span>
+          <AlertTriangle size={20} color="#d97706" strokeWidth={2.2} style={{ flexShrink: 0 }} />
           <div>
             <p className="font-bold text-amber-800 text-sm">{pastRdvs.length} RDV passé(s) non clôturé(s)</p>
             <p className="text-xs text-amber-600">Ces rendez-vous sont dépassés sans statut Terminé ou Annulé.</p>
@@ -421,7 +421,7 @@ function Agenda({ patients, rdvs = [], setRdvs, equipe = [], sb, dbInsert, dbUpd
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center text-slate-400 text-sm">
-                <div className="text-3xl mb-2">🎉</div>
+                <div className="mb-3 flex justify-center"><span style={{width:44,height:44,borderRadius:'50%',background:'#f0fdf4',border:'1.5px solid #bbf7d0',display:'inline-flex',alignItems:'center',justifyContent:'center'}}><CalendarCheck size={20} color="#16a34a" strokeWidth={2} /></span></div>
                 {hasFilters ? 'Aucun RDV aujourd\'hui pour ces filtres' : 'Journée libre — aucun rendez-vous aujourd\'hui'}
               </div>
             )}
