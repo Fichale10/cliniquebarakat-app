@@ -115,7 +115,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
             <input
               className="border-2 border-slate-200 rounded-xl px-3 py-2 text-sm outline-none w-44"
               style={{ fontFamily: 'Outfit,sans-serif' }}
-              placeholder="🔍 Rechercher…"
+              placeholder="Rechercher…"
               value={search} onChange={e => setSearch(e.target.value)}
             />
             <select className="border-2 border-slate-200 rounded-xl px-3 py-2 text-sm outline-none" style={{ fontFamily: 'Outfit,sans-serif' }}
@@ -168,7 +168,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
                           <div style={{ width: 16, height: 16, borderRadius: 4, border: '2px solid', borderColor: form.membres.includes(m) ? '#0d9488' : '#cbd5e1', background: form.membres.includes(m) ? '#0d9488' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {form.membres.includes(m) && <span style={{ color: 'white', fontSize: 10, fontWeight: 900 }}>✓</span>}
                           </div>
-                          <span style={{ fontSize: 13, fontWeight: 500 }}>👤 {m}</span>
+                          <span style={{ fontSize: 13, fontWeight: 500 }}>{m}</span>
                         </label>
                       ))}
                       <div style={{ padding: '8px 14px', borderTop: '1px solid #f1f5f9' }}>
@@ -228,7 +228,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
                           <div className="flex flex-wrap gap-1 mb-2">
                             {(t.membres || []).map((m, i) => (
                               <span key={i} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 999, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>
-                                👤 {m}
+                                {m}
                               </span>
                             ))}
                           </div>
@@ -236,7 +236,7 @@ function Taches({ equipe = [], taches = [], setTaches, sb, dbInsert, dbUpdate, d
                           <p className="text-xs text-slate-300 mb-2">Non assignée</p>
                         )}
 
-                        <div className="text-xs text-slate-400 mb-2">📅 {t.echeance}</div>
+                        <div className="text-xs text-slate-400 mb-2">Échéance : {t.echeance}</div>
 
                         {/* Actions */}
                         <div className="flex gap-1">

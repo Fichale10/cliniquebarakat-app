@@ -71,7 +71,7 @@ function Depenses({ otrMode, depsHist = [], setDepsHist, sb }) {
       <div id="depenses-print">
         <div className="grid grid-cols-2 gap-4 mb-5">
           <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-            <div className="text-sm text-red-600 font-bold mb-1">💸 Total dépenses</div>
+            <div className="text-sm text-red-600 font-bold mb-1">Total dépenses</div>
             <div className="text-2xl font-black text-red-700 font-mono">{mask(total)}</div>
           </div>
           <div className="bg-white border border-slate-200 rounded-2xl p-4">
@@ -125,16 +125,16 @@ function Depenses({ otrMode, depsHist = [], setDepsHist, sb }) {
                 <Field label="Montant (F) *" value={form.montant} onChange={e => setForm({...form, montant: e.target.value})} type="number" placeholder="0"/>
               </div>
               <div className="mt-3">
-                <Btn onClick={addDep} color="red" disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Enregistrer'}</Btn>
+                <Btn onClick={addDep} color="red" disabled={saving}>{saving ? 'Enregistrement…' : '✓ Enregistrer'}</Btn>
               </div>
             </div>
           )}
 
-          <FilterBar search={searchDep} onSearch={setSearchDep} placeholder="🔍 Description, catégorie…"
+          <FilterBar search={searchDep} onSearch={setSearchDep} placeholder="Description, catégorie…"
             activeCount={[fDepCat, fDepMode, fDepPeriode, searchDep].filter(Boolean).length}
             onReset={() => { setSearchDep(''); setFDepCat(''); setFDepMode(''); setFDepPeriode('') }}>
-            <FilterSelect label="📂 Catégorie" value={fDepCat} onChange={setFDepCat} options={CATS.map(c => ({v:c, l:c}))}/>
-            <FilterSelect label="💳 Mode" value={fDepMode} onChange={setFDepMode} options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m, l:m}))}/>
+            <FilterSelect label="Catégorie" value={fDepCat} onChange={setFDepCat} options={CATS.map(c => ({v:c, l:c}))}/>
+            <FilterSelect label="Mode" value={fDepMode} onChange={setFDepMode} options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m, l:m}))}/>
             <FilterPeriode value={fDepPeriode} onChange={setFDepPeriode}/>
             <span className="text-xs text-slate-400">{depsFiltered.length}/{depsHist.length} · {mask(totalFiltered)}</span>
           </FilterBar>

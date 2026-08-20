@@ -90,14 +90,14 @@ function Calculateur({meds,patients}){
                 <Badge color="purple">{m.categorie}</Badge>
                 {m.doseMgKg?<Badge color="blue">{m.doseMgKg} mg/kg</Badge>:<Badge color="slate">Dose fixe</Badge>}
               </div>
-              {m.stock<=m.seuil&&<div className="mt-1 stock-alert inline-block rounded-full"><Badge color="red">🚨 Stock critique</Badge></div>}
+              {m.stock<=m.seuil&&<div className="mt-1 stock-alert inline-block rounded-full"><Badge color="red">Stock critique</Badge></div>}
             </button>)}
           </div>
         </div>
 
         {/* Concentration (injectable) */}
         {selMed&&(selMed.unite==='flacons'||selMed.categorie==='Anti-inflammatoire')&&<div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-          <label className="text-xs font-bold text-blue-700 mb-1 block">💉 Concentration du produit (mg/ml) — optionnel</label>
+          <label className="text-xs font-bold text-blue-700 mb-1 block">Concentration du produit (mg/ml) — optionnel</label>
           <div className="flex gap-2 items-center">
             <input type="number" className="w-36 border-2 border-blue-200 rounded-lg px-3 py-2 text-sm focus:border-blue-400 outline-none" placeholder="ex: 10" value={concentration} onChange={e=>setConcentration(e.target.value)}/>
             <span className="text-xs text-blue-600">Laissez vide → hypothèse 10 mg/ml</span>
@@ -120,7 +120,7 @@ function Calculateur({meds,patients}){
     {resultats&&<div id="calc-print" className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{border:'2px solid #166534'}}>
       <div className="p-5 border-b flex items-center justify-between" style={{background:'linear-gradient(135deg,#f0fdf4,#dbeafe)'}}>
         <h3 className="font-bold text-xl flex items-center gap-2" style={{color:'#14532d'}}>✅ Résultat du calcul</h3>
-        <PrintBtn zoneId="calc-print" label="🖨 Imprimer"/>
+        <PrintBtn zoneId="calc-print" label="Imprimer"/>
       </div>
       <div className="p-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">

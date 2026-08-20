@@ -323,7 +323,7 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
                 </div>
                 )
               })}
-              <p style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>💡 Cliquez pour choisir dans le catalogue, ou tapez librement le nom d'un <b>nouveau produit</b> — pensez à créer sa fiche dans Médicaments à la réception pour gérer son stock.</p>
+              <p style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>Cliquez pour choisir dans le catalogue, ou tapez librement le nom d'un <b>nouveau produit</b> — pensez à créer sa fiche dans Médicaments à la réception pour gérer son stock.</p>
             </FormSection>
 
             <div className="flex items-center justify-between mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
@@ -331,17 +331,17 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Total commande</p>
                 <span className="text-2xl font-black text-blue-600 font-mono">{fmtF(montantTotal)}</span>
               </div>
-              <Btn color="blue" onClick={addCommande} disabled={saving}>{saving ? '⏳ Enregistrement…' : editingId ? '✓ Enregistrer les modifications' : '✓ Passer la commande'}</Btn>
+              <Btn color="blue" onClick={addCommande} disabled={saving}>{saving ? 'Enregistrement…' : editingId ? '✓ Enregistrer les modifications' : '✓ Passer la commande'}</Btn>
             </div>
           </FormPanel>
         )}
 
-        <FilterBar search={searchCmd} onSearch={setSearchCmd} placeholder="🔍 N° commande, fournisseur…"
+        <FilterBar search={searchCmd} onSearch={setSearchCmd} placeholder="N° commande, fournisseur…"
           activeCount={[fCmdStatut, fCmdFourn, fCmdPeriode, searchCmd].filter(Boolean).length}
           onReset={() => { setSearchCmd(''); setFCmdStatut(''); setFCmdFourn(''); setFCmdPeriode('') }}>
-          <FilterBtns options={[{ v:'En attente', l:'🟡 En attente' }, { v:'En transit', l:'🔵 Transit' }, { v:'Reçu', l:'🟢 Reçu' }, { v:'Annulé', l:'🔴 Annulé' }]}
+          <FilterBtns options={[{ v:'En attente', l:'En attente' }, { v:'En transit', l:'Transit' }, { v:'Reçu', l:'🟢 Reçu' }, { v:'Annulé', l:'🔴 Annulé' }]}
             value={fCmdStatut} onChange={setFCmdStatut} colorFn={v => SC[v] || 'slate'} />
-          <FilterSelect label="🏭 Fournisseur" value={fCmdFourn} onChange={setFCmdFourn} options={fournisseurOptions.map(f => ({ v: f, l: f }))} />
+          <FilterSelect label="Fournisseur" value={fCmdFourn} onChange={setFCmdFourn} options={fournisseurOptions.map(f => ({ v: f, l: f }))} />
           <FilterPeriode value={fCmdPeriode} onChange={setFCmdPeriode} />
           <span className="text-xs text-slate-400">{cmdFiltered.length}/{(achatsHist || []).length}</span>
         </FilterBar>
@@ -357,12 +357,12 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
                       <span className="font-mono text-xs text-slate-400">{c.num}</span>
                       <Badge color={SC[c.statut] || 'slate'}>{c.statut}</Badge>
                     </div>
-                    <h3 className="font-bold">🏭 {c.fournisseur}</h3>
+                    <h3 className="font-bold">{c.fournisseur}</h3>
                     <p className="text-sm text-slate-500 mt-0.5 truncate">
                       {(c.lignes || []).map(l => `${l.produit === '__autre__' ? l.nomLibre : l.produit} ×${l.qte}`).join(', ')}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
-                      📅 {c.date}{c.date_reception ? ` · Reçu le ${c.date_reception}` : ''}
+                      {c.date}{c.date_reception ? ` · Reçu le ${c.date_reception}` : ''}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
@@ -370,7 +370,7 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
                     {c.statut !== 'Reçu' && c.statut !== 'Annulé' && (
                       <div className="flex gap-1 justify-end flex-wrap">
                         {c.statut === 'En attente' && (
-                          <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'En transit') }} color="blue" sm>🚚 Transit</Btn>
+                          <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'En transit') }} color="blue" sm>Transit</Btn>
                         )}
                         <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'Reçu') }} color="green" sm>✓ Reçu</Btn>
                         <Btn onClick={e => { e.stopPropagation(); changeStatut(c.id, 'Annulé') }} color="red" sm>✕</Btn>

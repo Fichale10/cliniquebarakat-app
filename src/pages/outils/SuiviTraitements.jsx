@@ -173,7 +173,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             style={{padding:'7px 14px',borderRadius:'9px',fontSize:'13px',fontWeight:700,cursor:'pointer',
               background:filter===f?'linear-gradient(135deg,#166534,#1d4ed8)':'white',
               color:filter===f?'white':'#64748b',border:`1px solid ${filter===f?'transparent':'#e2e8f0'}`}}>
-            {f==='actifs'?'🟢 Actifs':f==='termines'?'⚫ Terminés':'📋 Tous'}
+            {f==='actifs'?'Actifs':f==='termines'?'Terminés':'Tous'}
           </button>)}
           <button onClick={()=>setShowForm(!showForm)}
             style={{padding:'7px 14px',borderRadius:'9px',fontSize:'13px',fontWeight:700,cursor:'pointer',background:showForm?'#ef4444':'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none'}}>
@@ -244,10 +244,10 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
         </div>
-        <p style={{fontSize:12,color:'#64748b',marginBottom:10}}>💡 Si le traitement vient d'une consultation déjà payée, laissez le prix à 0 pour éviter la double facturation.</p>
+        <p style={{fontSize:12,color:'#64748b',marginBottom:10}}>Si le traitement vient d'une consultation déjà payée, laissez le prix à 0 pour éviter la double facturation.</p>
         <button onClick={addTraitement} disabled={saving}
           style={{padding:'9px 20px',borderRadius:'10px',background:saving?'#94a3b8':'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:saving?'wait':'pointer'}}>
-          {saving?'⏳ Enregistrement…':'✓ Enregistrer le traitement'}
+          {saving?'Enregistrement…':'✓ Enregistrer le traitement'}
         </button>
       </div>}
 
@@ -269,21 +269,21 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
                   <span style={{fontWeight:800,fontSize:'15px',color:'#1e293b'}}>{t.patient}</span>
                   <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',
                     background:t.actif?'#dcfce7':'#f1f5f9',color:t.actif?'#166534':'#64748b'}}>
-                    {t.actif?'🟢 Actif':'⚫ Terminé'}
+                    {t.actif?'Actif':'Terminé'}
                   </span>
                   {t.vente_id&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',background:'#f0fdf4',border:'1px solid #bbf7d0',color:'#16a34a'}}>✓ Facturé</span>}
                   {bientot&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',background:'#fef3c7',color:'#d97706'}}>
                     ⏰ {jRestants===0?'Termine aujourd\'hui':jRestants+'j restants'}
                   </span>}
                 </div>
-                <div style={{fontSize:'13px',fontWeight:600,color:'#374151',marginBottom:'3px'}}>💊 {t.medicament}</div>
+                <div style={{fontSize:'13px',fontWeight:600,color:'#374151',marginBottom:'3px'}}>{t.medicament}</div>
                 <div style={{fontSize:'12px',color:'#64748b',display:'flex',gap:'14px',flexWrap:'wrap'}}>
                   {t.posologie&&<span>📋 {t.posologie}</span>}
                   <span>🔁 {t.frequence}</span>
                   <span>📅 {t.debut}{t.fin?` → ${t.fin}`:''}</span>
                   {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{t.qte} × {fmtF(t.pu)} = {fmtF(tTotal(t))}</span>}
                 </div>
-                {t.notes&&<div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px',fontStyle:'italic'}}>📌 {t.notes}</div>}
+                {t.notes&&<div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px',fontStyle:'italic'}}>Note — {t.notes}</div>}
               </div>
               <div style={{display:'flex',gap:'6px',flexShrink:0,flexWrap:'wrap'}}>
                 {!t.vente_id&&tTotal(t)>0&&<>

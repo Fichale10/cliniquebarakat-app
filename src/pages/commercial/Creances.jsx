@@ -89,15 +89,15 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
     <div className="app-page space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="stat-tile stat-tile--orange">
-          <div className="stat-tile__label">💰 Total à recouvrer</div>
+          <div className="stat-tile__label">Total à recouvrer</div>
           <div className="stat-tile__value">{mask(totalDu)}</div>
         </div>
         <div className="stat-tile stat-tile--slate">
-          <div className="stat-tile__label">👥 Clients débiteurs</div>
+          <div className="stat-tile__label">Clients débiteurs</div>
           <div className="stat-tile__value">{listeClients.length}</div>
         </div>
         <div className="stat-tile stat-tile--blue">
-          <div className="stat-tile__label">📋 Créances en cours</div>
+          <div className="stat-tile__label">Créances en cours</div>
           <div className="stat-tile__value">{creances.length}</div>
         </div>
       </div>
@@ -163,7 +163,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {(v.lignes || []).map((l, i) => (
-                              <span key={i} className="text-xs bg-slate-100 rounded px-2 py-0.5">💊 {l.med} ×{l.qte}</span>
+                              <span key={i} className="text-xs bg-slate-100 rounded px-2 py-0.5">{l.med} ×{l.qte}</span>
                             ))}
                           </div>
                         </div>
@@ -174,7 +174,7 @@ function Creances({ ventesHist, setVentesHist, otrMode, sb, tva, consultations, 
                           )}
                           <button onClick={() => encaisserVersement(v.id)}
                             className="mt-1 text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold block w-full">
-                            💵 Versement
+                            Versement
                           </button>
                           <button onClick={() => marquerPaye(v.id)}
                             className="mt-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-bold block w-full">

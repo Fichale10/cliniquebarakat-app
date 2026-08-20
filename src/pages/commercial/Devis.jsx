@@ -202,7 +202,7 @@ ${d.notes ? `<p style="margin-top:16px;padding:12px;background:#f8fafc;border-ra
               <span className="font-bold">Total HT :</span>
               <span className="font-black text-green-600 font-mono">{fmtF(total)}</span>
             </div>
-            <Btn onClick={addDevis} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Créer le devis'}</Btn>
+            <Btn onClick={addDevis} disabled={saving}>{saving ? 'Enregistrement…' : '✓ Créer le devis'}</Btn>
           </div>
         )}
 

@@ -119,7 +119,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
       {/* Plan des cages */}
       <div className="app-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-lg flex items-center gap-2">🏥 Plan des cages</h3>
+          <h3 className="font-bold text-lg flex items-center gap-2">Plan des cages</h3>
           <Btn onClick={() => setShowForm(v => !v)}>
             {showForm ? '✕ Annuler' : '+ Hospitaliser un patient'}
           </Btn>
@@ -158,7 +158,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
               <Field label="Motif" value={form.motif} onChange={f('motif')} placeholder="Motif d'hospitalisation" />
             </div>
             <Btn color="brand" onClick={addHospi} disabled={saving}>
-              {saving ? '⏳ Enregistrement…' : '✓ Hospitaliser'}
+              {saving ? 'Enregistrement…' : '✓ Hospitaliser'}
             </Btn>
           </div>
         )}
@@ -218,7 +218,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
 
           {confirmDel === sel.id && (
             <div className="px-5 py-3 flex items-center justify-between gap-3" style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
-              <p className="text-sm font-semibold text-red-700">⚠️ Supprimer le dossier de {sel.patient} ?</p>
+              <p className="text-sm font-semibold text-red-700">Supprimer le dossier de {sel.patient} ?</p>
               <div className="flex gap-2">
                 <button onClick={() => deleteHospi(sel.id)}
                   style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, padding: '5px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
@@ -236,7 +236,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
             {/* Feuille de soins */}
             <div className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-bold flex items-center gap-2">📋 Feuille de soins</h4>
+                <h4 className="font-bold flex items-center gap-2">Feuille de soins</h4>
                 {sel.statut === 'Hospitalisé' && (
                   <button onClick={() => setShowAddSoin(v => !v)}
                     style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 8, background: '#f0fdfa', border: '1px solid #99f6e4', color: '#0d9488', cursor: 'pointer' }}>
@@ -315,7 +315,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
 
             {/* Paramètres vitaux */}
             <div className="p-5">
-              <h4 className="font-bold mb-3 flex items-center gap-2">📊 Paramètres vitaux</h4>
+              <h4 className="font-bold mb-3 flex items-center gap-2">Paramètres vitaux</h4>
 
               {sel.statut === 'Hospitalisé' && (
                 <div className="mb-4 p-3 rounded-xl border border-slate-200 bg-slate-50">
@@ -364,7 +364,7 @@ function Hospitalisation({ patients, hospitalisations = [], setHospitalisations,
       {actifs.length > 0 && !sel && (
         <div className="app-card">
           <div className="p-4 border-b">
-            <h3 className="font-bold flex items-center gap-2">🏥 Patients actuellement hospitalisés</h3>
+            <h3 className="font-bold flex items-center gap-2">Patients actuellement hospitalisés</h3>
           </div>
           <div className="divide-y divide-slate-100">
             {actifs.map(h => (

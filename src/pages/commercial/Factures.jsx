@@ -159,7 +159,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="stat-tile stat-tile--blue">
-          <div className="stat-tile__label">📄 Total factures</div>
+          <div className="stat-tile__label">Total factures</div>
           <div className="stat-tile__value">{factures.length}</div>
         </div>
         <div className="stat-tile stat-tile--green">
@@ -167,7 +167,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
           <div className="stat-tile__value">{fmtF(totalP)}</div>
         </div>
         <div className="stat-tile stat-tile--yellow">
-          <div className="stat-tile__label">⏳ En attente</div>
+          <div className="stat-tile__label">En attente</div>
           <div className="stat-tile__value">{fmtF(totalA)}</div>
         </div>
       </div>
@@ -179,7 +179,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
             <p className="text-xs text-slate-400 mt-0.5">{factures.length} facture(s)</p>
           </div>
           <div className="flex gap-2">
-            <PrintBtn zoneId="factures-print" label="🖨 Imprimer"/>
+            <PrintBtn zoneId="factures-print" label="Imprimer"/>
             <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouvelle facture'}</Btn>
           </div>
         </div>
@@ -201,7 +201,7 @@ function Factures({ factures = [], setFactures, clients = [], sb, dbInsert, dbUp
               <Field label="Mode paiement" value={form.mode} onChange={e => setForm({...form, mode: e.target.value})} options={MODES}/>
             </div>
             <div className="mt-3">
-              <Btn onClick={addFacture} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Créer la facture'}</Btn>
+              <Btn onClick={addFacture} disabled={saving}>{saving ? 'Enregistrement…' : '✓ Créer la facture'}</Btn>
             </div>
           </div>
         )}
