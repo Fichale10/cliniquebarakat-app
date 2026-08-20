@@ -10,6 +10,23 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
   const [savedMsg,setSavedMsg]=useState('');
   const ROLES_EQUIPE=['Vétérinaire','Chirurgien','ASV','Réceptionniste','Autre'];
 
+  // ── Verrouillage automatique (réglage par poste, stocké localement) ──
+  const [autolock,setAutolock]=useState(()=>parseInt(localStorage.getItem('lb_autolock_min')||'0')||0);
+  const saveAutolock=(min)=>{ setAutolock(min); try{ localStorage.setItem('lb_autolock_min', String(min)) }catch(e){} };
+
+  // ── Export complet des données (JSON, depuis le cache local) ──
+  const exportAll=()=>{
+    const tables=['patients','clients','medicaments','ventes','consultations','commandes','depenses','fournisseurs','devis','factures','rdvs','ordonnances','chirurgies','hospitalisations','taches','inventaires','versements_fournisseurs','equipe','clinique_settings'];
+    const data={ export_date:new Date().toISOString(), clinique:clinique?.nom||'La Barakat' };
+    tables.forEach(t=>{ try{ const v=JSON.parse(localStorage.getItem('lb_'+t)||'null'); if(v) data[t]=v }catch(e){} });
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`sauvegarde_labarakat_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const flashSaved=(msg)=>{setSavedMsg(msg);setTimeout(()=>setSavedMsg(''),3000);}
   const handleSaveClinique=async()=>{
     setSavingCli(true);
@@ -32,10 +49,38 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
     <div className="app-card">
       <div className="p-5 border-b"><h2 className="text-xl font-bold flex items-center gap-2"><Settings size={20} color="#0d9488" strokeWidth={2.3} /> Paramètres</h2></div>
       <div className="flex border-b overflow-x-auto">
-        {[{k:'clinique',l:'🏥 Ma clinique'},{k:'equipe',l:'👥 Mon équipe'},{k:'tva',l:'💰 TVA & Taxes'}].map(t=>(
+        {[{k:'clinique',l:'🏥 Ma clinique'},{k:'equipe',l:'👥 Mon équipe'},{k:'tva',l:'💰 TVA & Taxes'},{k:'securite',l:'🔒 Sécurité & Données'}].map(t=>(
           <button key={t.k} onClick={()=>setTab(t.k)} className={`px-5 py-3 font-semibold text-sm border-b-2 transition-all whitespace-nowrap ${tab===t.k?'border-green-600 text-green-700':'border-transparent text-slate-500 hover:text-slate-700'}`}>{t.l}</button>
         ))}
       </div>
+
+      {/* Sécurité & Données tab */}
+      {tab==='securite'&&<div className="p-6 space-y-5">
+        <div className="bg-white border-2 border-slate-200 rounded-xl p-4">
+          <p className="font-bold text-slate-800 mb-1">⏱️ Verrouillage automatique</p>
+          <p className="text-sm text-slate-500 mb-3">Déconnexion automatique de ce poste après une période d'inactivité — protège la caisse si quelqu'un passe derrière le comptoir. Réglage propre à cet appareil.</p>
+          <div className="flex gap-3 flex-wrap">
+            {[{v:0,l:'Désactivé'},{v:5,l:'5 min'},{v:10,l:'10 min'},{v:15,l:'15 min'},{v:30,l:'30 min'}].map(o=>(
+              <button key={o.v} onClick={()=>saveAutolock(o.v)}
+                className={`px-5 py-2.5 rounded-xl font-bold border-2 transition-all ${autolock===o.v?'border-green-500 bg-green-50 text-green-700':'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                {o.l}
+              </button>
+            ))}
+          </div>
+          {autolock>0&&<p className="text-xs text-green-600 mt-3">✓ Ce poste se déconnectera après {autolock} minute(s) sans activité.</p>}
+        </div>
+
+        <div className="bg-white border-2 border-slate-200 rounded-xl p-4">
+          <p className="font-bold text-slate-800 mb-1">💾 Sauvegarde des données</p>
+          <p className="text-sm text-slate-500 mb-3">Télécharge un fichier JSON contenant toutes vos données (patients, ventes, stock, clients, dépenses…). À conserver régulièrement en lieu sûr (clé USB, Drive…).</p>
+          <button onClick={exportAll}
+            className="px-5 py-2.5 rounded-xl font-bold text-white transition-all"
+            style={{background:'linear-gradient(135deg,#166534,#1d4ed8)'}}>
+            💾 Exporter toutes les données (JSON)
+          </button>
+          <p className="text-xs text-slate-400 mt-2">Astuce : faites cet export au moins une fois par semaine, après la clôture.</p>
+        </div>
+      </div>}
 
       {/* TVA tab */}
       {tab==='tva'&&<div className="p-6 space-y-5">

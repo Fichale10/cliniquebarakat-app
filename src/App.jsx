@@ -218,6 +218,7 @@ useEffect(() => {
   // appLoading now from Root props
   const [syncPending,setSyncPending]=useState(()=>getQ().length);
   const [syncing,setSyncing]=useState(false);
+  const [syncBlocked,setSyncBlocked]=useState(false);
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
@@ -352,7 +353,9 @@ useEffect(() => {
       setOnline(true)
       syncQueue(sb, (n) => setSyncPending(n)).then((synced) => {
         loadAll({ force: synced > 0 })
-        setSyncPending(getQ().length)
+        const rest = getQ().length
+        setSyncPending(rest)
+        setSyncBlocked(rest > 0 && navigator.onLine)
       })
     }
     const onOffline = () => {
@@ -406,6 +409,20 @@ useEffect(() => {
       .subscribe()
     return () => { try { sb.removeChannel(ch) } catch (e) {} }
   }, [user?.email])
+
+  // ── Verrouillage automatique après inactivité (réglable dans Paramètres) ──
+  // localStorage lb_autolock_min : 0 = désactivé, sinon minutes d'inactivité.
+  useEffect(() => {
+    let last = Date.now()
+    const bump = () => { last = Date.now() }
+    const evs = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    evs.forEach(e => window.addEventListener(e, bump, { passive: true }))
+    const id = setInterval(() => {
+      const min = parseInt(localStorage.getItem('lb_autolock_min') || '0') || 0
+      if (min > 0 && Date.now() - last > min * 60000) onLogout?.()
+    }, 30000)
+    return () => { evs.forEach(e => window.removeEventListener(e, bump)); clearInterval(id) }
+  }, [])
 
   // Auth handled by Root component
 
@@ -836,14 +853,18 @@ useEffect(() => {
         <button onClick={toggleOTR} className="underline hover:no-underline">Désactiver</button>
       </div>}
       {/* Status bar (offline / sync pending) */}
-      {(!online||syncing||syncPending>0||sbError)&&<div className={`flex items-center justify-between px-5 py-1.5 text-xs font-semibold no-print ${!online?'bg-amber-500 text-white':sbError?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}`}>
+      {(!online||syncing||syncPending>0||sbError)&&<div className={`flex items-center justify-between px-5 py-1.5 text-xs font-semibold no-print ${!online?'bg-amber-500 text-white':syncBlocked?'bg-red-100 text-red-700':sbError?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}`}>
         <div className="flex items-center gap-2">
           {!online&&<><span>📡</span><span>Hors ligne — vos modifications seront synchronisées à la reconnexion</span></>}
           {online&&syncing&&<><span className="inline-block animate-spin">🔄</span><span>Synchronisation des données…</span></>}
-          {online&&!syncing&&syncPending>0&&<><span className="inline-block animate-spin">🔄</span><span>{syncPending} opération(s) en attente de sync…</span></>}
+          {online&&!syncing&&syncPending>0&&syncBlocked&&<><span>⚠️</span><span>{syncPending} opération(s) refusée(s) par le serveur — réessayez ou signalez à l'administrateur</span></>}
+          {online&&!syncing&&syncPending>0&&!syncBlocked&&<><span className="inline-block animate-spin">🔄</span><span>{syncPending} opération(s) en attente de sync…</span></>}
           {online&&!syncing&&!syncPending&&sbError&&<><span>⚠️</span><span>Connexion Supabase impossible — données locales utilisées</span></>}
         </div>
-        {online&&syncPending>0&&!syncing&&<button onClick={()=>syncQueue(sb, n=>setSyncPending(n)).then(()=>loadAll({ force: true }))} className="underline">Synchroniser</button>}
+        {online&&syncPending>0&&!syncing&&<div className="flex items-center gap-3">
+          <button onClick={()=>syncQueue(sb, n=>setSyncPending(n)).then((synced)=>{ const rest=getQ().length; setSyncPending(rest); setSyncBlocked(rest>0&&navigator.onLine); if(synced>0)loadAll({ force: true }) })} className="underline">{syncBlocked?'Réessayer':'Synchroniser'}</button>
+          {syncBlocked&&<button onClick={()=>{ if(confirm(`Abandonner définitivement ces ${syncPending} opération(s) non synchronisées ?\nElles seront perdues.`)){ localStorage.removeItem('lb_offlineQueue'); setSyncPending(0); setSyncBlocked(false) } }} className="underline">Abandonner</button>}
+        </div>}
       </div>}
       {/* ── Header premium ── */}
       <header className="app-header no-print shrink-0 z-10 relative" style={{height:'58px',padding:'0 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>

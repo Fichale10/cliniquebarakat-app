@@ -137,6 +137,18 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
 
   const adjQte = (i, delta) => setQte(i, (parseInt(lignes[i].qte) || 0) + delta)
 
+  // ── Raccourcis clavier caisse : F2 encaisser · F4 nouvelle ligne · Échap vider ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if (tab !== 'caisse' || recu) return
+      if (e.key === 'F2')      { e.preventDefault(); if (!saving && lignesOk.length) enregistrer() }
+      else if (e.key === 'F4') { e.preventDefault(); setLignes(prev => [...prev, { ...EMPTY_LIGNE }]) }
+      else if (e.key === 'Escape' && lignesOk.length) { resetForm() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   const resetForm = () => {
     setLignes([{ ...EMPTY_LIGNE }])
     setPosDate(today())
@@ -344,7 +356,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
     const tvaVal   = v.tva_amt || v.tvaAmt || 0
     const fmt      = n => new Intl.NumberFormat('fr-FR').format(Math.round(n || 0))
     const dateStr  = (v.date || now.toISOString().split('T')[0]).replace(/-/g, '').slice(2)
-    const numRecu  = 'REC-' + dateStr + '-' + v.id.slice(-4).toUpperCase()
+    const numRecu  = v.num || ('REC-' + dateStr + '-' + v.id.slice(-4).toUpperCase())
     const lignesHtml = (v.lignes || []).map(l => `
       <div class="item">
         <div class="item-top">
@@ -507,6 +519,17 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       setCompte({}); setClotureNote('')
       if (logAction && sb) logAction(sb, user, 'cloture_caisse', `${row.date} — écart ${fmtF(row.ecart)}`)
       imprimerCloture(saved)
+      // ── Résumé WhatsApp (destinataire au choix de l'utilisateur) ──
+      if (confirm('Envoyer le résumé de clôture par WhatsApp ?')) {
+        const txt = `🔒 Clôture de caisse — ${new Date(row.date + 'T00:00:00').toLocaleDateString('fr-FR')}\n`
+          + `Caissier : ${row.caissier}\n`
+          + `Ventes payées : ${row.nb_ventes}\n`
+          + `Attendu : ${fmtF(totalAttendu)}\n`
+          + `Compté : ${fmtF(totalCompte)}\n`
+          + `Écart : ${row.ecart >= 0 ? '+' : ''}${fmtF(row.ecart)}`
+          + (row.note ? `\nNote : ${row.note}` : '')
+        window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank')
+      }
     } catch (e) {
       alert('Erreur enregistrement clôture : ' + (e?.message || e))
     } finally { setSavingCloture(false) }
@@ -597,7 +620,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                   <span style={{ fontSize:'28px' }}>✅</span>
                   <div>
                     <div style={{ fontWeight:800, color:'#166534', fontSize:'15px' }}>Vente enregistrée</div>
-                    <div style={{ fontSize:'13px', color:'#16a34a' }}>{recu.client || 'Comptoir'} — {fmtF(totalTTCV(recu))}</div>
+                    <div style={{ fontSize:'13px', color:'#16a34a' }}>{recu.num ? `${recu.num} · ` : ''}{recu.client || 'Comptoir'} — {fmtF(totalTTCV(recu))}</div>
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
@@ -802,8 +825,11 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
               )}
               <button type="button" onClick={enregistrer} disabled={saving || !lignesOk.length}
                 style={{ width:'100%', padding:'14px', borderRadius:'12px', border:'none', background: saving ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color:'white', fontWeight:900, fontSize:'16px', cursor: saving ? 'wait' : 'pointer', boxShadow:'0 4px 20px rgba(34,197,94,0.4)' }}>
-                {saving ? 'Enregistrement…' : '✓ Encaisser'}
+                {saving ? 'Enregistrement…' : '✓ Encaisser (F2)'}
               </button>
+              <p style={{ textAlign:'center', fontSize:'10px', color:'rgba(255,255,255,0.35)', marginTop:'8px', letterSpacing:'.03em' }}>
+                ⌨ F2 Encaisser · F4 Nouvelle ligne · Échap Vider
+              </p>
               {lignesOk.length > 0 && (
                 <button type="button" onClick={resetForm}
                   style={{ width:'100%', marginTop:'8px', padding:'10px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.2)', background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.6)', fontWeight:600, fontSize:'13px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
@@ -1039,6 +1065,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap', marginBottom:3 }}>
                           <span style={{ fontWeight:800, fontSize:14, color:'#0f172a' }}>👤 {v.client||'Comptoir'}</span>
+                          {v.num && <span style={{ fontSize:10, fontWeight:700, fontFamily:"'Space Mono',monospace", padding:'2px 7px', borderRadius:99, background:'#f8fafc', border:'1px solid #e2e8f0', color:'#64748b' }}>{v.num}</span>}
                           <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background:statBg, border:`1px solid ${statBorder}`, color:statColor }}>
                             <span style={{ width:5, height:5, borderRadius:'50%', background:statColor, flexShrink:0 }} />{v.statut}
                           </span>

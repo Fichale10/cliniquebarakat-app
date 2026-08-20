@@ -18,6 +18,8 @@ function JournalActivite({user}){
     }catch(e){}
     // Charger depuis Supabase
     if(navigator.onLine&&sb){
+      // Purge automatique des entrées > 12 mois (fonction serveur, admins seulement)
+      try { sb.rpc('purge_activity_logs', { p_months: 12 }).then(()=>{}) } catch(e) {}
       sb.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(200)
         .then(({ data }) => {
           if (!data?.length) return
