@@ -1,4 +1,4 @@
-import { Factory, Coins, Pencil, Trash2 } from 'lucide-react'
+import { Factory, Coins, Pencil, Trash2, Star, Pill, Syringe, Wrench, Wheat, Building2, SprayCan, Package, Truck, Tag, User, Phone, Mail, Globe, MapPin, CreditCard, Handshake, Landmark, CheckCircle2, ClipboardList, Receipt } from 'lucide-react'
 import { useState, useMemo } from 'react';
 import { today, fmtF, findDups } from '../../lib/utils';
 import { newId } from '../../lib/db';
@@ -23,13 +23,13 @@ const CONDITIONS_PAIEMENT = [
 ];
 
 const SPEC_STYLE = {
-  'Médicaments vétérinaires':    { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', icon: '💊' },
-  'Vaccins et antiparasitaires': { bg: '#eff6ff', border: '#bfdbfe', text: '#2563eb', icon: '💉' },
-  'Matériel et consommables':    { bg: '#faf5ff', border: '#e9d5ff', text: '#9333ea', icon: '🔧' },
-  'Alimentation animale':        { bg: '#fffbeb', border: '#fde68a', text: '#d97706', icon: '🌾' },
-  'Équipements médicaux':        { bg: '#ecfeff', border: '#a5f3fc', text: '#0891b2', icon: '🏥' },
-  'Produits désinfectants':      { bg: '#fff7ed', border: '#fed7aa', text: '#ea580c', icon: '🧴' },
-  'Autre':                       { bg: '#f8fafc', border: '#e2e8f0', text: '#64748b', icon: '📦' },
+  'Médicaments vétérinaires':    { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', icon: Pill },
+  'Vaccins et antiparasitaires': { bg: '#eff6ff', border: '#bfdbfe', text: '#2563eb', icon: Syringe },
+  'Matériel et consommables':    { bg: '#faf5ff', border: '#e9d5ff', text: '#9333ea', icon: Wrench },
+  'Alimentation animale':        { bg: '#fffbeb', border: '#fde68a', text: '#d97706', icon: Wheat },
+  'Équipements médicaux':        { bg: '#ecfeff', border: '#a5f3fc', text: '#0891b2', icon: Building2 },
+  'Produits désinfectants':      { bg: '#fff7ed', border: '#fed7aa', text: '#ea580c', icon: SprayCan },
+  'Autre':                       { bg: '#f8fafc', border: '#e2e8f0', text: '#64748b', icon: Package },
 };
 const specStyle = (s) => SPEC_STYLE[s] || SPEC_STYLE['Autre'];
 
@@ -80,7 +80,7 @@ function FormulaireF({ initial, onSave, onCancel, saving }) {
   return (
     <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg,#f0fdfa,#f5fffe)', borderBottom: '1px solid rgba(13,148,136,0.15)' }}>
       <h3 style={{ fontWeight: 800, color: '#0f766e', fontSize: 15, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {initial ? '✏️ Modifier le fournisseur' : '✚ Nouveau fournisseur'}
+        {initial ? 'Modifier le fournisseur' : '+ Nouveau fournisseur'}
       </h3>
 
       <Section title="Identité" />
@@ -116,7 +116,7 @@ function FormulaireF({ initial, onSave, onCancel, saving }) {
 
       <div className="flex gap-2 mt-5">
         <Btn color="brand" onClick={() => onSave(form)} disabled={saving}>
-          {saving ? '⏳ Enregistrement…' : `✓ ${initial ? 'Enregistrer les modifications' : 'Créer le fournisseur'}`}
+          {saving ? 'Enregistrement…' : `✓ ${initial ? 'Enregistrer les modifications' : 'Créer le fournisseur'}`}
         </Btn>
         <button onClick={onCancel} style={{ padding: '8px 16px', fontSize: 13, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>Annuler</button>
       </div>
@@ -138,8 +138,8 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
         <div style={{ background: s.bg, borderBottom: `1px solid ${s.border}`, padding: '20px 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: s.bg, border: `2px solid ${s.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>
-                {s.icon}
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: s.bg, border: `2px solid ${s.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <s.icon size={26} color={s.text} strokeWidth={2} />
               </div>
               <div>
                 <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: 0 }}>{f.nom}</h2>
@@ -154,7 +154,7 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Btn onClick={onEdit} color="slate" sm>✏️ Modifier</Btn>
+              <Btn onClick={onEdit} color="slate" sm><Pencil size={12} strokeWidth={2.4} style={{display:'inline',marginRight:4}} />Modifier</Btn>
               <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#94a3b8', cursor: 'pointer' }}>✕</button>
             </div>
           </div>
@@ -165,13 +165,13 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
           {/* KPIs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
             {[
-              { l: 'Note qualité', v: `${f.noteQualite}/5`,    icon: '⭐', bg: '#fffbeb', border: '#fde68a', text: '#d97706' },
-              { l: 'Produits',     v: medsF.length,             icon: '💊', bg: '#faf5ff', border: '#e9d5ff', text: '#9333ea' },
-              { l: 'Délai livr.',  v: `${f.delaiLivraison}j`,  icon: '🚚', bg: '#eff6ff', border: '#bfdbfe', text: '#2563eb' },
-              { l: 'Remise',       v: `${f.remise}%`,           icon: '🏷️', bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
+              { l: 'Note qualité', v: `${f.noteQualite}/5`,    icon: Star, bg: '#fffbeb', border: '#fde68a', text: '#d97706' },
+              { l: 'Produits',     v: medsF.length,             icon: Pill, bg: '#faf5ff', border: '#e9d5ff', text: '#9333ea' },
+              { l: 'Délai livr.',  v: `${f.delaiLivraison}j`,  icon: Truck, bg: '#eff6ff', border: '#bfdbfe', text: '#2563eb' },
+              { l: 'Remise',       v: `${f.remise}%`,           icon: Tag, bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a' },
             ].map((k, i) => (
               <div key={i} style={{ background: k.bg, border: `1px solid ${k.border}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
+                <div style={{ marginBottom: 4, display:'flex', justifyContent:'center' }}><k.icon size={19} color={k.text} strokeWidth={2.2} /></div>
                 <div style={{ fontSize: 17, fontWeight: 900, color: k.text, fontVariantNumeric: 'tabular-nums' }}>{k.v}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: k.text, opacity: .7, textTransform: 'uppercase', letterSpacing: '.04em' }}>{k.l}</div>
               </div>
@@ -181,31 +181,31 @@ function FicheFournisseur({ f, meds, onEdit, onClose }) {
           {/* Contact + Conditions */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <InfoBox title="Contact">
-              {f.contact && <InfoRow icon="👤" val={f.contact} />}
-              {f.tel     && <InfoRow icon="📞" val={f.tel}   link={`tel:${f.tel}`} />}
-              {f.email   && <InfoRow icon="✉️" val={f.email} link={`mailto:${f.email}`} />}
-              {f.siteWeb && <InfoRow icon="🌐" val={f.siteWeb} link={`https://${f.siteWeb}`} />}
-              <InfoRow icon="📍" val={[f.adresse, f.ville, f.pays].filter(Boolean).join(', ') || '—'} />
+              {f.contact && <InfoRow icon={User} val={f.contact} />}
+              {f.tel     && <InfoRow icon={Phone} val={f.tel}   link={`tel:${f.tel}`} />}
+              {f.email   && <InfoRow icon={Mail} val={f.email} link={`mailto:${f.email}`} />}
+              {f.siteWeb && <InfoRow icon={Globe} val={f.siteWeb} link={`https://${f.siteWeb}`} />}
+              <InfoRow icon={MapPin} val={[f.adresse, f.ville, f.pays].filter(Boolean).join(', ') || '—'} />
             </InfoBox>
             <InfoBox title="Conditions commerciales">
-              <InfoRow icon="💳" val={condLabel}                         label="Paiement" />
-              <InfoRow icon="🏷️" val={`${f.remise}%`}                    label="Remise" />
-              <InfoRow icon="🚚" val={`${f.delaiLivraison} jours ouvrés`} label="Délai" />
-              <InfoRow icon="🤝" val={f.dateDebut || '—'}                 label="Partenariat depuis" />
-              {f.rib && <InfoRow icon="🏦" val={f.rib} label="RIB" mono />}
+              <InfoRow icon={CreditCard} val={condLabel}                         label="Paiement" />
+              <InfoRow icon={Tag} val={`${f.remise}%`}                    label="Remise" />
+              <InfoRow icon={Truck} val={`${f.delaiLivraison} jours ouvrés`} label="Délai" />
+              <InfoRow icon={Handshake} val={f.dateDebut || '—'}                 label="Partenariat depuis" />
+              {f.rib && <InfoRow icon={Landmark} val={f.rib} label="RIB" mono />}
             </InfoBox>
           </div>
 
           {f.notes && (
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '12px 16px', marginBottom: 16 }}>
-              <p style={{ fontSize: 10, fontWeight: 800, color: '#d97706', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>📝 Notes internes</p>
+              <p style={{ fontSize: 10, fontWeight: 800, color: '#d97706', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Notes internes</p>
               <p style={{ fontSize: 13, color: '#92400e' }}>{f.notes}</p>
             </div>
           )}
 
           {medsF.length > 0 && (
             <div>
-              <p style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>💊 Médicaments approvisionnés ({medsF.length})</p>
+              <p style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Médicaments approvisionnés ({medsF.length})</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {medsF.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderRadius: 12, border: '1px solid #f1f5f9', padding: '10px 12px' }}>
@@ -237,10 +237,10 @@ function InfoBox({ title, children }) {
   );
 }
 
-function InfoRow({ icon, val, label, link, mono }) {
+function InfoRow({ icon: Icon, val, label, link, mono }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-      <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+      <Icon size={14} color="#94a3b8" strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} />
       <div style={{ minWidth: 0 }}>
         {label && <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, marginBottom: 1 }}>{label}</p>}
         {link
@@ -391,8 +391,8 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
       {/* Tabs pill */}
       <div style={{ display:'flex', gap:4, background:'#f1f5f9', borderRadius:14, padding:4, width:'fit-content' }}>
         {[
-          { k:'liste',  l:'🏭 Fournisseurs',       c: fournisseurs.length },
-          { k:'dettes', l:'💰 Dettes & Paiements', c: debtData.filter(d=>d.solde>0).length },
+            { k:'liste',  l:'Fournisseurs',       c: fournisseurs.length },
+            { k:'dettes', l:'Dettes & Paiements', c: debtData.filter(d=>d.solde>0).length },
         ].map(t => (
           <button key={t.k} onClick={() => setActiveTab(t.k)} style={{
             padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700,
@@ -413,14 +413,14 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { icon:'🏭', label:'Fournisseurs actifs', value: stats.actifs,           sub: `sur ${fournisseurs.length} total`,   color:'#0d9488' },
-            { icon:'📋', label:'Total fournisseurs',  value: fournisseurs.length,    sub: `${fournisseurs.length - stats.actifs} inactif(s)`, color:'#2563eb' },
-            { icon:'⭐', label:'Note qualité moy.',   value: `${stats.noteAvg}/5`,   sub: 'évaluation moyenne',                 color:'#d97706' },
-            { icon:'🚚', label:'Délai livr. moyen',   value: `${stats.delaiMoy} j`,  sub: 'jours ouvrés',                       color:'#9333ea' },
+            { icon:Factory, label:'Fournisseurs actifs', value: stats.actifs,           sub: `sur ${fournisseurs.length} total`,   color:'#0d9488' },
+            { icon:ClipboardList, label:'Total fournisseurs',  value: fournisseurs.length,    sub: `${fournisseurs.length - stats.actifs} inactif(s)`, color:'#2563eb' },
+            { icon:Star, label:'Note qualité moy.',   value: `${stats.noteAvg}/5`,   sub: 'évaluation moyenne',                 color:'#d97706' },
+            { icon:Truck, label:'Délai livr. moyen',   value: `${stats.delaiMoy} j`,  sub: 'jours ouvrés',                       color:'#9333ea' },
           ].map((k,i) => (
             <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                <div style={{ width:34,height:34,borderRadius:10, background:k.color+'18', display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+                <div style={{ width:34,height:34,borderRadius:10, background:k.color+'18', display:'flex',alignItems:'center',justifyContent:'center' }}><k.icon size={16} color={k.color} strokeWidth={2.3} /></div>
                 <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
               </div>
               <div style={{ fontSize:20,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -453,9 +453,9 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
             <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
               <select value={sortBy} onChange={e => setSortBy(e.target.value)}
                 style={{ border:'1.5px solid #e2e8f0', borderRadius:10, padding:'7px 10px', fontSize:12, fontWeight:700, color:'#64748b', outline:'none', background:'white' }}>
-                <option value="nom">🔤 Par nom</option>
-                <option value="note">⭐ Meilleure note</option>
-                <option value="delai">🚚 Délai livraison</option>
+                <option value="nom">Par nom</option>
+                <option value="note">Meilleure note</option>
+                <option value="delai">Délai livraison</option>
               </select>
               {view === 'liste'
                 ? <Btn color="brand" onClick={() => { setView('form-new'); setEditTarget(null); }}>+ Nouveau</Btn>
@@ -466,7 +466,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
 
           {/* Filtres */}
           <div style={{ padding:'12px 20px', borderBottom:'1px solid #f8fafc', display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Nom, contact, ville…"
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nom, contact, ville…"
               style={{ flex:'1 1 180px', minWidth:150, padding:'8px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, outline:'none' }} />
             <select value={fSpec} onChange={e => setFSpec(e.target.value)}
               style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fSpec?'#0f172a':'#94a3b8', outline:'none' }}>
@@ -482,9 +482,9 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
             <select value={fNote} onChange={e => setFNote(e.target.value)}
               style={{ padding:'8px 10px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:13, background:'white', color: fNote?'#0f172a':'#94a3b8', outline:'none' }}>
               <option value="">Toutes notes</option>
-              <option value="3">⭐⭐⭐ et +</option>
-              <option value="4">⭐⭐⭐⭐ et +</option>
-              <option value="5">⭐⭐⭐⭐⭐</option>
+                <option value="3">★★★ et +</option>
+                <option value="4">★★★★ et +</option>
+                <option value="5">★★★★★</option>
             </select>
             {activeFilters > 0 && (
               <button onClick={resetFilters} style={{ padding:'8px 12px', borderRadius:10, border:'1.5px solid #e2e8f0', fontSize:12, fontWeight:700, background:'white', color:'#64748b', cursor:'pointer' }}>
@@ -515,12 +515,12 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
                       {/* Header */}
                       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:12 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
-                          <div style={{ width:40,height:40,borderRadius:12,background:s.bg,border:`1.5px solid ${s.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0 }}>
-                            {s.icon}
+                          <div style={{ width:40,height:40,borderRadius:12,background:s.bg,border:`1.5px solid ${s.border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                            <s.icon size={19} color={s.text} strokeWidth={2.1} />
                           </div>
                           <div style={{ minWidth:0 }}>
                             <h3 style={{ fontWeight:800,fontSize:14,color:'#0f172a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:160 }}>{f.nom}</h3>
-                            {f.contact && <p style={{ fontSize:11,color:'#94a3b8',marginTop:1 }}>👤 {f.contact}</p>}
+                            {f.contact && <p style={{ fontSize:11,color:'#94a3b8',marginTop:1 }}>{f.contact}</p>}
                           </div>
                         </div>
                         <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0 }}>
@@ -588,13 +588,13 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
           {/* KPIs dettes */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { icon:'💸', label:'Total dettes',           value: fmtF(totalDette),                                  color:'#dc2626', sub: `${debtData.filter(d=>d.solde>0).length} fournisseur(s) à régler` },
-              { icon:'🏭', label:'Fournisseurs à régler',  value: debtData.filter(d=>d.solde>0).length,              color:'#d97706', sub: 'avec solde positif' },
-              { icon:'✅', label:'Total versé',            value: fmtF(totalVerse),                                  color:'#16a34a', sub: `${(versements||[]).length} versement(s)` },
+              { icon:Receipt, label:'Total dettes',           value: fmtF(totalDette),                                  color:'#dc2626', sub: `${debtData.filter(d=>d.solde>0).length} fournisseur(s) à régler` },
+              { icon:Factory, label:'Fournisseurs à régler',  value: debtData.filter(d=>d.solde>0).length,              color:'#d97706', sub: 'avec solde positif' },
+              { icon:CheckCircle2, label:'Total versé',            value: fmtF(totalVerse),                                  color:'#16a34a', sub: `${(versements||[]).length} versement(s)` },
             ].map((k,i) => (
               <div key={i} style={{ background:'white', borderRadius:16, padding:'14px 16px', border:'1px solid #f1f5f9', boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-                  <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+                  <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center' }}><k.icon size={16} color={k.color} strokeWidth={2.3} /></div>
                   <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
                 </div>
                 <div style={{ fontSize:20,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -615,7 +615,7 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
             {/* Formulaire versement */}
             {showVForm && (
               <div style={{ padding:'18px 20px', background:'linear-gradient(135deg,#f0fdfa,#f5fffe)', borderBottom:'1px solid rgba(13,148,136,0.15)' }}>
-                <h3 style={{ fontWeight:800,color:'#0f766e',fontSize:14,marginBottom:14 }}>💳 Nouveau paiement fournisseur</h3>
+                <h3 style={{ fontWeight:800,color:'#0f766e',fontSize:14,marginBottom:14 }}>Nouveau paiement fournisseur</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
                   <div>
                     <label style={{ fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>Fournisseur *</label>
@@ -648,13 +648,13 @@ export default function Fournisseurs({ fournisseurs = [], setFournisseurs, meds 
                       style={{ width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none' }} />
                   </div>
                 </div>
-                <Btn color="brand" onClick={addVersement} disabled={savingV}>{savingV?'⏳ Enregistrement…':'✓ Enregistrer le paiement'}</Btn>
+                <Btn color="brand" onClick={addVersement} disabled={savingV}>{savingV?'Enregistrement…':'✓ Enregistrer le paiement'}</Btn>
               </div>
             )}
 
             {!debtData.length ? (
               <div style={{ textAlign:'center',padding:'48px 24px',color:'#94a3b8' }}>
-                <div style={{ fontSize:40,marginBottom:8 }}>✅</div>
+                <div style={{ marginBottom:8, display:'flex', justifyContent:'center' }}><CheckCircle2 size={36} color="#86efac" strokeWidth={1.8} /></div>
                 <p style={{ fontWeight:700,color:'#475569' }}>Aucune transaction avec les fournisseurs</p>
                 <p style={{ fontSize:13,marginTop:4 }}>Les commandes reçues et paiements apparaîtront ici</p>
               </div>

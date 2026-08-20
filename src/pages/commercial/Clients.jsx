@@ -1,4 +1,4 @@
-import { Users, Pencil, Trash2 } from 'lucide-react'
+import { Users, Pencil, Trash2, PawPrint, Calendar, Phone, PhoneOff, Mail, MapPin } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Btn, Field, DupWarning, PrintBtn, ValidationBanner, FormPanel, Pagination, usePagination, EmptyState } from '../../components/ui'
 import { dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
@@ -145,14 +145,14 @@ function Clients({ clients, setClients, user, sb, logAction }) {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon:'👥', label:'Total clients',    value:kpis.total,       sub:'enregistrés',                  color:'#0d9488' },
-          { icon:'🐾', label:'Avec animaux',     value:kpis.avecAnimaux, sub:`${Math.round(kpis.avecAnimaux/Math.max(1,kpis.total)*100)}% de la clientèle`, color:'#16a34a' },
-          { icon:'📅', label:'Nouveaux ce mois', value:kpis.ceMois,      sub:'ce mois-ci',                   color:'#7c3aed' },
-          { icon:'📵', label:'Sans téléphone',   value:kpis.sansTel,     sub:'à compléter',                  color:'#d97706' },
+          { icon:Users, label:'Total clients',    value:kpis.total,       sub:'enregistrés',                  color:'#0d9488' },
+          { icon:PawPrint, label:'Avec animaux',     value:kpis.avecAnimaux, sub:`${Math.round(kpis.avecAnimaux/Math.max(1,kpis.total)*100)}% de la clientèle`, color:'#16a34a' },
+          { icon:Calendar, label:'Nouveaux ce mois', value:kpis.ceMois,      sub:'ce mois-ci',                   color:'#7c3aed' },
+          { icon:PhoneOff, label:'Sans téléphone',   value:kpis.sansTel,     sub:'à compléter',                  color:'#d97706' },
         ].map((k,i) => (
           <div key={i} style={{ background:'white',borderRadius:16,padding:'14px 16px',border:'1px solid #f1f5f9',boxShadow:'0 1px 3px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16 }}>{k.icon}</div>
+              <div style={{ width:34,height:34,borderRadius:10,background:k.color+'18',display:'flex',alignItems:'center',justifyContent:'center' }}><k.icon size={16} color={k.color} strokeWidth={2.3} /></div>
               <span style={{ fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em' }}>{k.label}</span>
             </div>
             <div style={{ fontSize:22,fontWeight:900,color:'#0f172a',lineHeight:1 }}>{k.value}</div>
@@ -173,11 +173,11 @@ function Clients({ clients, setClients, user, sb, logAction }) {
           <div style={{ display:'flex',gap:8,alignItems:'center',flexWrap:'wrap' }}>
             <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
               style={{ border:'1.5px solid #e2e8f0',borderRadius:10,padding:'7px 10px',fontSize:12,fontWeight:700,color:'#64748b',outline:'none',background:'white' }}>
-              <option value="nom">🔤 Nom A→Z</option>
-              <option value="recent">🕐 Plus récents</option>
-              <option value="animaux">🐾 Plus d'animaux</option>
+                <option value="nom">Nom A→Z</option>
+                <option value="recent">Plus récents</option>
+                <option value="animaux">Plus d'animaux</option>
             </select>
-            <PrintBtn zoneId="clients-print" label="🖨️" />
+            <PrintBtn zoneId="clients-print" label="Imprimer" />
             <Btn onClick={() => setShowForm(!showForm)}>{showForm ? '✕ Annuler' : '+ Nouveau client'}</Btn>
           </div>
         </div>
@@ -198,7 +198,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
               ))}
             </div>
             <div style={{ marginTop:14 }}>
-              <Btn onClick={handleAdd} disabled={saving}>{saving ? '⏳ Enregistrement…' : '✓ Enregistrer le client'}</Btn>
+              <Btn onClick={handleAdd} disabled={saving}>{saving ? 'Enregistrement…' : '✓ Enregistrer le client'}</Btn>
             </div>
           </FormPanel>
         )}
@@ -223,14 +223,14 @@ function Clients({ clients, setClients, user, sb, logAction }) {
 
         {/* Barre recherche + filtres */}
         <div style={{ padding:'12px 20px',borderBottom:'1px solid #f8fafc',display:'flex',flexWrap:'wrap',gap:8,alignItems:'center' }}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Nom, téléphone, adresse, email…"
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Nom, téléphone, adresse, email…"
             style={{ flex:'1 1 200px',padding:'8px 12px',borderRadius:10,border:'1.5px solid #e2e8f0',fontSize:13,outline:'none' }} />
           <button onClick={() => setFilterAnimal(v=>!v)}
             style={{ padding:'8px 14px',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .12s',
               border:`1.5px solid ${filterAnimal?'#16a34a':'#e2e8f0'}`,
               background:filterAnimal?'#f0fdf4':'white',
               color:filterAnimal?'#16a34a':'#64748b' }}>
-            🐾 Avec animaux {filterAnimal && `(${kpis.avecAnimaux})`}
+            Avec animaux {filterAnimal && `(${kpis.avecAnimaux})`}
           </button>
           {(activeFilters > 0 || search) && (
             <button onClick={resetFilters}
@@ -272,17 +272,17 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                       {c.tel && (
                         <a href={`tel:${c.tel}`} onClick={e=>e.stopPropagation()}
                           style={{ fontSize:12,color:'#0d9488',fontWeight:600,display:'flex',alignItems:'center',gap:4,textDecoration:'none',marginBottom:2 }}>
-                          📞 {c.tel}
+                          <Phone size={11} strokeWidth={2.4} /> {c.tel}
                         </a>
                       )}
-                      {!c.tel && <p style={{ fontSize:12,color:'#e2e8f0',fontStyle:'italic' }}>📵 Pas de téléphone</p>}
-                      {c.adresse && <p style={{ fontSize:11,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>📍 {c.adresse}</p>}
+                      {!c.tel && <p style={{ fontSize:12,color:'#e2e8f0',fontStyle:'italic' }}>Pas de téléphone</p>}
+                      {c.adresse && <p style={{ fontSize:11,color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{c.adresse}</p>}
                     </div>
                     {/* Badges droite */}
                     <div style={{ flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:5 }}>
                       {(c.animaux > 0) ? (
-                        <span style={{ fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:99,background:'#f0fdf4',border:'1px solid #bbf7d0',color:'#16a34a' }}>
-                          🐾 {c.animaux}
+                        <span style={{ fontSize:11,fontWeight:700,padding:'3px 9px',borderRadius:99,background:'#f0fdf4',border:'1px solid #bbf7d0',color:'#16a34a',display:'inline-flex',alignItems:'center',gap:4 }}>
+                          <PawPrint size={10} strokeWidth={2.5} /> {c.animaux}
                         </span>
                       ) : (
                         <span style={{ fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:99,background:'#f8fafc',border:'1px solid #e2e8f0',color:'#cbd5e1' }}>
@@ -299,14 +299,14 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                       {/* Infos complètes */}
                       <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14 }}>
                         {[
-                          { icon:'✉️', label:'Email',        value:c.email   || '—' },
-                          { icon:'📍', label:'Adresse',      value:c.adresse || '—' },
-                          { icon:'🐾', label:'Animaux',      value:c.animaux > 0 ? `${c.animaux} animal(ux)` : 'Aucun' },
-                          { icon:'📅', label:'Inscrit(e) le', value:c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '—' },
+                          { icon:Mail, label:'Email',        value:c.email   || '—' },
+                          { icon:MapPin, label:'Adresse',      value:c.adresse || '—' },
+                          { icon:PawPrint, label:'Animaux',      value:c.animaux > 0 ? `${c.animaux} animal(ux)` : 'Aucun' },
+                          { icon:Calendar, label:'Inscrit(e) le', value:c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '—' },
                         ].map((info,i) => (
                           <div key={i} style={{ background:'#f8fafc',borderRadius:10,padding:'8px 10px' }}>
                             <p style={{ fontSize:9,fontWeight:700,color:'#94a3b8',marginBottom:3,textTransform:'uppercase' }}>{info.label}</p>
-                            <p style={{ fontSize:12,color:'#475569',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{info.icon} {info.value}</p>
+                            <p style={{ fontSize:12,color:'#475569',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:5 }}><info.icon size={11} color="#94a3b8" strokeWidth={2.3} /> {info.value}</p>
                           </div>
                         ))}
                       </div>
@@ -317,14 +317,14 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                           <a href={`tel:${c.tel}`}
                             style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,
                               background:'#f0fdfa',border:'1px solid #99f6e4',color:'#0d9488',textDecoration:'none' }}>
-                            📞 Appeler
+                            <Phone size={12} strokeWidth={2.4} /> Appeler
                           </a>
                         )}
                         {c.email && (
                           <a href={`mailto:${c.email}`}
                             style={{ display:'inline-flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:10,fontSize:12,fontWeight:700,
                               background:'#eff6ff',border:'1px solid #bfdbfe',color:'#2563eb',textDecoration:'none' }}>
-                            ✉️ Email
+                            <Mail size={12} strokeWidth={2.4} /> Email
                           </a>
                         )}
                         <button onClick={()=>startEdit(c)}
@@ -342,7 +342,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                       {/* Confirmation suppression */}
                       {confirmDel===c.id && (
                         <div style={{ marginTop:10,padding:'10px 14px',borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10 }}>
-                          <p style={{ fontSize:13,color:'#dc2626',fontWeight:700 }}>⚠️ Supprimer <strong>{c.nom}</strong> ?</p>
+                          <p style={{ fontSize:13,color:'#dc2626',fontWeight:700 }}>Supprimer <strong>{c.nom}</strong> ?</p>
                           <div style={{ display:'flex',gap:6,flexShrink:0 }}>
                             <button onClick={()=>doDelete(c.id)}
                               style={{ padding:'6px 12px',background:'#dc2626',color:'white',border:'none',borderRadius:9,fontSize:12,fontWeight:700,cursor:'pointer' }}>Confirmer</button>
@@ -357,7 +357,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                   {/* Formulaire d'édition inline */}
                   {isExpanded && isEditing && (
                     <div style={{ marginTop:14,paddingTop:14,borderTop:'1px solid #f1f5f9' }}>
-                      <p style={{ fontSize:12,fontWeight:800,color:'#d97706',marginBottom:12,display:'flex',alignItems:'center',gap:6 }}>✏️ Modifier les informations</p>
+                      <p style={{ fontSize:12,fontWeight:800,color:'#d97706',marginBottom:12,display:'flex',alignItems:'center',gap:6 }}><Pencil size={12} strokeWidth={2.4} /> Modifier les informations</p>
                       <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12 }}>
                         {[
                           { l:'Nom complet *', k:'nom',     ph:'Nom et prénom',    type:'text' },
@@ -377,7 +377,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                       <div style={{ display:'flex',gap:8 }}>
                         <button onClick={saveEdit} disabled={savingEdit||!editForm.nom?.trim()}
                           style={{ padding:'8px 16px',background:'#d97706',color:'white',border:'none',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',opacity:savingEdit?0.6:1 }}>
-                          {savingEdit?'⏳ Enregistrement…':'✓ Enregistrer'}
+                          {savingEdit?'Enregistrement…':'✓ Enregistrer'}
                         </button>
                         <button onClick={cancelEdit}
                           style={{ padding:'8px 12px',background:'none',border:'none',color:'#94a3b8',fontSize:12,fontWeight:700,cursor:'pointer' }}>
