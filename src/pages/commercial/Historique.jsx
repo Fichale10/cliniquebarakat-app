@@ -1,4 +1,4 @@
-import { History, Banknote, Smartphone, CreditCard, Landmark, PenLine } from 'lucide-react'
+import { History, Banknote, Smartphone, CreditCard, Landmark, PenLine, User } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { fmtF } from '../../lib/utils'
 import { Badge, FilterPeriode, FilterSelect, FilterBar, EmptyState } from '../../components/ui'
@@ -91,8 +91,8 @@ function VenteCard({ e, expanded, onToggle }) {
         {/* Infos */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-            <span style={{ fontWeight: 800, fontSize: 14, color: '#0f172a' }}>
-              👤 {e.client || '—'}
+            <span style={{ fontWeight: 800, fontSize: 14, color: '#0f172a', display:'inline-flex', alignItems:'center', gap:5 }}>
+              <User size={13} color="#64748b" strokeWidth={2.4} />{e.client || '—'}
             </span>
             <StatutPill statut={e.statut} map={STATUT_VENTE} />
             {e.mode && (

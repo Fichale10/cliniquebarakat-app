@@ -10,7 +10,7 @@ import { venteToDbRow, validateCaisseForm, validateVenteForm, venteFormToRow } f
 import { fmtF, STATUTS, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, venteEncaisse, ligneUnites, CLIENT_INTERNE, isCession } from '../../lib/ventes'
 import { exportCSV } from '../../lib/utils'
 import { applyVenteStock } from '../../lib/stock'
-import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil, Copy, Download } from 'lucide-react'
+import { ShoppingCart, Coins, Hourglass, ClipboardList, Receipt, Pill, Lock, Printer, Trash2, Pencil, Copy, Download, User } from 'lucide-react'
 
 const today      = () => new Date().toISOString().split('T')[0]
 const EMPTY_LIGNE = { med: '', medSearch: '', cond: 'Unité', qte: 1, pu: 0, mult: 1, showSugg: false }
@@ -679,7 +679,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 <div>
                   <label style={LBL}>Client</label>
                   {achatInterne
-                    ? <div style={{ ...INPUT, background:'#eff6ff', border:'1.5px solid #93c5fd', fontWeight:700, color:'#1d4ed8', display:'flex', alignItems:'center' }}>🏥 {CLIENT_INTERNE}</div>
+                    ? <div style={{ ...INPUT, background:'#eff6ff', border:'1.5px solid #93c5fd', fontWeight:700, color:'#1d4ed8', display:'flex', alignItems:'center' }}>{CLIENT_INTERNE}</div>
                     : <>
                         <input value={client} onChange={e => patchCaisse({ client: e.target.value })}
                           placeholder="Nom du client…" list="caisse-clients" style={INPUT} />
@@ -924,7 +924,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 onClose={() => setShowVenteForm(false)}
               >
                 <div className="flex gap-2 mb-4">
-                  {[{v:'detail',l:'🏪 Vente au détail'},{v:'gros',l:'📦 Vente en gros'}].map(t => (
+                  {[{v:'detail',l:'Vente au détail'},{v:'gros',l:'Vente en gros'}].map(t => (
                     <button key={t.v} type="button"
                       onClick={() => patchVenteForm({ type:t.v, lignes:[{med:'',medSearch:'',cond:'',qte:1,pu:'',showSugg:false}] })}
                       className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${venteForm.type===t.v
@@ -1013,7 +1013,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                           </div>
                           {venteForm.type === 'gros' ? (
                             <div className="flex items-center h-full">
-                              <span className={`text-xs font-bold px-3 py-2.5 rounded-xl border ${l.med ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>📦 Gros</span>
+                              <span className={`text-xs font-bold px-3 py-2.5 rounded-xl border ${l.med ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>Gros</span>
                             </div>
                           ) : (
                             <select className={`w-full border-2 rounded-xl px-3 py-2.5 text-sm outline-none bg-white ${!l.med?'border-slate-100 text-slate-300':'border-slate-200 focus:border-green-400'}`}
@@ -1064,7 +1064,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
             {fVRange && (
               <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', margin:'0 16px', padding:'8px 14px', borderRadius:12, background:'#f0fdfa', border:'1px solid #99f6e4' }}>
                 <span style={{ fontSize:12, fontWeight:800, color:'#0f766e' }}>
-                  📅 Recettes du Dashboard — {fVRange.du === fVRange.au
+                  Période — {fVRange.du === fVRange.au
                     ? `le ${new Date(fVRange.du+'T00:00:00').toLocaleDateString('fr-FR')}`
                     : `du ${new Date(fVRange.du+'T00:00:00').toLocaleDateString('fr-FR')} au ${new Date(fVRange.au+'T00:00:00').toLocaleDateString('fr-FR')}`}
                   {' '}· {filtered.length} vente(s)
@@ -1075,12 +1075,12 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                 </button>
               </div>
             )}
-            <FilterBar search={searchV} onSearch={setSearchV} placeholder="🔍 Client, produit…"
+            <FilterBar search={searchV} onSearch={setSearchV} placeholder="Client, produit…"
               activeCount={[fVStatut,fVMode,fVPeriode,fVType,searchV,fVRange].filter(Boolean).length}
               onReset={() => { setSearchV(''); setFVStatut(''); setFVMode(''); setFVPeriode(''); setFVType(''); setFVRange(null) }}>
-              <FilterSelect label="📋 Statut"   value={fVStatut}  onChange={setFVStatut}  options={STATUTS.map(s => ({v:s,l:s}))} />
-              <FilterSelect label="💳 Paiement" value={fVMode}    onChange={setFVMode}    options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m,l:m}))} />
-              <FilterBtns label="Type" options={[{v:'detail',l:'🏪 Détail'},{v:'gros',l:'📦 Gros'}]} value={fVType} onChange={setFVType} colorFn={v => v==='gros' ? 'orange' : 'green'} />
+              <FilterSelect label="Statut"   value={fVStatut}  onChange={setFVStatut}  options={STATUTS.map(s => ({v:s,l:s}))} />
+              <FilterSelect label="Paiement" value={fVMode}    onChange={setFVMode}    options={['Espèces','Mobile Money','Virement','Chèque'].map(m => ({v:m,l:m}))} />
+              <FilterBtns label="Type" options={[{v:'detail',l:'Détail'},{v:'gros',l:'Gros'}]} value={fVType} onChange={setFVType} colorFn={v => v==='gros' ? 'orange' : 'green'} />
               <FilterPeriode value={fVPeriode} onChange={setFVPeriode} />
               {/* Plage de dates libre (du → au) */}
               <div style={{ display:'flex', alignItems:'center', gap:5 }}>
@@ -1121,15 +1121,15 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                       {/* Infos */}
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap', marginBottom:3 }}>
-                          <span style={{ fontWeight:800, fontSize:14, color:'#0f172a' }}>👤 {v.client||'Comptoir'}</span>
+                          <span style={{ fontWeight:800, fontSize:14, color:'#0f172a', display:'inline-flex', alignItems:'center', gap:5 }}><User size={13} color="#64748b" strokeWidth={2.4} />{v.client||'Comptoir'}</span>
                           {v.num && <span style={{ fontSize:10, fontWeight:700, fontFamily:"'Space Mono',monospace", padding:'2px 7px', borderRadius:99, background:'#f8fafc', border:'1px solid #e2e8f0', color:'#64748b' }}>{v.num}</span>}
                           <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background:statBg, border:`1px solid ${statBorder}`, color:statColor }}>
                             <span style={{ width:5, height:5, borderRadius:'50%', background:statColor, flexShrink:0 }} />{v.statut}
                           </span>
-                          {v.type === 'gros' && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c' }}>📦 Gros</span>}
-                          {(v.type === 'clinique' || v.consultation_id) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#2563eb' }}>🩺 Consultation</span>}
-                          {isCession(v) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#f5f3ff', border:'1px solid #ddd6fe', color:'#7c3aed' }}>🏥 Achat interne clinique</span>}
-                          {v.caissier && <span style={{ fontSize:10, color:'#94a3b8' }}>🧾 {v.caissier}</span>}
+                          {v.type === 'gros' && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fff7ed', border:'1px solid #fed7aa', color:'#ea580c' }}>Gros</span>}
+                          {(v.type === 'clinique' || v.consultation_id) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#2563eb' }}>Consultation</span>}
+                          {isCession(v) && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#f5f3ff', border:'1px solid #ddd6fe', color:'#7c3aed' }}>Achat interne</span>}
+                          {v.caissier && <span style={{ fontSize:10, color:'#94a3b8' }}>par {v.caissier}</span>}
                         </div>
                         <div style={{ fontSize:11, color:'#64748b' }}>
                           {(v.lignes||[]).length} article{(v.lignes||[]).length>1?'s':''}
@@ -1151,7 +1151,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))', gap:8, paddingTop:12 }}>
                           {(v.lignes||[]).map((l, i) => (
                             <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:10, background:'#f8fafc', border:'1px solid #f1f5f9' }}>
-                              <span style={{ fontSize:18 }}>💊</span>
+                              <Pill size={15} color="#0d9488" strokeWidth={2.2} style={{ flexShrink:0 }} />
                               <div style={{ minWidth:0 }}>
                                 <div style={{ fontWeight:700, fontSize:12, color:'#1e293b' }}>{l.med||'?'}</div>
                                 <div style={{ fontSize:11, color:'#94a3b8' }}>{l.cond||''}{l.cond&&l.qte?' · ':''}{l.qte?`×${l.qte}`:''}{l.pu?` · ${fmtF((l.pu||0)*(l.qte||0))}`:''}</div>
@@ -1159,7 +1159,7 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                             </div>
                           ))}
                         </div>
-                        {v.note && <div style={{ marginTop:10, padding:'8px 12px', borderRadius:10, background:'#fffbeb', border:'1px solid #fde68a', fontSize:12, color:'#92400e' }}>📌 {v.note}</div>}
+                        {v.note && <div style={{ marginTop:10, padding:'8px 12px', borderRadius:10, background:'#fffbeb', border:'1px solid #fde68a', fontSize:12, color:'#92400e' }}><strong>Note</strong> — {v.note}</div>}
                         {/* Actions */}
                         <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:12 }}>
                           <button onClick={() => imprimerRecu(v)} style={{ padding:'6px 12px', borderRadius:9, fontSize:12, fontWeight:700, border:'1px solid #e2e8f0', background:'white', color:'#475569', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}><Printer size={12} strokeWidth={2.4} /> Imprimer</button>

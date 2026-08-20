@@ -5,7 +5,7 @@ import { validateVenteForm, venteFormToRow } from '../../lib/validation'
 import { fmtF, fmtK, STATUTS, STATUT_STYLE, getTarifs, getPrixGros, getRemiseApplied, computeTvaAmt, venteTvaAmt, venteTTC, ligneUnites } from '../../lib/ventes'
 import { applyVenteStock } from '../../lib/stock'
 import { exportCSV } from '../../lib/utils'
-import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2, Download, Banknote, Smartphone, Landmark, PenLine } from 'lucide-react'
+import { ShoppingCart, CheckCircle2, Hourglass, Package, BarChart3, ClipboardList, Pill, Printer, Trash2, Download, Banknote, Smartphone, Landmark, PenLine, User } from 'lucide-react'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -455,13 +455,13 @@ function Ventes({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
                   {/* Infos centrales */}
                   <div style={{ flex:1,minWidth:0 }}>
                     <div style={{ display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:6 }}>
-                      <span style={{ fontWeight:800,fontSize:14,color:'#0f172a' }}>👤 {v.client}</span>
+                      <span style={{ fontWeight:800,fontSize:14,color:'#0f172a',display:'inline-flex',alignItems:'center',gap:5 }}><User size={13} color="#64748b" strokeWidth={2.4} />{v.client}</span>
                       <StatutPill statut={v.statut} />
                       <span style={{ fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:99,background:'#f1f5f9',color:'#64748b',border:'1px solid #e2e8f0',display:'inline-flex',alignItems:'center',gap:4 }}>
                         {MODE_ICON[v.mode] ? (() => { const MIc = MODE_ICON[v.mode]; return <MIc size={11} strokeWidth={2.4} /> })() : null} {v.mode}
                       </span>
-                      {isGros && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fff7ed',border:'1px solid #fed7aa',color:'#ea580c' }}>📦 Gros</span>}
-                      {v.type==='cession' && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#f5f3ff',border:'1px solid #ddd6fe',color:'#7c3aed' }}>🏥 Interne</span>}
+                      {isGros && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#fff7ed',border:'1px solid #fed7aa',color:'#ea580c' }}>Gros</span>}
+                      {v.type==='cession' && <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#f5f3ff',border:'1px solid #ddd6fe',color:'#7c3aed' }}>Interne</span>}
                       <span style={{ fontSize:11,color:'#94a3b8' }}>{v.date}</span>
                     </div>
                     {/* Produits preview */}
