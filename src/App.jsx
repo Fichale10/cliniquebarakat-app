@@ -256,7 +256,9 @@ useEffect(() => {
     const rows = ['nom','sousTitre','tel','adresse','ville','email'].map(key => ({ key, value: String(c[key] ?? '') }))
     setCache('clinique_settings', rows)
     if (!sb || !navigator.onLine) return
-    const { error } = await sb.from('clinique_settings').upsert(rows)
+    // onConflict:'key' → la contrainte unique porte sur key (pas la PK id) :
+    // sans cela l'upsert tente un INSERT et échoue en duplicate key.
+    const { error } = await sb.from('clinique_settings').upsert(rows, { onConflict: 'key' })
     if (error) throw new Error(error.message)
   }
 
