@@ -131,18 +131,84 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
     const tel = (v.tel || '').replace(/[^0-9+]/g, '')
     window.open(`https://wa.me/${tel}?text=${msg}`, '_blank')
   }
-  // Téléchargement PDF : ouvre le certificat en document autonome, le titre du
-  // document sert de nom de fichier, l'impression est lancée (destination « PDF »).
-  const telechargerPDF = () => {
-    const zone = document.getElementById('vaccin-print')
-    if (!zone || !cert) return
-    const w = window.open('', '_blank')
-    if (!w) { alert('Autorisez les fenêtres pop-up pour télécharger le PDF.'); return }
-    const nomFichier = `Certificat_Vaccination_${(cert.patient || 'animal').replace(/[^a-z0-9]/gi, '_')}_${cert.date || ''}`
-    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${nomFichier}</title>
-      <style>body{margin:0;padding:24px;background:white;} @media print{body{padding:0;}} @page{size:A4;margin:14mm;}</style>
-      </head><body>${zone.outerHTML}<script>window.onload=()=>{window.print();}<\/script></body></html>`)
-    w.document.close()
+  // Téléchargement direct d'un vrai fichier .pdf (jsPDF, chargé à la demande)
+  const telechargerPDF = async () => {
+    if (!cert) return
+    try {
+      const { jsPDF } = await import('jspdf')
+      const { default: autoTable } = await import('jspdf-autotable')
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+      const W = 210, M = 16
+      let y = 20
+
+      // En-tête
+      doc.setTextColor(20, 83, 45)
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17)
+      doc.text(clinique?.nom || 'La Barakat', W / 2, y, { align: 'center' }); y += 6.5
+      doc.setFontSize(11); doc.setTextColor(22, 101, 52)
+      doc.text(clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire', W / 2, y, { align: 'center' }); y += 5.5
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(71, 85, 105)
+      const coords = [[clinique?.adresse, clinique?.ville].filter(Boolean).join(', '), clinique?.tel && `Tél : ${clinique.tel}`, clinique?.email].filter(Boolean).join('  ·  ')
+      if (coords) { doc.text(coords, W / 2, y, { align: 'center' }); y += 4.5 }
+      if (clinique?.agrement) { doc.setFontSize(8.5); doc.text(`Agrément n° ${clinique.agrement}`, W / 2, y, { align: 'center' }); y += 4.5 }
+      y += 2
+      doc.setDrawColor(20, 83, 45); doc.setLineWidth(0.7); doc.line(M, y, W - M, y)
+      doc.setLineWidth(0.25); doc.line(M, y + 1.1, W - M, y + 1.1); y += 9
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(30, 41, 59)
+      doc.text('CERTIFICAT DE VACCINATION', W / 2, y, { align: 'center', charSpace: 1.2 }); y += 5.5
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139)
+      doc.text(`N° ${String(cert.id).slice(0, 8).toUpperCase()}  ·  Établi le ${fmtDate(cert.date)}`, W / 2, y, { align: 'center' }); y += 10
+
+      // Identification
+      doc.setFontSize(10.5); doc.setTextColor(30, 41, 59)
+      const ident = [
+        ['Espèce :', cert.espece, 'Animal / Troupeau :', `${cert.patient}${(cert.nombre || 1) > 1 ? ` (${cert.nombre} animaux)` : ''}`],
+        ['Propriétaire :', cert.proprio || '—', 'Téléphone :', cert.tel || '—'],
+      ]
+      ident.forEach(r => {
+        doc.setFont('helvetica', 'bold'); doc.text(r[0], M, y)
+        doc.setFont('helvetica', 'normal'); doc.text(String(r[1]), M + 32, y)
+        doc.setFont('helvetica', 'bold'); doc.text(r[2], W / 2 + 4, y)
+        doc.setFont('helvetica', 'normal'); doc.text(String(r[3]), W / 2 + 44, y)
+        y += 6.5
+      })
+      y += 3
+
+      // Tableau des vaccinations
+      autoTable(doc, {
+        startY: y, margin: { left: M, right: M },
+        head: [['Date', 'Vaccin', 'N° lot', 'Dose / Voie', 'Validité', 'Prochain rappel']],
+        body: certLignes.map(l => [fmtDate(l.date), l.vaccin, l.lot || '—', [l.dose, l.voie].filter(Boolean).join(' · ') || '—', `${l.validite_mois} mois`, fmtDate(l.rappel)]),
+        styles: { fontSize: 8.8, cellPadding: 2.4, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.2 },
+        headStyles: { fillColor: [240, 253, 244], textColor: [20, 83, 45], fontStyle: 'bold' },
+        didParseCell: (d) => { if (d.section === 'body' && certLignes[d.row.index]?.id === cert.id) d.cell.styles.fillColor = [254, 252, 232] },
+      })
+      y = doc.lastAutoTable.finalY + 8
+
+      if (cert.notes) {
+        doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.text('Observations :', M, y)
+        doc.setFont('helvetica', 'normal')
+        const notes = doc.splitTextToSize(cert.notes, W - 2 * M - 30)
+        doc.text(notes, M + 30, y); y += notes.length * 4.5 + 4
+      }
+
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(8.8); doc.setTextColor(71, 85, 105)
+      const legal = doc.splitTextToSize("Je soussigné(e), certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus, conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.", W - 2 * M)
+      doc.text(legal, M, y); y += legal.length * 4 + 14
+
+      // Signatures
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59)
+      doc.text('Le Vétérinaire', M, y)
+      doc.text(`Fait le ${fmtDate(cert.date)}`, W - M, y, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      doc.text(cert.veterinaire || '________________', M, y + 5.5)
+      doc.setFontSize(8.5); doc.setTextColor(148, 163, 184)
+      doc.text('Signature et cachet', M, y + 26)
+      doc.text('Le Propriétaire', W - M, y + 26, { align: 'right' })
+
+      doc.save(`Certificat_Vaccination_${(cert.patient || 'animal').replace(/[^a-z0-9]/gi, '_')}_${cert.date || ''}.pdf`)
+    } catch (e) { alert('Erreur PDF : ' + (e?.message || e)) }
   }
   // ── Filtres & stats ──
   const filtered = useMemo(() => vaccs.filter(v => {
