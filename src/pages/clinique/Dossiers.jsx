@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { FolderOpen, AlertTriangle } from 'lucide-react'
+import { FolderOpen, AlertTriangle, ShieldPlus } from 'lucide-react'
 import { Badge, PrintBtn, EmptyState } from '../../components/ui'
+import { dbFetch } from '../../lib/db'
+import { sb } from '../../lib/globals'
 
 function Dossiers({patients}){
   const [sel,setSel]=useState(null);
@@ -13,6 +15,13 @@ function Dossiers({patients}){
   const tc={Consultation:'blue',Vaccination:'green',Chirurgie:'purple',Antiparasitaire:'yellow',Contrôle:'slate'};
   const emoji={Chien:'🐕',Chat:'🐈',Bovin:'🐄',Caprin:'🐐',Ovin:'🐑'};
   const pat=sel?patients.find(p=>p.id===sel):null;
+  // Carnet de vaccination du patient (table vaccinations)
+  const [vaccs,setVaccs]=useState([]);
+  useEffect(()=>{(async()=>{
+    try{setVaccs((await dbFetch(sb,'vaccinations'))||[]);}catch(e){}
+  })()},[]);
+  const vaccsPat=pat?vaccs.filter(v=>v.patient===pat.nom).sort((a,b)=>(b.date||'').localeCompare(a.date||'')):[];
+  const fmtD=d=>d?d.split('-').reverse().join('/'):'—';
   return <div className="app-page">
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] shadow-sm overflow-hidden">
@@ -46,6 +55,17 @@ function Dossiers({patients}){
             {pat.allergies&&<div className="bg-red-50 rounded-xl p-3 text-center border border-red-200"><div className="text-xs font-bold text-red-500 uppercase mb-1 flex items-center justify-center gap-1"><AlertTriangle size={11} strokeWidth={2.5} /> Allergies</div><div className="font-bold text-red-700 text-sm">{pat.allergies}</div></div>}
           </div>
           {pat.antecedents&&<div className="mt-3 bg-amber-50 rounded-xl p-3 border border-amber-200"><span className="text-xs font-bold text-amber-600">Antécédents : </span><span className="text-sm">{pat.antecedents}</span></div>}
+        </div>
+        <div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] p-5">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><ShieldPlus size={18} color="#2563eb" strokeWidth={2.3}/> Carnet de vaccination</h3>
+          {vaccsPat.length?<div className="space-y-2">{vaccsPat.map(v=>{
+            const j=v.rappel?Math.round((new Date(v.rappel+'T00:00:00')-new Date())/86400000):null;
+            return <div key={v.id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-xl flex-wrap">
+              <span className="font-bold text-sm">{v.vaccin}</span>
+              <span className="text-xs text-slate-500">vacciné le {fmtD(v.date)}{v.lot?` · lot ${v.lot}`:''}</span>
+              {v.rappel&&<Badge color={j!==null&&j<0?'red':j!==null&&j<=30?'yellow':'green'}>{j!==null&&j<0?`Rappel dépassé (${fmtD(v.rappel)})`:`Rappel ${fmtD(v.rappel)}`}</Badge>}
+            </div>;})}
+          </div>:<p className="text-slate-400 text-center py-6 text-sm">Aucune vaccination enregistrée — utilisez la page Vaccinations.</p>}
         </div>
         <div className="bg-[var(--app-surface)] rounded-2xl border border-[var(--app-border)] p-5">
           <h3 className="font-bold text-lg mb-4">Historique médical</h3>

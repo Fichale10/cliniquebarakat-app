@@ -56,6 +56,8 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
     veterinaire: user?.name || '', validite: 12, rappel: addMonths(today(), 12), notes: '', prix: '' }
   const [form, setForm] = useState(EMPTY)
   const f = k => e => setForm({ ...form, [k]: e.target.value })
+  const [campagne, setCampagne] = useState(false)
+  const [nbCampagne, setNbCampagne] = useState(0)
 
   useEffect(() => { (async () => {
     try { setVaccs((await dbFetch(sb, 'vaccinations', { force: true })) || []) }
@@ -107,7 +109,13 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
       }
       const saved = await dbInsert(sb, 'vaccinations', row)
       setVaccs([saved, ...vaccs])
-      setForm(EMPTY); setShowForm(false); setCert(saved)
+      if (campagne) {
+        // Mode campagne : garder vaccin/espèce/lot/dose/voie/date, passer à l'éleveur suivant
+        setForm(prev => ({ ...prev, patient: '', nombre: 1, proprio: '', tel: '', notes: '' }))
+        setNbCampagne(n => n + 1)
+      } else {
+        setForm(EMPTY); setShowForm(false); setCert(saved)
+      }
     } catch (e) { alert('Erreur : ' + (e?.message || e)) }
     finally { setSaving(false) }
   }
@@ -366,6 +374,11 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
 
       {/* Formulaire */}
       {showForm && <div style={{ padding: 20, background: '#f0fdfa', borderBottom: '1px solid #99f6e4' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, cursor: 'pointer', width: 'fit-content' }}>
+          <input type="checkbox" checked={campagne} onChange={e => { setCampagne(e.target.checked); setNbCampagne(0) }} style={{ width: 16, height: 16, accentColor: '#0d9488' }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#0d9488' }}>Mode campagne — enchaîner les éleveurs sans resaisir le vaccin</span>
+          {campagne && nbCampagne > 0 && <span style={{ fontSize: 12, fontWeight: 800, padding: '2px 10px', borderRadius: 999, background: '#0d9488', color: 'white' }}>{nbCampagne} enregistrée(s)</span>}
+        </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <div><label style={lbl}>Date</label><input type="date" value={form.date} onChange={changeDate} style={inp} /></div>
           <div><label style={lbl}>Espèce *</label>
@@ -404,7 +417,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
         </div>
         <button onClick={enregistrer} disabled={saving}
           style={{ padding: '10px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#166534,#1d4ed8)', color: 'white', border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: saving ? .6 : 1 }}>
-          {saving ? 'Enregistrement…' : '✓ Enregistrer et générer le certificat'}
+          {saving ? 'Enregistrement…' : campagne ? '✓ Enregistrer et passer au suivant' : '✓ Enregistrer et générer le certificat'}
         </button>
       </div>}
 
