@@ -112,9 +112,13 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
       setTraitements(traitements.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
       if(paye&&m?.id&&setMeds){
         const q=parseFloat(t.qte)||0;
-        if(sb)await dbAdjustStock(sb,m.id,0,-q).catch(e=>console.warn('[stock]',e));
-        const newClin=Math.max(0,(m.stock_clinique||0)-q);
-        setMeds(meds.map(x=>x.id===m.id?{...x,stock_clinique:newClin}:x));
+        // Priorité au stock clinique, complément sur le stock pharmacie
+        const clin=Math.min(q,m.stock_clinique||0);
+        const pharm=Math.max(0,q-clin);
+        if(sb)await dbAdjustStock(sb,m.id,-pharm,-clin).catch(e=>console.warn('[stock]',e));
+        setMeds(meds.map(x=>x.id===m.id?{...x,
+          stock:Math.max(0,(x.stock||0)-pharm),
+          stock_clinique:Math.max(0,(x.stock_clinique||0)-clin)}:x));
       }
     }catch(e){alert('Erreur facturation : '+(e?.message||e));}
   };
@@ -197,9 +201,9 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             <select value={form.medicament} onChange={selectMedicament}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}>
               <option value="">— Choisir —</option>
-              {meds.filter(m=>(m.stock_clinique||0)>0).map(m=><option key={m.id} value={m.nom}>{m.nom} (clinique: {m.stock_clinique||0})</option>)}
+              {meds.filter(m=>((m.stock_clinique||0)+(m.stock||0))>0).map(m=><option key={m.id} value={m.nom}>{m.nom} — clinique: {m.stock_clinique||0} · pharmacie: {m.stock||0}</option>)}
             </select>
-            {!meds.some(m=>(m.stock_clinique||0)>0)&&<p style={{fontSize:'11px',color:'#d97706',marginTop:'4px'}}>Aucun produit en stock clinique — faites un transfert depuis l'Inventaire (onglet Transferts).</p>}
+            {!meds.some(m=>((m.stock_clinique||0)+(m.stock||0))>0)&&<p style={{fontSize:'11px',color:'#d97706',marginTop:'4px'}}>Aucun produit en stock — ajoutez des médicaments depuis la page Médicaments.</p>}
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Posologie</label>
