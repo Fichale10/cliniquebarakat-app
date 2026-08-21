@@ -58,6 +58,19 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
   const f = k => e => setForm({ ...form, [k]: e.target.value })
   const [campagne, setCampagne] = useState(false)
   const [nbCampagne, setNbCampagne] = useState(0)
+  // Vaccins de la séance : saisie libre + suggestions du protocole, plusieurs possibles
+  const [vaccinInput, setVaccinInput] = useState('')
+  const [vaccinsSel, setVaccinsSel] = useState([])   // [{ nom, validite }]
+
+  const ajouterVaccin = () => {
+    const nom = vaccinInput.trim()
+    if (!nom) return
+    if (vaccinsSel.some(v => v.nom.toLowerCase() === nom.toLowerCase())) { setVaccinInput(''); return }
+    const proto = (PROTOCOLES[form.espece] || []).find(p => p.v === nom)
+    setVaccinsSel([...vaccinsSel, { nom, validite: proto ? proto.m : (parseInt(form.validite) || 12) }])
+    setVaccinInput('')
+  }
+  const retirerVaccin = (nom) => setVaccinsSel(vaccinsSel.filter(v => v.nom !== nom))
 
   useEffect(() => { (async () => {
     try { setVaccs((await dbFetch(sb, 'vaccinations', { force: true })) || []) }
@@ -74,16 +87,11 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
       ...(p ? { proprio: p.proprio || prev.proprio, tel: p.tel || prev.tel, espece: ESPECE_MAP[p.espece] || prev.espece } : {}) }))
   }
 
-  // Espèce → réinitialise le vaccin ; Vaccin → validité par défaut ; Date/Validité → rappel auto
+  // Espèce → réinitialise les vaccins ; Date/Validité → rappel auto
   const changeEspece = e => {
     const espece = e.target.value
-    setForm(prev => ({ ...prev, espece, vaccin: '', autreVaccin: '' }))
-  }
-  const changeVaccin = e => {
-    const vaccin = e.target.value
-    const proto = (PROTOCOLES[form.espece] || []).find(p => p.v === vaccin)
-    const validite = proto ? proto.m : form.validite
-    setForm(prev => ({ ...prev, vaccin, validite, rappel: addMonths(prev.date, validite) }))
+    setForm(prev => ({ ...prev, espece }))
+    setVaccinsSel([]); setVaccinInput('')
   }
   const changeDate = e => {
     const date = e.target.value
@@ -95,26 +103,39 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
   }
 
   const enregistrer = async () => {
-    const vaccinFinal = form.vaccin === '__autre' || form.espece === 'Autre' ? form.autreVaccin : form.vaccin
-    if (!form.patient || !vaccinFinal) { alert('Patient / troupeau et vaccin requis.'); return }
+    // Le texte encore dans le champ compte comme un vaccin (pas besoin de cliquer +)
+    const liste = [...vaccinsSel]
+    const reste = vaccinInput.trim()
+    if (reste && !liste.some(v => v.nom.toLowerCase() === reste.toLowerCase())) {
+      const proto = (PROTOCOLES[form.espece] || []).find(p => p.v === reste)
+      liste.push({ nom: reste, validite: proto ? proto.m : (parseInt(form.validite) || 12) })
+    }
+    if (!form.patient || !liste.length) { alert('Patient / troupeau et au moins un vaccin requis.'); return }
     setSaving(true)
     try {
-      const row = {
-        id: newId(), date: form.date, espece: form.espece, patient: form.patient,
-        nombre: parseInt(form.nombre) || 1, proprio: form.proprio, tel: form.tel,
-        vaccin: vaccinFinal, lot: form.lot, dose: form.dose, voie: form.voie,
-        veterinaire: form.veterinaire, validite_mois: parseInt(form.validite) || 12,
-        rappel: form.rappel || null, notes: form.notes, created_by: user?.name || '',
-        prix: parseFloat(form.prix) || 0,
+      const prixTotal = parseFloat(form.prix) || 0
+      const nouvelles = []
+      for (let i = 0; i < liste.length; i++) {
+        const v = liste[i]
+        const row = {
+          id: newId(), date: form.date, espece: form.espece, patient: form.patient,
+          nombre: parseInt(form.nombre) || 1, proprio: form.proprio, tel: form.tel,
+          vaccin: v.nom, lot: form.lot, dose: form.dose, voie: form.voie,
+          veterinaire: form.veterinaire, validite_mois: parseInt(v.validite) || 12,
+          rappel: addMonths(form.date, v.validite) || null, notes: form.notes, created_by: user?.name || '',
+          prix: i === 0 ? prixTotal : 0, // le prix de la séance porté par la 1ère ligne (pas de double facturation)
+        }
+        nouvelles.push(await dbInsert(sb, 'vaccinations', row))
       }
-      const saved = await dbInsert(sb, 'vaccinations', row)
-      setVaccs([saved, ...vaccs])
+      setVaccs([...nouvelles.reverse(), ...vaccs])
+      setVaccinsSel([]); setVaccinInput('')
       if (campagne) {
-        // Mode campagne : garder vaccin/espèce/lot/dose/voie/date, passer à l'éleveur suivant
+        // Mode campagne : garder vaccins/espèce/lot/dose/voie/date, passer à l'éleveur suivant
+        setVaccinsSel(liste)
         setForm(prev => ({ ...prev, patient: '', nombre: 1, proprio: '', tel: '', notes: '' }))
         setNbCampagne(n => n + 1)
       } else {
-        setForm(EMPTY); setShowForm(false); setCert(saved)
+        setForm(EMPTY); setShowForm(false); setCert(nouvelles[nouvelles.length - 1])
       }
     } catch (e) { alert('Erreur : ' + (e?.message || e)) }
     finally { setSaving(false) }
@@ -406,15 +427,24 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
           <div><label style={lbl}>Nombre d'animaux</label><input type="number" min="1" value={form.nombre} onChange={f('nombre')} style={inp} /></div>
           <div><label style={lbl}>Propriétaire</label><input value={form.proprio} onChange={f('proprio')} placeholder="Nom et prénom" style={inp} /></div>
           <div><label style={lbl}>Téléphone</label><input value={form.tel} onChange={f('tel')} placeholder="+227…" style={inp} /></div>
-          <div className="col-span-2"><label style={lbl}>Vaccin *</label>
-            {form.espece === 'Autre'
-              ? <input value={form.autreVaccin} onChange={f('autreVaccin')} placeholder="Nom du vaccin…" style={inp} />
-              : <select value={form.vaccin} onChange={changeVaccin} style={inp}>
-                  <option value="">— Choisir —</option>
-                  {(PROTOCOLES[form.espece] || []).map(p => <option key={p.v} value={p.v}>{p.v} (validité {p.m} mois)</option>)}
-                  <option value="__autre">Autre vaccin…</option>
-                </select>}
-            {form.vaccin === '__autre' && form.espece !== 'Autre' && <input value={form.autreVaccin} onChange={f('autreVaccin')} placeholder="Nom du vaccin…" style={{ ...inp, marginTop: 6 }} />}
+          <div className="col-span-2"><label style={lbl}>Vaccins * <span style={{ fontWeight: 400, textTransform: 'none' }}>— plusieurs possibles</span></label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input value={vaccinInput} onChange={e => setVaccinInput(e.target.value)} list="vacc-protocole"
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); ajouterVaccin() } }}
+                placeholder="Tapez ou choisissez, puis + pour en ajouter un autre…" style={{ ...inp, flex: 1 }} />
+              <button type="button" onClick={ajouterVaccin} title="Ajouter ce vaccin"
+                style={{ padding: '0 14px', borderRadius: 9, background: '#0d9488', color: 'white', border: 'none', fontWeight: 800, fontSize: 16, cursor: 'pointer', flexShrink: 0 }}>+</button>
+            </div>
+            <datalist id="vacc-protocole">
+              {(PROTOCOLES[form.espece] || []).map(p => <option key={p.v} value={p.v}>{`validité ${p.m} mois`}</option>)}
+            </datalist>
+            {vaccinsSel.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {vaccinsSel.map(v => <span key={v.nom} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: '#ccfbf1', border: '1px solid #99f6e4', fontSize: 12, fontWeight: 700, color: '#0f766e' }}>
+                {v.nom} <span style={{ fontWeight: 400 }}>· {v.validite} mois → {fmtDate(addMonths(form.date, v.validite))}</span>
+                <button type="button" onClick={() => retirerVaccin(v.nom)} style={{ background: 'none', border: 'none', color: '#0f766e', cursor: 'pointer', fontWeight: 900, fontSize: 13, lineHeight: 1, padding: 0 }}>×</button>
+              </span>)}
+            </div>}
+            <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Saisie libre acceptée — si le vaccin n'est pas dans la liste, tapez son nom et ajoutez-le.</p>
           </div>
           <div><label style={lbl}>N° de lot</label><input value={form.lot} onChange={f('lot')} placeholder="Lot du vaccin" style={inp} /></div>
           <div><label style={lbl}>Dose</label><input value={form.dose} onChange={f('dose')} placeholder="ex: 1 ml / animal" style={inp} /></div>
@@ -426,10 +456,9 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
               {user?.name && !equipe.some(m => (m.nom || m.name || m) === user.name) && <option value={user.name}>{user.name}</option>}
             </select> : <input value={form.veterinaire} onChange={f('veterinaire')} style={inp} />}
           </div>
-          <div><label style={lbl}>Validité (mois)</label><input type="number" min="1" value={form.validite} onChange={changeValidite} style={inp} /></div>
-          <div><label style={lbl}>Prochain rappel</label><input type="date" value={form.rappel} onChange={f('rappel')} style={inp} />
-            <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>Calculé automatiquement, modifiable</p></div>
-          <div><label style={lbl}>Prix de l'acte (F)</label><input type="number" min="0" value={form.prix} onChange={f('prix')} placeholder="0 = gratuit / déjà facturé" style={inp} /></div>
+          <div><label style={lbl}>Validité par défaut (mois)</label><input type="number" min="1" value={form.validite} onChange={changeValidite} style={inp} />
+            <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>Pour les vaccins hors protocole</p></div>
+          <div><label style={lbl}>Prix de la séance (F)</label><input type="number" min="0" value={form.prix} onChange={f('prix')} placeholder="0 = gratuit / déjà facturé" style={inp} /></div>
           <div className="col-span-2"><label style={lbl}>Notes</label><input value={form.notes} onChange={f('notes')} placeholder="Observations…" style={inp} /></div>
         </div>
         <button onClick={enregistrer} disabled={saving}
