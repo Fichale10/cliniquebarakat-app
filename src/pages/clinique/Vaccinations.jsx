@@ -138,74 +138,122 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
       const { jsPDF } = await import('jspdf')
       const { default: autoTable } = await import('jspdf-autotable')
       const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-      const W = 210, M = 16
-      let y = 20
+      const W = 210, H = 297, M = 16
+      const VERT = [20, 83, 45], VERT2 = [22, 101, 52], ARDOISE = [30, 41, 59], GRIS = [100, 116, 139]
+      const nomClinique = clinique?.nom || 'La Barakat'
 
-      // En-tête
-      doc.setTextColor(20, 83, 45)
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(17)
-      doc.text(clinique?.nom || 'La Barakat', W / 2, y, { align: 'center' }); y += 6.5
-      doc.setFontSize(11); doc.setTextColor(22, 101, 52)
-      doc.text(clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire', W / 2, y, { align: 'center' }); y += 5.5
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(71, 85, 105)
+      // ── Filigrane de sécurité (nom de la clinique en diagonale) ──
+      doc.saveGraphicsState()
+      doc.setGState(new doc.GState({ opacity: 0.045 }))
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(52); doc.setTextColor(20, 83, 45)
+      doc.text(nomClinique.toUpperCase(), W / 2, H / 2 + 20, { align: 'center', angle: 38 })
+      doc.restoreGraphicsState()
+
+      // ── Bandeau d'en-tête ──
+      doc.setFillColor(240, 253, 244); doc.rect(0, 0, W, 46, 'F')
+      doc.setFillColor(...VERT); doc.rect(0, 46, W, 1.4, 'F')
+      // Médaillon initiales (façon logo)
+      const initiales = nomClinique.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+      doc.setFillColor(...VERT); doc.circle(M + 9, 23, 9, 'F')
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(255, 255, 255)
+      doc.text(initiales, M + 9, 24.8, { align: 'center' })
+      // Nom + coordonnées
+      doc.setTextColor(...VERT); doc.setFontSize(17)
+      doc.text(nomClinique, M + 23, 19)
+      doc.setFontSize(10); doc.setTextColor(...VERT2)
+      doc.text(clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire', M + 23, 25)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(71, 85, 105)
       const coords = [[clinique?.adresse, clinique?.ville].filter(Boolean).join(', '), clinique?.tel && `Tél : ${clinique.tel}`, clinique?.email].filter(Boolean).join('  ·  ')
-      if (coords) { doc.text(coords, W / 2, y, { align: 'center' }); y += 4.5 }
-      if (clinique?.agrement) { doc.setFontSize(8.5); doc.text(`Agrément n° ${clinique.agrement}`, W / 2, y, { align: 'center' }); y += 4.5 }
-      y += 2
-      doc.setDrawColor(20, 83, 45); doc.setLineWidth(0.7); doc.line(M, y, W - M, y)
-      doc.setLineWidth(0.25); doc.line(M, y + 1.1, W - M, y + 1.1); y += 9
+      if (coords) doc.text(coords, M + 23, 30.5)
+      if (clinique?.agrement) doc.text(`Agrément n° ${clinique.agrement}`, M + 23, 35)
+      // Cartouche N° de certificat
+      doc.setDrawColor(...VERT); doc.setLineWidth(0.4); doc.setFillColor(255, 255, 255)
+      doc.roundedRect(W - M - 46, 13, 46, 20, 2, 2, 'FD')
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...GRIS)
+      doc.text('CERTIFICAT N°', W - M - 23, 19, { align: 'center' })
+      doc.setFontSize(12); doc.setTextColor(...VERT)
+      doc.text(String(cert.id).slice(0, 8).toUpperCase(), W - M - 23, 25.5, { align: 'center' })
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GRIS)
+      doc.text(`Établi le ${fmtDate(cert.date)}`, W - M - 23, 30, { align: 'center' })
 
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(30, 41, 59)
-      doc.text('CERTIFICAT DE VACCINATION', W / 2, y, { align: 'center', charSpace: 1.2 }); y += 5.5
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139)
-      doc.text(`N° ${String(cert.id).slice(0, 8).toUpperCase()}  ·  Établi le ${fmtDate(cert.date)}`, W / 2, y, { align: 'center' }); y += 10
+      let y = 60
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...ARDOISE)
+      doc.text('CERTIFICAT DE VACCINATION', W / 2, y, { align: 'center', charSpace: 1.4 })
+      doc.setDrawColor(...VERT); doc.setLineWidth(0.8)
+      doc.line(W / 2 - 24, y + 2.5, W / 2 + 24, y + 2.5)
+      y += 12
 
-      // Identification
-      doc.setFontSize(10.5); doc.setTextColor(30, 41, 59)
+      // ── Section Identification ──
+      const sectionTitre = (titre, yy) => {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...VERT)
+        doc.text(titre.toUpperCase(), M, yy, { charSpace: 0.8 })
+        doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3)
+        doc.line(M + doc.getTextWidth(titre.toUpperCase()) + 4, yy - 1.2, W - M, yy - 1.2)
+        return yy + 6
+      }
+      y = sectionTitre("Identification de l'animal", y)
+      doc.setFillColor(248, 250, 252); doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3)
+      doc.roundedRect(M, y - 3, W - 2 * M, 17, 1.5, 1.5, 'FD')
+      doc.setFontSize(10); doc.setTextColor(...ARDOISE)
       const ident = [
-        ['Espèce :', cert.espece, 'Animal / Troupeau :', `${cert.patient}${(cert.nombre || 1) > 1 ? ` (${cert.nombre} animaux)` : ''}`],
-        ['Propriétaire :', cert.proprio || '—', 'Téléphone :', cert.tel || '—'],
+        ['Espèce', cert.espece, 'Animal / Troupeau', `${cert.patient}${(cert.nombre || 1) > 1 ? ` (${cert.nombre} animaux)` : ''}`],
+        ['Propriétaire', cert.proprio || '—', 'Téléphone', cert.tel || '—'],
       ]
       ident.forEach(r => {
-        doc.setFont('helvetica', 'bold'); doc.text(r[0], M, y)
-        doc.setFont('helvetica', 'normal'); doc.text(String(r[1]), M + 32, y)
-        doc.setFont('helvetica', 'bold'); doc.text(r[2], W / 2 + 4, y)
-        doc.setFont('helvetica', 'normal'); doc.text(String(r[3]), W / 2 + 44, y)
-        y += 6.5
+        doc.setFont('helvetica', 'bold'); doc.text(`${r[0]} :`, M + 4, y + 2.5)
+        doc.setFont('helvetica', 'normal'); doc.text(String(r[1]), M + 36, y + 2.5)
+        doc.setFont('helvetica', 'bold'); doc.text(`${r[2]} :`, W / 2 + 4, y + 2.5)
+        doc.setFont('helvetica', 'normal'); doc.text(String(r[3]), W / 2 + 44, y + 2.5)
+        y += 7
       })
-      y += 3
+      y += 8
 
-      // Tableau des vaccinations
+      // ── Section Vaccinations ──
+      y = sectionTitre('Vaccinations réalisées', y)
       autoTable(doc, {
         startY: y, margin: { left: M, right: M },
         head: [['Date', 'Vaccin', 'N° lot', 'Dose / Voie', 'Validité', 'Prochain rappel']],
         body: certLignes.map(l => [fmtDate(l.date), l.vaccin, l.lot || '—', [l.dose, l.voie].filter(Boolean).join(' · ') || '—', `${l.validite_mois} mois`, fmtDate(l.rappel)]),
-        styles: { fontSize: 8.8, cellPadding: 2.4, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.2 },
-        headStyles: { fillColor: [240, 253, 244], textColor: [20, 83, 45], fontStyle: 'bold' },
-        didParseCell: (d) => { if (d.section === 'body' && certLignes[d.row.index]?.id === cert.id) d.cell.styles.fillColor = [254, 252, 232] },
+        styles: { fontSize: 8.8, cellPadding: 2.6, textColor: ARDOISE, lineColor: [226, 232, 240], lineWidth: 0.2 },
+        headStyles: { fillColor: VERT, textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell: (d) => { if (d.section === 'body' && certLignes[d.row.index]?.id === cert.id) { d.cell.styles.fillColor = [240, 253, 244]; d.cell.styles.fontStyle = 'bold' } },
       })
       y = doc.lastAutoTable.finalY + 8
 
       if (cert.notes) {
-        doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.text('Observations :', M, y)
+        doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...ARDOISE); doc.text('Observations :', M, y)
         doc.setFont('helvetica', 'normal')
         const notes = doc.splitTextToSize(cert.notes, W - 2 * M - 30)
-        doc.text(notes, M + 30, y); y += notes.length * 4.5 + 4
+        doc.text(notes, M + 30, y); y += notes.length * 4.5 + 5
       }
 
       doc.setFont('helvetica', 'italic'); doc.setFontSize(8.8); doc.setTextColor(71, 85, 105)
       const legal = doc.splitTextToSize("Je soussigné(e), certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus, conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.", W - 2 * M)
-      doc.text(legal, M, y); y += legal.length * 4 + 14
+      doc.text(legal, M, y); y += legal.length * 4 + 8
 
-      // Signatures
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59)
-      doc.text('Le Vétérinaire', M, y)
-      doc.text(`Fait le ${fmtDate(cert.date)}`, W - M, y, { align: 'right' })
-      doc.setFont('helvetica', 'normal')
-      doc.text(cert.veterinaire || '________________', M, y + 5.5)
-      doc.setFontSize(8.5); doc.setTextColor(148, 163, 184)
-      doc.text('Signature et cachet', M, y + 26)
-      doc.text('Le Propriétaire', W - M, y + 26, { align: 'right' })
+      // ── Encadrés de signature ──
+      const boxW = (W - 2 * M - 8) / 2, boxH = 34
+      if (y + boxH > H - 24) y = H - 24 - boxH
+      doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.35)
+      doc.roundedRect(M, y, boxW, boxH, 2, 2, 'D')
+      doc.roundedRect(M + boxW + 8, y, boxW, boxH, 2, 2, 'D')
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ARDOISE)
+      doc.text('Le Vétérinaire', M + 4, y + 6)
+      doc.text('Le Propriétaire', M + boxW + 12, y + 6)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+      doc.text(cert.veterinaire || '', M + 4, y + 12)
+      doc.setFontSize(7.5); doc.setTextColor(148, 163, 184)
+      doc.text('Signature et cachet', M + 4, y + boxH - 4)
+      doc.text('Lu et approuvé, signature', M + boxW + 12, y + boxH - 4)
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ARDOISE)
+      doc.text(`Fait le ${fmtDate(cert.date)}`, W - M, y - 4, { align: 'right' })
+
+      // ── Pied de page d'authentification ──
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3)
+      doc.line(M, H - 14, W - M, H - 14)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184)
+      doc.text(`Document officiel généré par ${nomClinique} · Certificat n° ${String(cert.id).slice(0, 8).toUpperCase()} · ${new Date().toLocaleString('fr-FR')}`, W / 2, H - 9, { align: 'center' })
 
       doc.save(`Certificat_Vaccination_${(cert.patient || 'animal').replace(/[^a-z0-9]/gi, '_')}_${cert.date || ''}.pdf`)
     } catch (e) { alert('Erreur PDF : ' + (e?.message || e)) }
