@@ -132,7 +132,7 @@ function Parametres({equipe,setEquipe,clinique,setClinique,tva,saveTva,saveClini
       {tab==='clinique'&&<div className="p-6 space-y-4">
         <h3 className="font-bold text-slate-700">Informations de la structure</h3>
         <div className="grid grid-cols-2 gap-4">
-          {[{l:'Nom de la structure',k:'nom',ph:'Ex: La Barakat'},{l:'Sous-titre / spécialité',k:'sousTitre',ph:'Ex: Pharmacie et Clinique Vétérinaire'},{l:'Téléphone',k:'tel',ph:'+228 XX XX XX XX'},{l:'Adresse',k:'adresse',ph:'Numéro, Rue…'},{l:'Ville',k:'ville',ph:'Ex: Lomé'},{l:'Email',k:'email',ph:'contact@labarakat.tg'}].map(f=>(
+          {[{l:'Nom de la structure',k:'nom',ph:'Ex: La Barakat'},{l:'Sous-titre / spécialité',k:'sousTitre',ph:'Ex: Pharmacie et Clinique Vétérinaire'},{l:'Téléphone',k:'tel',ph:'+228 XX XX XX XX'},{l:'Adresse',k:'adresse',ph:'Numéro, Rue…'},{l:'Ville',k:'ville',ph:'Ex: Lomé'},{l:'Email',k:'email',ph:'contact@labarakat.tg'},{l:'N° agrément / registre',k:'agrement',ph:'Ex: AGR-2024-0123'}].map(f=>(
             <div key={f.k}><label className="text-xs font-bold text-slate-600 mb-1 block">{f.l}</label>
               <input className="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-green-500 outline-none" placeholder={f.ph} value={clinique[f.k]||''} onChange={e=>setClinique({...clinique,[f.k]:e.target.value})}/></div>
           ))}

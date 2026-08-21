@@ -61,6 +61,15 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
     finally { setLoading(false) }
   })() }, [])
 
+  // Patient connu → pré-remplissage propriétaire, téléphone et espèce
+  const ESPECE_MAP = { Chien:'Chien', Chat:'Chat', Bovin:'Bovin', Caprin:'Ovin / Caprin', Ovin:'Ovin / Caprin', Volaille:'Volaille', Équin:'Équin / Asin', Asin:'Équin / Asin', Camelin:'Camelin' }
+  const changePatient = e => {
+    const nom = e.target.value
+    const p = patients.find(x => x.nom === nom)
+    setForm(prev => ({ ...prev, patient: nom,
+      ...(p ? { proprio: p.proprio || prev.proprio, tel: p.tel || prev.tel, espece: ESPECE_MAP[p.espece] || prev.espece } : {}) }))
+  }
+
   // Espèce → réinitialise le vaccin ; Vaccin → validité par défaut ; Date/Validité → rappel auto
   const changeEspece = e => {
     const espece = e.target.value
@@ -197,7 +206,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
           <div><label style={lbl}>Espèce *</label>
             <select value={form.espece} onChange={changeEspece} style={inp}>{ESPECES.map(e => <option key={e}>{e}</option>)}</select></div>
           <div><label style={lbl}>Animal / Troupeau *</label>
-            <input value={form.patient} onChange={f('patient')} list="vacc-patients" placeholder="Nom ou identification…" style={inp} />
+            <input value={form.patient} onChange={changePatient} list="vacc-patients" placeholder="Nom ou identification…" style={inp} />
             <datalist id="vacc-patients">{patients.map(p => <option key={p.id} value={p.nom}>{p.espece}{p.proprio ? ` · ${p.proprio}` : ''}</option>)}</datalist></div>
           <div><label style={lbl}>Nombre d'animaux</label><input type="number" min="1" value={form.nombre} onChange={f('nombre')} style={inp} /></div>
           <div><label style={lbl}>Propriétaire</label><input value={form.proprio} onChange={f('proprio')} placeholder="Nom et prénom" style={inp} /></div>
@@ -296,10 +305,14 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
       </div>
 
       <div id="vaccin-print" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '28px 32px', maxWidth: 800, margin: '0 auto', fontFamily: 'Georgia, serif', color: '#1e293b' }}>
-        {/* En-tête */}
+        {/* En-tête — personnalisable dans Paramètres clinique */}
         <div style={{ textAlign: 'center', borderBottom: '3px double #14532d', paddingBottom: 14, marginBottom: 18 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#14532d' }}>🐄 {clinique?.nom || 'La Barakat'} — Pharmacie & Clinique Vétérinaire</div>
-          {(clinique?.adresse || clinique?.tel) && <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{[clinique?.adresse, clinique?.tel && `Tél : ${clinique.tel}`].filter(Boolean).join(' · ')}</div>}
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#14532d' }}>🐄 {clinique?.nom || 'La Barakat'}</div>
+          <div style={{ fontSize: 13, color: '#166534', fontWeight: 700 }}>{clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire'}</div>
+          {(clinique?.adresse || clinique?.ville || clinique?.tel || clinique?.email) && <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>
+            {[[clinique?.adresse, clinique?.ville].filter(Boolean).join(', '), clinique?.tel && `Tél : ${clinique.tel}`, clinique?.email].filter(Boolean).join(' · ')}
+          </div>}
+          {clinique?.agrement && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Agrément n° {clinique.agrement}</div>}
           <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '.14em', marginTop: 12, textTransform: 'uppercase' }}>Certificat de vaccination</div>
           <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>N° {String(cert.id).slice(0, 8).toUpperCase()} · Établi le {fmtDate(cert.date)}</div>
         </div>
