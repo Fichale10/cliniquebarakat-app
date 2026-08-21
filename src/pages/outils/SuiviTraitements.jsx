@@ -186,11 +186,11 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Patient *</label>
-            <select value={form.patient} onChange={f('patient')}
-              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}>
-              <option value="">— Choisir —</option>
-              {patients.map(p=><option key={p.id} value={p.nom}>{p.nom} ({p.espece})</option>)}
-            </select>
+            <input value={form.patient} onChange={f('patient')} list="trait-patients" placeholder="Nom de l'animal ou du troupeau…"
+              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+            <datalist id="trait-patients">
+              {patients.map(p=><option key={p.id} value={p.nom}>{p.espece}{p.proprio?` · ${p.proprio}`:''}</option>)}
+            </datalist>
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Médicament *</label>
@@ -199,6 +199,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
               <option value="">— Choisir —</option>
               {meds.filter(m=>(m.stock_clinique||0)>0).map(m=><option key={m.id} value={m.nom}>{m.nom} (clinique: {m.stock_clinique||0})</option>)}
             </select>
+            {!meds.some(m=>(m.stock_clinique||0)>0)&&<p style={{fontSize:'11px',color:'#d97706',marginTop:'4px'}}>Aucun produit en stock clinique — faites un transfert depuis l'Inventaire (onglet Transferts).</p>}
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Posologie</label>
