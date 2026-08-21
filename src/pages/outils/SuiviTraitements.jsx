@@ -48,8 +48,10 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   const selectMedicament=(e)=>{
     const nom=e.target.value;
     const m=meds.find(x=>x.nom===nom);
-    setForm(prev=>({...prev,medicament:nom,pu:String(m?.prixVente??m?.prix_vente??'')}));
+    setForm(prev=>({...prev,medicament:nom,pu:m?String(m.prixVente??m.prix_vente??''):prev.pu}));
   };
+  // Médicament actuellement sélectionné (pour l'unité : ml, flacon, comprimé…)
+  const selMed=meds.find(x=>x.nom===form.medicament);
 
   const addTraitement=async()=>{
     if(!form.patient||!form.medicament){alert('Patient et médicament requis.');return;}
@@ -198,11 +200,12 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Médicament *</label>
-            <select value={form.medicament} onChange={selectMedicament}
-              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}>
-              <option value="">— Choisir —</option>
-              {meds.filter(m=>((m.stock_clinique||0)+(m.stock||0))>0).map(m=><option key={m.id} value={m.nom}>{m.nom} — clinique: {m.stock_clinique||0} · pharmacie: {m.stock||0}</option>)}
-            </select>
+            <input value={form.medicament} onChange={selectMedicament} list="trait-meds" placeholder="Tapez pour rechercher…"
+              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+            <datalist id="trait-meds">
+              {meds.filter(m=>((m.stock_clinique||0)+(m.stock||0))>0).map(m=><option key={m.id} value={m.nom}>{`clinique: ${m.stock_clinique||0} · pharmacie: ${m.stock||0}${m.unite?` · ${m.unite}`:''}`}</option>)}
+            </datalist>
+            {selMed&&<p style={{fontSize:'11px',color:'#16a34a',marginTop:'4px'}}>Stock — clinique : {selMed.stock_clinique||0} · pharmacie : {selMed.stock||0}{selMed.unite?` (${selMed.unite})`:''}</p>}
             {!meds.some(m=>((m.stock_clinique||0)+(m.stock||0))>0)&&<p style={{fontSize:'11px',color:'#d97706',marginTop:'4px'}}>Aucun produit en stock — ajoutez des médicaments depuis la page Médicaments.</p>}
           </div>
           <div>
@@ -228,12 +231,16 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
           <div>
-            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité</label>
-            <input type="number" min="1" value={form.qte} onChange={f('qte')}
-              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité {selMed?.unite?`(${selMed.unite})`:''}</label>
+            <div style={{display:'flex',alignItems:'center',border:'1.5px solid #e2e8f0',borderRadius:'9px',background:'white',overflow:'hidden'}}>
+              <input type="number" min="0" step="any" value={form.qte} onChange={f('qte')}
+                style={{flex:1,minWidth:0,border:'none',padding:'8px',fontSize:'13px',outline:'none',background:'transparent'}}/>
+              <span style={{padding:'0 10px',fontSize:'12px',fontWeight:700,color:'#0d9488',background:'#f0fdfa',alignSelf:'stretch',display:'flex',alignItems:'center',borderLeft:'1.5px solid #e2e8f0',whiteSpace:'nowrap'}}>{selMed?.unite||'unité(s)'}</span>
+            </div>
+            <p style={{fontSize:'10px',color:'#94a3b8',marginTop:'3px'}}>Décimales acceptées (ex : 2.5 {selMed?.unite||'ml'})</p>
           </div>
           <div>
-            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Prix unitaire (F)</label>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Prix unitaire (F{selMed?.unite?` / ${selMed.unite}`:''})</label>
             <input type="number" min="0" value={form.pu} onChange={f('pu')} placeholder="0 = non facturable"
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
@@ -286,7 +293,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
                   {t.posologie&&<span>📋 {t.posologie}</span>}
                   <span>🔁 {t.frequence}</span>
                   <span>📅 {t.debut}{t.fin?` → ${t.fin}`:''}</span>
-                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{t.qte} × {fmtF(t.pu)} = {fmtF(tTotal(t))}</span>}
+                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{t.qte}{(()=>{const m=meds.find(x=>x.nom===t.medicament);return m?.unite?` ${m.unite}`:''})()} × {fmtF(t.pu)} = {fmtF(tTotal(t))}</span>}
                 </div>
                 {t.notes&&<div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px',fontStyle:'italic'}}>Note — {t.notes}</div>}
               </div>
