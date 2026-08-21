@@ -238,6 +238,21 @@ useEffect(() => {
   const [syncPending,setSyncPending]=useState(()=>getQ().length);
   const [syncing,setSyncing]=useState(false);
   const [syncBlocked,setSyncBlocked]=useState(false);
+  // Rappel de sauvegarde hebdomadaire (admin) : bandeau si > 7 jours
+  const [backupDue,setBackupDue]=useState(()=>{
+    try{const last=Number(localStorage.getItem('lb_last_backup')||0);return Date.now()-last>7*86400000;}catch{return false}
+  });
+  const faireSauvegarde=()=>{
+    try{
+      const data={export_date:new Date().toISOString()};
+      for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('lb_')&&k!=='lb_offlineQueue'){try{data[k]=JSON.parse(localStorage.getItem(k))}catch{data[k]=localStorage.getItem(k)}}}
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=`sauvegarde_labarakat_${new Date().toISOString().split('T')[0]}.json`;a.click();
+      URL.revokeObjectURL(a.href);
+      localStorage.setItem('lb_last_backup',String(Date.now()));setBackupDue(false);
+    }catch(e){alert('Erreur sauvegarde : '+(e?.message||e))}
+  };
   const [otrMode,setOtrMode]=useState(()=>localStorage.getItem('lb_otr')==='1');
   const [tva,setTva]=useState(()=>{ try{return JSON.parse(localStorage.getItem('lb_tva')||'{"active":false,"taux":18}');}catch{return {active:false,taux:18};} });
   const [ventesHist,setVentesHist]=useState(()=>getCache('ventes')||[]);
@@ -891,6 +906,14 @@ useEffect(() => {
           <button onClick={()=>syncQueue(sb, n=>setSyncPending(n)).then((synced)=>{ const rest=getQ().length; setSyncPending(rest); setSyncBlocked(rest>0&&navigator.onLine); if(synced>0)loadAll({ force: true }) })} className="underline">{syncBlocked?'Réessayer':'Synchroniser'}</button>
           {syncBlocked&&<button onClick={()=>{ if(confirm(`Abandonner définitivement ces ${syncPending} opération(s) non synchronisées ?\nElles seront perdues.`)){ localStorage.removeItem('lb_offlineQueue'); setSyncPending(0); setSyncBlocked(false) } }} className="underline">Abandonner</button>}
         </div>}
+      </div>}
+      {/* Rappel de sauvegarde hebdomadaire (admin) */}
+      {backupDue&&isAdmin&&online&&<div className="flex items-center justify-between px-5 py-1.5 text-xs font-semibold no-print bg-teal-50 text-teal-800" style={{borderBottom:'1px solid #99f6e4'}}>
+        <span>Sauvegarde hebdomadaire recommandée — dernière copie locale il y a plus de 7 jours</span>
+        <div className="flex items-center gap-3">
+          <button onClick={faireSauvegarde} className="underline font-bold">Sauvegarder maintenant</button>
+          <button onClick={()=>{localStorage.setItem('lb_last_backup',String(Date.now()));setBackupDue(false)}} className="underline" title="Reporter d'une semaine">Plus tard</button>
+        </div>
       </div>}
       {/* ── Header premium ── */}
       <header className="app-header no-print shrink-0 z-10 relative" style={{height:'58px',padding:'0 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
