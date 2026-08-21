@@ -279,22 +279,34 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
       const legal = doc.splitTextToSize("Je soussigné(e), certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus, conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.", W - 2 * M)
       doc.text(legal, M, y); y += legal.length * 4 + 8
 
-      // ── Encadrés de signature ──
-      const boxW = (W - 2 * M - 8) / 2, boxH = 34
+      // ── Encadrés de signature (selon le profil connecté) ──
+      const estProprio = user?.role === 'admin' || user?.role === 'admin2'
+      const boxH = 34
       if (y + boxH > H - 24) y = H - 24 - boxH
       doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.35)
-      doc.roundedRect(M, y, boxW, boxH, 2, 2, 'D')
-      doc.roundedRect(M + boxW + 8, y, boxW, boxH, 2, 2, 'D')
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ARDOISE)
-      doc.text('Le Vétérinaire', M + 4, y + 6)
-      doc.text('Le Propriétaire', M + boxW + 12, y + 6)
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
-      doc.text(cert.veterinaire || '', M + 4, y + 12)
-      doc.setFontSize(7.5); doc.setTextColor(148, 163, 184)
-      doc.text('Signature et cachet', M + 4, y + boxH - 4)
-      doc.text('Lu et approuvé, signature', M + boxW + 12, y + boxH - 4)
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ARDOISE)
       doc.text(`Fait le ${fmtDate(cert.date)}`, W - M, y - 4, { align: 'right' })
+      if (estProprio) {
+        // Signature unique : propriétaire de la clinique
+        const boxW = 88
+        doc.roundedRect(M, y, boxW, boxH, 2, 2, 'D')
+        doc.text('Le Vétérinaire', M + 4, y + 6)
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+        doc.text('Dr Tambate Abila', M + 4, y + 12)
+        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184)
+        doc.text('Signature et cachet', M + 4, y + boxH - 4)
+      } else {
+        const boxW = (W - 2 * M - 8) / 2
+        doc.roundedRect(M, y, boxW, boxH, 2, 2, 'D')
+        doc.roundedRect(M + boxW + 8, y, boxW, boxH, 2, 2, 'D')
+        doc.text('Le Vétérinaire', M + 4, y + 6)
+        doc.text('Le Propriétaire', M + boxW + 12, y + 6)
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+        doc.text(cert.veterinaire || '', M + 4, y + 12)
+        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184)
+        doc.text('Signature et cachet', M + 4, y + boxH - 4)
+        doc.text('Lu et approuvé, signature', M + boxW + 12, y + boxH - 4)
+      }
 
       // ── Pied de page d'authentification ──
       doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3)
@@ -328,6 +340,11 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
 
   const inp = { width: '100%', border: '1.5px solid #e2e8f0', borderRadius: '9px', padding: '8px', fontSize: '13px', outline: 'none', background: 'white' }
   const lbl = { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: '5px' }
+
+  // Signature selon le profil connecté : admin/admin2 → signature unique du propriétaire
+  // de la clinique (Dr Tambate Abila) ; autres profils (technicien…) → 2 emplacements.
+  const isProprioClinique = user?.role === 'admin' || user?.role === 'admin2'
+  const SIGNATAIRE_PROPRIO = 'Dr Tambate Abila'
 
   return <div className="app-page space-y-5">
 
@@ -548,21 +565,35 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
           conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.
         </p>
 
-        {/* Signatures */}
-        <table style={{ width: '100%', fontSize: 12.5 }}>
-          <tbody>
-            <tr>
-              <td style={{ width: '50%', verticalAlign: 'top' }}>
-                <b>Le Vétérinaire</b><br />{cert.veterinaire || '________________'}<br /><br /><br />
-                <span style={{ color: '#94a3b8' }}>Signature et cachet</span>
-              </td>
-              <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right' }}>
-                Fait le {fmtDate(cert.date)}<br /><br /><br /><br />
-                <span style={{ color: '#94a3b8' }}>Le Propriétaire</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        {/* Signatures — selon le profil connecté */}
+        {isProprioClinique
+          ? <table style={{ width: '100%', fontSize: 12.5 }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '55%', verticalAlign: 'top' }}>
+                    <b>Le Vétérinaire</b><br />{SIGNATAIRE_PROPRIO}<br /><br /><br />
+                    <span style={{ color: '#94a3b8' }}>Signature et cachet</span>
+                  </td>
+                  <td style={{ width: '45%', verticalAlign: 'top', textAlign: 'right' }}>
+                    Fait le {fmtDate(cert.date)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          : <table style={{ width: '100%', fontSize: 12.5 }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '50%', verticalAlign: 'top' }}>
+                    <b>Le Vétérinaire</b><br />{cert.veterinaire || '________________'}<br /><br /><br />
+                    <span style={{ color: '#94a3b8' }}>Signature et cachet</span>
+                  </td>
+                  <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right' }}>
+                    Fait le {fmtDate(cert.date)}<br /><br /><br /><br />
+                    <span style={{ color: '#94a3b8' }}>Le Propriétaire</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>}
       </div>
     </div>}
   </div>
