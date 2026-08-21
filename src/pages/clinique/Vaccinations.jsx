@@ -290,7 +290,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
         // Signature unique : propriétaire de la clinique
         const boxW = 88
         doc.roundedRect(M, y, boxW, boxH, 2, 2, 'D')
-        doc.text('Le Vétérinaire', M + 4, y + 6)
+        doc.text('Le Docteur', M + 4, y + 6)
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
         doc.text('Dr Tambate Abila', M + 4, y + 12)
         doc.setFontSize(7.5); doc.setTextColor(148, 163, 184)
@@ -299,7 +299,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
         const boxW = (W - 2 * M - 8) / 2
         doc.roundedRect(M, y, boxW, boxH, 2, 2, 'D')
         doc.roundedRect(M + boxW + 8, y, boxW, boxH, 2, 2, 'D')
-        doc.text('Le Vétérinaire', M + 4, y + 6)
+        doc.text('Le Docteur', M + 4, y + 6)
         doc.text('Le Propriétaire', M + boxW + 12, y + 6)
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
         doc.text(cert.veterinaire || '', M + 4, y + 12)
@@ -571,7 +571,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
               <tbody>
                 <tr>
                   <td style={{ width: '55%', verticalAlign: 'top' }}>
-                    <b>Le Vétérinaire</b><br />{SIGNATAIRE_PROPRIO}<br /><br /><br />
+                    <b>Le Docteur</b><br />{SIGNATAIRE_PROPRIO}<br /><br /><br />
                     <span style={{ color: '#94a3b8' }}>Signature et cachet</span>
                   </td>
                   <td style={{ width: '45%', verticalAlign: 'top', textAlign: 'right' }}>
@@ -584,7 +584,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
               <tbody>
                 <tr>
                   <td style={{ width: '50%', verticalAlign: 'top' }}>
-                    <b>Le Vétérinaire</b><br />{cert.veterinaire || '________________'}<br /><br /><br />
+                    <b>Le Docteur</b><br />{cert.veterinaire || '________________'}<br /><br /><br />
                     <span style={{ color: '#94a3b8' }}>Signature et cachet</span>
                   </td>
                   <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right' }}>
