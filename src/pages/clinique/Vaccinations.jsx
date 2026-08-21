@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Syringe, AlertTriangle, CalendarClock, CheckCircle2, Trash2, MessageCircle, RotateCw, ShieldPlus, Printer } from 'lucide-react'
+import { Syringe, AlertTriangle, CalendarClock, CheckCircle2, Trash2, MessageCircle, RotateCw, ShieldPlus, Printer, FileDown } from 'lucide-react'
 import { EmptyState, Badge, PrintBtn } from '../../components/ui'
 import { dbFetch, dbInsert, dbDelete, newId } from '../../lib/db'
 
@@ -131,7 +131,19 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
     const tel = (v.tel || '').replace(/[^0-9+]/g, '')
     window.open(`https://wa.me/${tel}?text=${msg}`, '_blank')
   }
-
+  // Téléchargement PDF : ouvre le certificat en document autonome, le titre du
+  // document sert de nom de fichier, l'impression est lancée (destination « PDF »).
+  const telechargerPDF = () => {
+    const zone = document.getElementById('vaccin-print')
+    if (!zone || !cert) return
+    const w = window.open('', '_blank')
+    if (!w) { alert('Autorisez les fenêtres pop-up pour télécharger le PDF.'); return }
+    const nomFichier = `Certificat_Vaccination_${(cert.patient || 'animal').replace(/[^a-z0-9]/gi, '_')}_${cert.date || ''}`
+    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${nomFichier}</title>
+      <style>body{margin:0;padding:24px;background:white;} @media print{body{padding:0;}} @page{size:A4;margin:14mm;}</style>
+      </head><body>${zone.outerHTML}<script>window.onload=()=>{window.print();}<\/script></body></html>`)
+    w.document.close()
+  }
   // ── Filtres & stats ──
   const filtered = useMemo(() => vaccs.filter(v => {
     if (fEspece && v.espece !== fEspece) return false
@@ -301,7 +313,13 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
     {cert && <div className="app-card p-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4 no-print">
         <h3 className="font-bold text-base flex items-center gap-2"><Printer size={17} color="#0d9488" strokeWidth={2.3} /> Certificat de vaccination — {cert.patient}</h3>
-        <PrintBtn zoneId="vaccin-print" label="Imprimer le certificat" />
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={telechargerPDF}
+            style={{ padding: '8px 14px', borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <FileDown size={15} strokeWidth={2.4} /> Télécharger PDF
+          </button>
+          <PrintBtn zoneId="vaccin-print" label="Imprimer le certificat" />
+        </div>
       </div>
 
       <div id="vaccin-print" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '28px 32px', maxWidth: 800, margin: '0 auto', fontFamily: 'Georgia, serif', color: '#1e293b' }}>
