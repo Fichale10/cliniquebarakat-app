@@ -311,7 +311,8 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
       }
 
       doc.setFont('helvetica', 'italic'); doc.setFontSize(8.8); doc.setTextColor(71, 85, 105)
-      const legal = doc.splitTextToSize("Je soussigné(e), certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus, conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.", W - 2 * M)
+      const nomSignataire = (user?.role === 'admin' || user?.role === 'admin2') ? 'Dr Tambate Abila' : (cert.veterinaire || '………………………………')
+      const legal = doc.splitTextToSize(`Je soussigné(e), ${nomSignataire}, certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus, conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.`, W - 2 * M)
       doc.text(legal, M, y); y += legal.length * 4 + 8
 
       // ── Encadrés de signature (selon le profil connecté) ──
@@ -604,7 +605,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
         {cert.notes && <p style={{ fontSize: 12, marginBottom: 16 }}><b>Observations :</b> {cert.notes}</p>}
 
         <p style={{ fontSize: 11.5, color: '#475569', fontStyle: 'italic', marginBottom: 26 }}>
-          Je soussigné(e), certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus,
+          Je soussigné(e), <b>{isProprioClinique ? SIGNATAIRE_PROPRIO : (cert.veterinaire || '………………………………')}</b>, certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus,
           conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.
         </p>
 
