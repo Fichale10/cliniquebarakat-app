@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Syringe, AlertTriangle, CalendarClock, CheckCircle2, Trash2, MessageCircle, RotateCw, ShieldPlus, Printer, FileDown } from 'lucide-react'
+import { Syringe, AlertTriangle, CalendarClock, CheckCircle2, Trash2, MessageCircle, RotateCw, ShieldPlus, Printer, FileDown, Coins } from 'lucide-react'
 import { EmptyState, Badge, PrintBtn } from '../../components/ui'
-import { dbFetch, dbInsert, dbDelete, newId } from '../../lib/db'
+import { dbFetch, dbInsert, dbUpdate, dbDelete, newId } from '../../lib/db'
+import { fmtF, computeTvaAmt } from '../../lib/ventes'
+import { venteToDbRow } from '../../lib/validation'
 
 // ── Protocoles vaccinaux par espèce (validité par défaut en mois) ──
 const PROTOCOLES = {
@@ -37,7 +39,7 @@ const statutVacc = (v) => {
   return { label: 'À jour', color: 'green', j }
 }
 
-function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
+function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ventesHist, setVentesHist }) {
   const today = () => new Date().toISOString().split('T')[0]
   const [vaccs, setVaccs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -51,7 +53,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
 
   const EMPTY = { date: today(), espece: 'Chien', patient: '', nombre: 1, proprio: '', tel: '',
     vaccin: '', autreVaccin: '', lot: '', dose: '', voie: 'Sous-cutanée',
-    veterinaire: user?.name || '', validite: 12, rappel: addMonths(today(), 12), notes: '' }
+    veterinaire: user?.name || '', validite: 12, rappel: addMonths(today(), 12), notes: '', prix: '' }
   const [form, setForm] = useState(EMPTY)
   const f = k => e => setForm({ ...form, [k]: e.target.value })
 
@@ -101,6 +103,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
         vaccin: vaccinFinal, lot: form.lot, dose: form.dose, voie: form.voie,
         veterinaire: form.veterinaire, validite_mois: parseInt(form.validite) || 12,
         rappel: form.rappel || null, notes: form.notes, created_by: user?.name || '',
+        prix: parseFloat(form.prix) || 0,
       }
       const saved = await dbInsert(sb, 'vaccinations', row)
       setVaccs([saved, ...vaccs])
@@ -112,11 +115,36 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
   const revacciner = async (v) => {
     if (!confirm(`Revacciner ${v.patient} (${v.vaccin}) aujourd'hui ?\nUn nouveau certificat sera créé avec le prochain rappel.`)) return
     try {
-      const row = { ...v, id: newId(), date: today(), rappel: addMonths(today(), v.validite_mois || 12), created_by: user?.name || '' }
+      const row = { ...v, id: newId(), date: today(), rappel: addMonths(today(), v.validite_mois || 12), created_by: user?.name || '', vente_id: null }
       delete row.created_at
       const saved = await dbInsert(sb, 'vaccinations', row)
       setVaccs([saved, ...vaccs]); setCert(saved)
     } catch (e) { alert('Erreur : ' + (e?.message || e)) }
+  }
+
+  // Encaissement : crée la vente en caisse et lie la vaccination (anti double-facturation)
+  const encaisser = async (v) => {
+    if (v.vente_id) return
+    const prix = parseFloat(v.prix) || 0
+    if (prix <= 0) { alert('Renseignez un prix sur la vaccination avant d\'encaisser (modifiez-la ou recréez-la avec un prix).'); return }
+    const tvaAmt = computeTvaAmt(prix, tva)
+    const ttc = prix + tvaAmt
+    if (!confirm(`Encaisser ${fmtF(ttc)} (Espèces) pour la vaccination de ${v.patient} ?\nLa vente apparaîtra en Caisse et Finances.`)) return
+    try {
+      const row = venteToDbRow({
+        id: newId(), date: today(), client: v.proprio || v.patient,
+        lignes: [{ med: `Vaccination ${v.vaccin}`, cond: 'Acte', qte: 1, pu: prix, pa: 0, mult: 1 }],
+        total: prix, statut: 'Payé', mode: 'Espèces',
+        note: `Vaccination ${v.patient} — ${v.vaccin}`.slice(0, 200),
+        tva_amt: tvaAmt, montant_paye: ttc,
+        caissier: user?.name || '', type: 'clinique',
+      })
+      const saved = await dbInsert(sb, 'ventes', row)
+      if (setVentesHist) setVentesHist([saved, ...(ventesHist || [])].slice(0, 500))
+      await dbUpdate(sb, 'vaccinations', v.id, { vente_id: saved.id })
+      setVaccs(vaccs.map(x => x.id === v.id ? { ...x, vente_id: saved.id } : x))
+      if (cert?.id === v.id) setCert({ ...cert, vente_id: saved.id })
+    } catch (e) { alert('Erreur encaissement : ' + (e?.message || e)) }
   }
 
   const supprimer = async (id) => {
@@ -371,6 +399,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
           <div><label style={lbl}>Validité (mois)</label><input type="number" min="1" value={form.validite} onChange={changeValidite} style={inp} /></div>
           <div><label style={lbl}>Prochain rappel</label><input type="date" value={form.rappel} onChange={f('rappel')} style={inp} />
             <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>Calculé automatiquement, modifiable</p></div>
+          <div><label style={lbl}>Prix de l'acte (F)</label><input type="number" min="0" value={form.prix} onChange={f('prix')} placeholder="0 = gratuit / déjà facturé" style={inp} /></div>
           <div className="col-span-2"><label style={lbl}>Notes</label><input value={form.notes} onChange={f('notes')} placeholder="Observations…" style={inp} /></div>
         </div>
         <button onClick={enregistrer} disabled={saving}
@@ -407,12 +436,16 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
                     <Badge color="slate">{v.espece}</Badge>
                     {(v.nombre || 1) > 1 && <Badge color="blue">{v.nombre} animaux</Badge>}
                     <Badge color={s.color}>{s.label}</Badge>
+                    {v.vente_id && <Badge color="green">Encaissé</Badge>}
                   </div>
                   <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
-                    {v.vaccin} · vacciné le {fmtDate(v.date)} · rappel {fmtDate(v.rappel)}{v.proprio ? ` · ${v.proprio}` : ''}
+                    {v.vaccin} · vacciné le {fmtDate(v.date)} · rappel {fmtDate(v.rappel)}{v.proprio ? ` · ${v.proprio}` : ''}{(parseFloat(v.prix) || 0) > 0 ? ` · ${fmtF(v.prix)}` : ''}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  {!v.vente_id && (parseFloat(v.prix) || 0) > 0 && <button onClick={() => encaisser(v)} title="Encaisser (vente en caisse)"
+                    style={{ padding: '6px 10px', borderRadius: 8, background: '#16a34a', color: 'white', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <Coins size={13} strokeWidth={2.4} /> Encaisser</button>}
                   <button onClick={() => setCert(cert?.id === v.id ? null : v)} title="Certificat"
                     style={{ padding: '6px 10px', borderRadius: 8, background: cert?.id === v.id ? '#0d9488' : '#f0fdfa', color: cert?.id === v.id ? 'white' : '#0d9488', border: '1px solid #99f6e4', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                     <Printer size={13} strokeWidth={2.4} /> Certificat</button>
