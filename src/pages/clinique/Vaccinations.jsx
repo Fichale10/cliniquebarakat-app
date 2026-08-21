@@ -72,6 +72,20 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
   }
   const retirerVaccin = (nom) => setVaccinsSel(vaccinsSel.filter(v => v.nom !== nom))
 
+  // Insertion tolérante : si la migration vaccinations_v2.sql (prix/vente_id) n'est pas
+  // encore exécutée côté Supabase, on réessaie sans ces colonnes plutôt que d'échouer.
+  const insertVacc = async (row) => {
+    try { return await dbInsert(sb, 'vaccinations', row) }
+    catch (e) {
+      const msg = String(e?.message || e)
+      if (/prix|vente_id/i.test(msg) && /schema|column/i.test(msg)) {
+        const { prix, vente_id, ...sans } = row
+        return await dbInsert(sb, 'vaccinations', sans)
+      }
+      throw e
+    }
+  }
+
   useEffect(() => { (async () => {
     try { setVaccs((await dbFetch(sb, 'vaccinations', { force: true })) || []) }
     catch (e) { console.warn('[vaccinations]', e?.message || e) }
@@ -125,7 +139,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
           rappel: addMonths(form.date, v.validite) || null, notes: form.notes, created_by: user?.name || '',
           prix: i === 0 ? prixTotal : 0, // le prix de la séance porté par la 1ère ligne (pas de double facturation)
         }
-        nouvelles.push(await dbInsert(sb, 'vaccinations', row))
+        nouvelles.push(await insertVacc(row))
       }
       setVaccs([...nouvelles.reverse(), ...vaccs])
       setVaccinsSel([]); setVaccinInput('')
@@ -146,7 +160,7 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb, tva, ven
     try {
       const row = { ...v, id: newId(), date: today(), rappel: addMonths(today(), v.validite_mois || 12), created_by: user?.name || '', vente_id: null }
       delete row.created_at
-      const saved = await dbInsert(sb, 'vaccinations', row)
+      const saved = await insertVacc(row)
       setVaccs([saved, ...vaccs]); setCert(saved)
     } catch (e) { alert('Erreur : ' + (e?.message || e)) }
   }
