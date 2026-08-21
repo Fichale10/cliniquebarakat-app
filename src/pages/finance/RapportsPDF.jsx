@@ -1,4 +1,4 @@
-import { FileDown, Printer } from 'lucide-react'
+import { FileDown, Printer, Coins, TrendingDown, BarChart3, Pill } from 'lucide-react'
 import { useState } from 'react'
 
 function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
@@ -115,6 +115,100 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
     setTimeout(()=>setSent(false),4000);
   };
 
+  // Téléchargement direct .pdf avec logo (jsPDF, même design premium que le certificat)
+  const telechargerPDFLogo=async()=>{
+    try{
+      const { jsPDF }=await import('jspdf');
+      const { default: autoTable }=await import('jspdf-autotable');
+      const doc=new jsPDF({unit:'mm',format:'a4'});
+      const W=210,H=297,M=16;
+      const VERT=[20,83,45],ARDOISE=[30,41,59],GRIS=[100,116,139];
+      const nomClinique=clinique?.nom||'La Barakat';
+
+      // Bandeau + logo
+      doc.setFillColor(240,253,244);doc.rect(0,0,W,44,'F');
+      doc.setFillColor(...VERT);doc.rect(0,44,W,1.4,'F');
+      const logoData=await new Promise(res=>{const img=new Image();
+        img.onload=()=>{try{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);res(c.toDataURL('image/png'))}catch{res(null)}};
+        img.onerror=()=>res(null);img.src='/logo.png';});
+      if(logoData)doc.addImage(logoData,'PNG',M,10.5,22,22);
+      doc.setFont('helvetica','bold');doc.setTextColor(...VERT);doc.setFontSize(16);
+      doc.text(nomClinique,M+27,18);
+      doc.setFontSize(9.5);doc.setTextColor(22,101,52);
+      doc.text(clinique?.sousTitre||'Pharmacie & Clinique Vétérinaire',M+27,24);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(71,85,105);
+      const coords=[[clinique?.adresse,clinique?.ville].filter(Boolean).join(', '),clinique?.tel&&`Tél : ${clinique.tel}`].filter(Boolean).join('  ·  ');
+      if(coords)doc.text(coords,M+27,29.5);
+      doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(...ARDOISE);
+      doc.text('RAPPORT MENSUEL',W-M,18,{align:'right'});
+      doc.setFontSize(11);doc.setTextColor(...VERT);
+      doc.text(moisLabel.charAt(0).toUpperCase()+moisLabel.slice(1),W-M,24.5,{align:'right'});
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...GRIS);
+      doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`,W-M,29.5,{align:'right'});
+
+      let y=56;
+      // KPI
+      const kpis=[['Recettes',fmtF(totalVentes),[22,163,74],[240,253,244]],['Dépenses',fmtF(totalDeps),[220,38,38],[254,242,242]],['Résultat net',fmtF(resultat),resultat>=0?[37,99,235]:[220,38,38],resultat>=0?[239,246,255]:[254,242,242]]];
+      const kw=(W-2*M-12)/3;
+      kpis.forEach((k,i)=>{const x=M+i*(kw+6);
+        doc.setFillColor(...k[3]);doc.setDrawColor(226,232,240);doc.setLineWidth(0.3);
+        doc.roundedRect(x,y,kw,22,2,2,'FD');
+        doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...GRIS);
+        doc.text(k[0].toUpperCase(),x+kw/2,y+7,{align:'center',charSpace:0.5});
+        doc.setFontSize(13);doc.setTextColor(...k[2]);
+        doc.text(k[1],x+kw/2,y+16,{align:'center'});
+      });
+      y+=32;
+
+      const section=(t,yy)=>{doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...VERT);
+        doc.text(t.toUpperCase(),M,yy,{charSpace:0.8});
+        doc.setDrawColor(226,232,240);doc.setLineWidth(0.3);
+        doc.line(M+doc.getTextWidth(t.toUpperCase())+4,yy-1.2,W-M,yy-1.2);return yy+5;};
+
+      // Top produits
+      y=section('Top produits vendus',y);
+      autoTable(doc,{startY:y,margin:{left:M,right:M},
+        head:[['#','Produit','Quantité',"Chiffre d'affaires"]],
+        body:topMedsList.length?topMedsList.map((m,i)=>[i+1,m.nom,String(m.qte),fmtF(m.ca)]):[['—','Aucune vente ce mois','—','—']],
+        styles:{fontSize:8.6,cellPadding:2.2,textColor:ARDOISE,lineColor:[226,232,240],lineWidth:0.2},
+        headStyles:{fillColor:VERT,textColor:[255,255,255],fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[248,250,252]}});
+      y=doc.lastAutoTable.finalY+9;
+
+      // Ventes du mois (20 premières)
+      y=section(`Ventes du mois (${ventesMois.length} transactions)`,y);
+      autoTable(doc,{startY:y,margin:{left:M,right:M},
+        head:[['Date','Client','Mode','Statut','Total']],
+        body:ventesMois.length?ventesMois.slice(0,20).map(v=>[v.date,v.client||'Comptoir',v.mode||'—',v.statut||'—',fmtF(v.total||0)]):[['—','Aucune vente','—','—','—']],
+        styles:{fontSize:8.2,cellPadding:2,textColor:ARDOISE,lineColor:[226,232,240],lineWidth:0.2},
+        headStyles:{fillColor:VERT,textColor:[255,255,255],fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[248,250,252]}});
+      y=doc.lastAutoTable.finalY+9;
+
+      // Stocks à surveiller
+      const stocksAlerte=meds.filter(m=>m.stock<=(m.seuil||0)*1.5).slice(0,12);
+      if(stocksAlerte.length&&y<H-60){
+        y=section('Stocks à surveiller',y);
+        autoTable(doc,{startY:y,margin:{left:M,right:M},
+          head:[['Produit','Stock','Seuil','Statut']],
+          body:stocksAlerte.map(m=>[m.nom,`${m.stock} ${m.unite||''}`,String(m.seuil||0),m.stock<=(m.seuil||0)?'CRITIQUE':'Faible']),
+          styles:{fontSize:8.2,cellPadding:2,textColor:ARDOISE,lineColor:[226,232,240],lineWidth:0.2},
+          headStyles:{fillColor:VERT,textColor:[255,255,255],fontStyle:'bold'},
+          alternateRowStyles:{fillColor:[248,250,252]},
+          didParseCell:(d)=>{if(d.section==='body'&&d.column.index===3){d.cell.styles.textColor=d.cell.raw==='CRITIQUE'?[220,38,38]:[217,119,6];d.cell.styles.fontStyle='bold';}}});
+      }
+
+      // Pied de page sur chaque page
+      const pages=doc.getNumberOfPages();
+      for(let p=1;p<=pages;p++){doc.setPage(p);
+        doc.setDrawColor(226,232,240);doc.setLineWidth(0.3);doc.line(M,H-13,W-M,H-13);
+        doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(148,163,184);
+        doc.text(`${nomClinique} · Rapport ${moisLabel} · Confidentiel · Page ${p}/${pages}`,W/2,H-8,{align:'center'});}
+
+      doc.save(`Rapport_${nomClinique.replace(/[^a-z0-9]/gi,'_')}_${moisSel}.pdf`);
+    }catch(e){alert('Erreur PDF : '+(e?.message||e))}
+  };
+
   return <div className="app-page max-w-4xl space-y-5">
     <div className="app-card p-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
@@ -125,9 +219,13 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
         <div className="flex items-center gap-3 flex-wrap">
           <input type="month" value={moisSel} onChange={e=>setMoisSel(e.target.value)}
             style={{border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px 12px',fontSize:'13px',outline:'none'}}/>
+          <button onClick={telechargerPDFLogo}
+            style={{padding:'10px 20px',borderRadius:'10px',background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',fontWeight:700,fontSize:'14px',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
+            <FileDown size={15} strokeWidth={2.4} /> Télécharger PDF
+          </button>
           <button onClick={genererPDF}
             style={{padding:'10px 20px',borderRadius:'10px',background:'linear-gradient(135deg,#166534,#1d4ed8)',color:'white',border:'none',fontWeight:700,fontSize:'14px',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
-            <Printer size={15} strokeWidth={2.4} /> Générer PDF
+            <Printer size={15} strokeWidth={2.4} /> Imprimer
           </button>
         </div>
       </div>
@@ -135,11 +233,11 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
       {/* KPIs du mois */}
       <div className="grid grid-cols-3 gap-4 mb-5">
         {[
-          {l:'Recettes',v:fmtF(totalVentes),c:'#16a34a',bg:'#f0fdf4',icon:'💰'},
-          {l:'Dépenses',v:fmtF(totalDeps),c:'#dc2626',bg:'#fef2f2',icon:'📤'},
-          {l:'Résultat net',v:fmtF(resultat),c:resultat>=0?'#2563eb':'#dc2626',bg:resultat>=0?'#eff6ff':'#fef2f2',icon:'📊'},
+          {l:'Recettes',v:fmtF(totalVentes),c:'#16a34a',bg:'#f0fdf4',icon:Coins},
+          {l:'Dépenses',v:fmtF(totalDeps),c:'#dc2626',bg:'#fef2f2',icon:TrendingDown},
+          {l:'Résultat net',v:fmtF(resultat),c:resultat>=0?'#2563eb':'#dc2626',bg:resultat>=0?'#eff6ff':'#fef2f2',icon:BarChart3},
         ].map((k,i)=><div key={i} style={{background:k.bg,borderRadius:'12px',padding:'16px',textAlign:'center',border:'1px solid #e2e8f0'}}>
-          <div style={{fontSize:'22px',marginBottom:'4px'}}>{k.icon}</div>
+          <div style={{marginBottom:'6px',display:'flex',justifyContent:'center'}}><k.icon size={20} color={k.c} strokeWidth={2.2}/></div>
           <div style={{fontSize:'20px',fontWeight:900,color:k.c,fontFamily:"'Space Mono',monospace"}}>{k.v}</div>
           <div style={{fontSize:'11px',color:k.c,fontWeight:700,marginTop:'3px',textTransform:'uppercase',letterSpacing:'.05em'}}>{k.l}</div>
           <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'2px',textTransform:'capitalize'}}>{moisLabel}</div>
@@ -148,7 +246,7 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
 
       {/* Top médicaments */}
       {topMedsList.length>0&&<div>
-        <h3 style={{fontWeight:700,fontSize:'14px',marginBottom:'12px',color:'#1e293b'}}>💊 Top médicaments vendus</h3>
+        <h3 style={{fontWeight:700,fontSize:'14px',marginBottom:'12px',color:'#1e293b',display:'flex',alignItems:'center',gap:'6px'}}><Pill size={15} color="#166534" strokeWidth={2.3}/> Top médicaments vendus</h3>
         <div className="space-y-2">
           {topMedsList.map((m,i)=>{
             const pct=Math.round((m.ca/totalVentes)*100)||0;
