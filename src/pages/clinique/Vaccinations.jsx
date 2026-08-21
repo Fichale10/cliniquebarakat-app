@@ -152,20 +152,31 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
       // ── Bandeau d'en-tête ──
       doc.setFillColor(240, 253, 244); doc.rect(0, 0, W, 46, 'F')
       doc.setFillColor(...VERT); doc.rect(0, 46, W, 1.4, 'F')
-      // Médaillon initiales (façon logo)
-      const initiales = nomClinique.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
-      doc.setFillColor(...VERT); doc.circle(M + 9, 23, 9, 'F')
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(255, 255, 255)
-      doc.text(initiales, M + 9, 24.8, { align: 'center' })
+      // Logo de la clinique (public/logo.png), médaillon initiales en secours
+      const logoData = await new Promise(res => {
+        const img = new Image()
+        img.onload = () => { try { const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0); res(c.toDataURL('image/png')) } catch { res(null) } }
+        img.onerror = () => res(null)
+        img.src = '/logo.png'
+      })
+      if (logoData) {
+        doc.addImage(logoData, 'PNG', M, 11.5, 23, 23)
+      } else {
+        const initiales = nomClinique.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+        doc.setFillColor(...VERT); doc.circle(M + 11.5, 23, 9, 'F')
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(255, 255, 255)
+        doc.text(initiales, M + 11.5, 24.8, { align: 'center' })
+      }
       // Nom + coordonnées
+      doc.setFont('helvetica', 'bold')
       doc.setTextColor(...VERT); doc.setFontSize(17)
-      doc.text(nomClinique, M + 23, 19)
+      doc.text(nomClinique, M + 28, 19)
       doc.setFontSize(10); doc.setTextColor(...VERT2)
-      doc.text(clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire', M + 23, 25)
+      doc.text(clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire', M + 28, 25)
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(71, 85, 105)
       const coords = [[clinique?.adresse, clinique?.ville].filter(Boolean).join(', '), clinique?.tel && `Tél : ${clinique.tel}`, clinique?.email].filter(Boolean).join('  ·  ')
-      if (coords) doc.text(coords, M + 23, 30.5)
-      if (clinique?.agrement) doc.text(`Agrément n° ${clinique.agrement}`, M + 23, 35)
+      if (coords) doc.text(coords, M + 28, 30.5)
+      if (clinique?.agrement) doc.text(`Agrément n° ${clinique.agrement}`, M + 28, 35)
       // Cartouche N° de certificat
       doc.setDrawColor(...VERT); doc.setLineWidth(0.4); doc.setFillColor(255, 255, 255)
       doc.roundedRect(W - M - 46, 13, 46, 20, 2, 2, 'FD')
@@ -439,7 +450,8 @@ function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
       <div id="vaccin-print" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '28px 32px', maxWidth: 800, margin: '0 auto', fontFamily: 'Georgia, serif', color: '#1e293b' }}>
         {/* En-tête — personnalisable dans Paramètres clinique */}
         <div style={{ textAlign: 'center', borderBottom: '3px double #14532d', paddingBottom: 14, marginBottom: 18 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#14532d' }}>🐄 {clinique?.nom || 'La Barakat'}</div>
+          <img src="/logo.png" alt="" style={{ width: 74, height: 74, borderRadius: '50%', objectFit: 'cover', display: 'block', margin: '0 auto 8px' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#14532d' }}>{clinique?.nom || 'La Barakat'}</div>
           <div style={{ fontSize: 13, color: '#166534', fontWeight: 700 }}>{clinique?.sousTitre || 'Pharmacie & Clinique Vétérinaire'}</div>
           {(clinique?.adresse || clinique?.ville || clinique?.tel || clinique?.email) && <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>
             {[[clinique?.adresse, clinique?.ville].filter(Boolean).join(', '), clinique?.tel && `Tél : ${clinique.tel}`, clinique?.email].filter(Boolean).join(' · ')}
