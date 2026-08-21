@@ -13,7 +13,7 @@ function AssistantIA({ patients, meds, user, sb }) {
   useEffect(()=>{ if(chatRef.current) chatRef.current.scrollTop=chatRef.current.scrollHeight; },[messages]);
 
   const buildContext=()=>{
-    let ctx='Tu es un assistant vétérinaire expert intégré dans le logiciel La Barakat (Pharmacie & Clinique Vétérinaire, Lomé, Togo). Tu réponds en français, de manière professionnelle mais accessible. Tu fournis des informations médicales vétérinaires précises. Rappelle toujours que le vétérinaire doit confirmer tout diagnostic ou traitement.\n\n';
+    let ctx='Tu es un assistant vétérinaire expert intégré dans le logiciel La Barakat (Pharmacie & Clinique Vétérinaire, Anié, Togo). Tu réponds en français, de manière professionnelle mais accessible. Tu fournis des informations médicales vétérinaires précises. Rappelle toujours que le vétérinaire doit confirmer tout diagnostic ou traitement.\n\n';
     if(selectedPat){
       const p=patients.find(pa=>pa.nom===selectedPat);
       if(p) ctx+=`Patient sélectionné : ${p.nom} (${p.espece}, ${p.race}, ${p.age}, ${p.poids})\nAllergies : ${p.allergies||'Aucune'}\nAntécédents : ${p.antecedents||'Aucun'}\n\n`;

@@ -416,7 +416,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   <div class="header">
     <div class="clinic-emoji">🐄</div>
     <div class="clinic-name">LA BARAKAT</div>
-    <div class="clinic-sub">Pharmacie &amp; Clinique Vétérinaire · Lomé, Togo</div>
+    <div class="clinic-sub">Pharmacie &amp; Clinique Vétérinaire · Anié, Togo</div>
   </div>
   <div class="badge-wrap"><span class="badge">REÇU</span></div>
   <div class="rec-num">${numRecu}</div>
@@ -437,7 +437,7 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
   ${noteHtml}
   <div class="footer">
     <div class="footer-emoji">🐾</div>
-    <div class="footer-text">Merci de votre confiance !<br>La Barakat · Lomé, Togo<br><span style="color:#16a34a;font-weight:600">Bonne santé à votre compagnon 🌿</span></div>
+    <div class="footer-text">Merci de votre confiance !<br>La Barakat · Anié, Togo<br><span style="color:#16a34a;font-weight:600">Bonne santé à votre compagnon 🌿</span></div>
     <div class="watermark">— ORIGINAL —</div>
   </div>
 </div>

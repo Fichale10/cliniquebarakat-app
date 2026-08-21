@@ -65,7 +65,7 @@ function Stars({ note, onChange, readonly = false }) {
 // ── Formulaire ───────────────────────────────────────────────────
 function FormulaireF({ initial, onSave, onCancel, saving }) {
   const empty = {
-    nom: '', contact: '', tel: '', email: '', adresse: '', ville: 'Lomé', pays: 'Togo',
+    nom: '', contact: '', tel: '', email: '', adresse: '', ville: 'Anié', pays: 'Togo',
     specialite: 'Médicaments vétérinaires', delaiLivraison: 5,
     conditionsPaiement: '30j', remise: 0, noteQualite: 3,
     actif: true, notes: '', dateDebut: today(), rib: '', siteWeb: '',
@@ -92,7 +92,7 @@ function FormulaireF({ initial, onSave, onCancel, saving }) {
         <Field label="Email" value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="contact@fournisseur.com" />
         <Field label="Site web" value={form.siteWeb} onChange={e => set('siteWeb', e.target.value)} placeholder="www.fournisseur.com" />
         <Field label="Adresse" value={form.adresse} onChange={e => set('adresse', e.target.value)} placeholder="Rue, quartier" />
-        <Field label="Ville" value={form.ville} onChange={e => set('ville', e.target.value)} placeholder="Lomé" />
+        <Field label="Ville" value={form.ville} onChange={e => set('ville', e.target.value)} placeholder="Anié" />
         <Field label="Pays" value={form.pays} onChange={e => set('pays', e.target.value)} options={['Togo','Bénin','Ghana',"Côte d'Ivoire",'Nigeria','Sénégal','France','Autre']} />
       </div>
 

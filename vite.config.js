@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: 'La Barakat — Pharmacie & Clinique Vétérinaire',
         short_name: 'La Barakat',
-        description: 'Gestion de la pharmacie et clinique vétérinaire La Barakat — Lomé, Togo',
+        description: 'Gestion de la pharmacie et clinique vétérinaire La Barakat — Anié, Togo',
         lang: 'fr',
         start_url: '/',
         display: 'standalone',

@@ -53,7 +53,7 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
     <div class="header">
       <div>
         <div class="logo">🐄 LA BARAKAT</div>
-        <div class="sub">Pharmacie & Clinique Vétérinaire · Lomé, Togo</div>
+        <div class="sub">Pharmacie & Clinique Vétérinaire · Anié, Togo</div>
       </div>
       <div style="text-align:right">
         <div class="title">Rapport Mensuel</div>
@@ -98,7 +98,7 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
     </div>
 
     <div class="footer">
-      <div>La Barakat — Pharmacie & Clinique Vétérinaire · Lomé, Togo · www.labarakat.fr</div>
+      <div>La Barakat — Pharmacie & Clinique Vétérinaire · Anié, Togo</div>
       <div style="margin-top:4px">Rapport généré automatiquement · Confidentiel</div>
     </div>
     <script>window.onload=()=>{window.print();};<\/script>

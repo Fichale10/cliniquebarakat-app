@@ -192,7 +192,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                 { l:'Nom complet *',   k:'nom',     ph:'Nom et prénom',       type:'text' },
                 { l:'Téléphone',       k:'tel',     ph:'+228 XX XX XX XX',    type:'tel' },
                 { l:'Email',           k:'email',   ph:'email@domaine.com',   type:'email' },
-                { l:'Adresse / Ville', k:'adresse', ph:'Ex: Lomé, Bè',        type:'text' },
+                { l:'Adresse / Ville', k:'adresse', ph:'Ex: Anié, centre',   type:'text' },
               ].map(fi => (
                 <Field key={fi.k} label={fi.l} value={form[fi.k]} onChange={e => patchForm({[fi.k]:e.target.value})} error={formErrors[fi.k]} placeholder={fi.ph} type={fi.type} />
               ))}
@@ -363,7 +363,7 @@ function Clients({ clients, setClients, user, sb, logAction }) {
                           { l:'Nom complet *', k:'nom',     ph:'Nom et prénom',    type:'text' },
                           { l:'Téléphone',     k:'tel',     ph:'+228 XX XX XX XX', type:'tel' },
                           { l:'Email',         k:'email',   ph:'email@ex.com',     type:'email' },
-                          { l:'Adresse',       k:'adresse', ph:'Lomé, Bè…',        type:'text' },
+                          { l:'Adresse',       k:'adresse', ph:'Anié, centre…',     type:'text' },
                         ].map(fi => (
                           <div key={fi.k}>
                             <label style={{ fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:5 }}>{fi.l}</label>

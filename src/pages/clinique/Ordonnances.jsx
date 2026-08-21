@@ -30,7 +30,7 @@ function OrdPrint({ o }) {
             <div>
               <div style={{ fontFamily:'Outfit,sans-serif',fontWeight:900,fontSize:18,color:'#0d9488',letterSpacing:1 }}>LA BARAKAT</div>
               <div style={{ fontSize:11,color:'#64748b',marginTop:2 }}>Pharmacie & Clinique Vétérinaire</div>
-              <div style={{ fontSize:11,color:'#64748b' }}>Lomé, Togo</div>
+              <div style={{ fontSize:11,color:'#64748b' }}>Anié, Togo</div>
             </div>
           </div>
           <div style={{ textAlign:'right' }}>
@@ -80,7 +80,7 @@ function OrdPrint({ o }) {
           <div style={{ textAlign:'right',fontSize:10,color:'#94a3b8',lineHeight:1.6 }}>
             <div>Valable 3 mois à compter de la date de délivrance</div>
             <div>Non remboursable · Usage vétérinaire uniquement</div>
-            <div style={{ marginTop:4,fontStyle:'italic' }}>La Barakat · Lomé, Togo</div>
+            <div style={{ marginTop:4,fontStyle:'italic' }}>La Barakat · Anié, Togo</div>
           </div>
         </div>
       </div>

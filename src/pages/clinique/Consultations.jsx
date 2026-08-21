@@ -244,7 +244,7 @@ function Consultations({ patients, setPatients, consultations, setConsultations,
         <div style={{ display:'flex',justifyContent:'space-between',borderBottom:'3px solid #16a34a',paddingBottom:'15px',marginBottom:'20px' }}>
           <div>
             <h1 style={{ margin:0,fontSize:'22px',color:'#14532d',fontWeight:'900' }}>🐾 La Barakat</h1>
-            <p style={{ margin:'4px 0 0',color:'#64748b',fontSize:'12px' }}>Pharmacie & Clinique Vétérinaire · Lomé, Togo</p>
+            <p style={{ margin:'4px 0 0',color:'#64748b',fontSize:'12px' }}>Pharmacie & Clinique Vétérinaire · Anié, Togo</p>
           </div>
           <div style={{ textAlign:'right',fontSize:'12px',color:'#64748b' }}>
             <div style={{ fontWeight:'900',fontSize:'16px',color:'#16a34a' }}>FICHE CONSULTATION</div>

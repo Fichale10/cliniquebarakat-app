@@ -152,7 +152,7 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
               style={{ width:'100%', padding:'11px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.15)', background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.8)', fontWeight:700, fontSize:'14px', cursor:'pointer', fontFamily:"'Outfit',sans-serif", transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
               <UserPlus size={15} strokeWidth={2.4} /> Demander un accès
             </button>
-            <p style={{ color:'rgba(255,255,255,0.16)', fontSize:'11px', margin:'14px 0 0' }}>© La Barakat — Lomé, Togo</p>
+            <p style={{ color:'rgba(255,255,255,0.16)', fontSize:'11px', margin:'14px 0 0' }}>© La Barakat — Anié, Togo</p>
           </div>
         </div>
       </div>

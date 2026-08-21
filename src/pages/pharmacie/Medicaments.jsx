@@ -161,7 +161,7 @@ function Medicaments({ meds, setMeds, fournisseurs = [], setFournisseurs, user, 
     if (!quickFourNom.trim()) return
     setSavingFour(true)
     try {
-      const row = { id:newId(), nom:quickFourNom.trim(), contact:'', tel:'', email:'', adresse:'', ville:'Lomé', pays:'Togo', specialite:'Médicaments vétérinaires', delai_livraison:5, conditions_paiement:'30j', remise:0, note_qualite:3, actif:true, notes:'', date_debut:new Date().toISOString().split('T')[0], rib:'', site_web:'' }
+      const row = { id:newId(), nom:quickFourNom.trim(), contact:'', tel:'', email:'', adresse:'', ville:'Anié', pays:'Togo', specialite:'Médicaments vétérinaires', delai_livraison:5, conditions_paiement:'30j', remise:0, note_qualite:3, actif:true, notes:'', date_debut:new Date().toISOString().split('T')[0], rib:'', site_web:'' }
       const saved = await dbInsert(sb,'fournisseurs',row)
       const entry = { ...row, id:saved?.id||row.id }
       if (setFournisseurs) setFournisseurs(prev=>[entry,...(Array.isArray(prev)?prev:[])])

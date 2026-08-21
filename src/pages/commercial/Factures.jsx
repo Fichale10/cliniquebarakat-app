@@ -24,7 +24,7 @@ function FacPrint({ f }) {
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f0fdf4', border: '2px solid #86efac', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>🐄</div>
             <div>
               <div style={{ fontSize: '20px', fontWeight: '900', color: '#14532d', letterSpacing: '1px' }}>LA BARAKAT</div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Pharmacie & Clinique Vétérinaire · Lomé, Togo</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Pharmacie & Clinique Vétérinaire · Anié, Togo</div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -77,7 +77,7 @@ function FacPrint({ f }) {
 
         {/* Footer */}
         <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '10px', color: '#94a3b8' }}>Merci de votre confiance · La Barakat · Lomé, Togo</div>
+          <div style={{ fontSize: '10px', color: '#94a3b8' }}>Merci de votre confiance · La Barakat · Anié, Togo</div>
           <div style={{ fontSize: '9px', color: '#e2e8f0', fontFamily: "'Courier New',monospace", letterSpacing: '2px' }}>ORIGINAL</div>
         </div>
       </div>

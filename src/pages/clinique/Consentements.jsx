@@ -64,7 +64,7 @@ function Consentements({patients,equipe=[]}){
         <div style={{fontFamily:'Georgia, serif',maxWidth:'680px',margin:'0 auto'}}>
           <div style={{textAlign:'center',borderBottom:'2px solid #334155',paddingBottom:'20px',marginBottom:'24px'}}>
             <div style={{fontSize:'20px',fontWeight:'900',color:'#14532d',marginBottom:'6px'}}>🐾 La Barakat – Clinique Vétérinaire</div>
-            <div style={{fontSize:'14px',color:'#64748b'}}>Lomé, Togo · Tél : +228 XX XX XX XX</div>
+            <div style={{fontSize:'14px',color:'#64748b'}}>Anié, Togo · Tél : +228 XX XX XX XX</div>
             <div style={{fontSize:'18px',fontWeight:'900',marginTop:'16px',letterSpacing:'2px',color:'#334155'}}>{tpl.titre}</div>
           </div>
           <div style={{marginBottom:'20px',lineHeight:'1.8',fontSize:'14px'}}>

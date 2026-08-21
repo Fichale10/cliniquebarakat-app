@@ -169,7 +169,7 @@ th{background:#eff6ff;padding:8px;text-align:left;font-size:12px;color:#1d4ed8;b
 td{padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}
 @media print{button{display:none}}</style></head><body>
 <div style="display:flex;justify-content:space-between;border-bottom:3px solid #1d4ed8;padding-bottom:16px;margin-bottom:20px">
-  <div style="display:flex;align-items:center;gap:10px"><img src="/logo.png" alt="La Barakat" style="width:56px;height:56px;border-radius:50%;object-fit:cover"><div><h1 style="margin:0;color:#14532d">LA BARAKAT</h1><p style="margin:4px 0;color:#666;font-size:12px">Pharmacie & Clinique Vétérinaire · Lomé, Togo</p></div></div>
+  <div style="display:flex;align-items:center;gap:10px"><img src="/logo.png" alt="La Barakat" style="width:56px;height:56px;border-radius:50%;object-fit:cover"><div><h1 style="margin:0;color:#14532d">LA BARAKAT</h1><p style="margin:4px 0;color:#666;font-size:12px">Pharmacie & Clinique Vétérinaire · Anié, Togo</p></div></div>
   <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#1d4ed8">BON DE COMMANDE</div><div style="color:#666;font-size:12px">${c.num} · ${c.date}</div></div>
 </div>
 <div style="margin-bottom:16px"><b>Fournisseur :</b> ${c.fournisseur}${c.echeance ? `<br><b>Échéance de paiement :</b> ${c.echeance}` : ''}</div>
@@ -196,7 +196,7 @@ ${(c.lignes || []).map(l => `<tr><td>${nomLigne(l)}</td><td>${l.qte}</td><td>${f
   const envoyerWA = (c) => {
     const num = waNumber(telFournisseur(c.fournisseur))
     const lignesTxt = (c.lignes || []).map(l => `• ${nomLigne(l)} × ${l.qte}`).join('\n')
-    const msg = encodeURIComponent(`Bonjour,\n\nCommande ${c.num} — La Barakat (Pharmacie & Clinique Vétérinaire, Lomé) :\n\n${lignesTxt}\n\nTotal estimé : ${fmtF(c.total || 0)}\nDate souhaitée de livraison : dès que possible.\n\nMerci de confirmer la disponibilité et le délai. 🙏`)
+    const msg = encodeURIComponent(`Bonjour,\n\nCommande ${c.num} — La Barakat (Pharmacie & Clinique Vétérinaire, Anié) :\n\n${lignesTxt}\n\nTotal estimé : ${fmtF(c.total || 0)}\nDate souhaitée de livraison : dès que possible.\n\nMerci de confirmer la disponibilité et le délai. 🙏`)
     window.open(num ? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank')
   }
 
