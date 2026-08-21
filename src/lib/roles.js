@@ -17,16 +17,16 @@ export const ROLE_ACCESS = {
   admin: 'all',
   admin2: [
   'dashboard','monprofil','parametres','journal','lots','caisse','ia','notifications','rapports','carteclients','traitements',
-  'patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements',
+  'patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','vaccinations',
   'clients','fournisseurs','factures','devis','creances','ventes',
   'medicaments','commandes','inventaire','historique',
   'depenses','finances'
 ],
-  veterinaire: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
+  veterinaire: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','vaccinations','clients','ia','traitements','carteclients'],
   // Alias de droits pour compatibilité avec d'anciens comptes
-  utilisateur: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','clients','ia','traitements','carteclients'],
+  utilisateur: ['dashboard','monprofil','patients','consultations','dossiers','ordonnances','chirurgies','hospitalisation','agenda','taches','calculateur','consentements','vaccinations','clients','ia','traitements','carteclients'],
   pharmacien:  ['dashboard','monprofil','patients','clients','medicaments','commandes','inventaire','ventes','devis','creances','ordonnances','factures','caisse','lots','ia','carteclients','traitements','historique'],
-  technicien:  ['dashboard','monprofil','patients','consultations','ordonnances','medicaments','inventaire','lots','taches','ia','traitements','calculateur','agenda'],
+  technicien:  ['dashboard','monprofil','patients','consultations','ordonnances','medicaments','inventaire','lots','taches','ia','traitements','calculateur','agenda','vaccinations'],
   caissier:    ['dashboard','monprofil','ventes','clients','devis','creances','factures','caisse','carteclients','historique'],
 }
 

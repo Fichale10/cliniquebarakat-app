@@ -80,6 +80,7 @@ export const NAV_ALL = [
   { id:'taches',          label:'Tâches équipe',        icon:'✅', cat:'Clinique' },
   { id:'calculateur',     label:'Calculateur doses',    icon:'⚖️', cat:'Clinique' },
   { id:'consentements',   label:'Consentements',        icon:'✍️', cat:'Clinique' },
+  { id:'vaccinations',    label:'Vaccinations',         icon:'💉', cat:'Clinique' },
   { id:'clients',         label:'Clients',              icon:'👥', cat:'Commercial' },
   { id:'fournisseurs',    label:'Fournisseurs',         icon:'🏭', cat:'Commercial', admin:true },
   { id:'factures',        label:'Factures',             icon:'📄', cat:'Commercial', admin:true },

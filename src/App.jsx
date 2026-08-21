@@ -21,6 +21,7 @@ const Chirurgies      = lazy(() => import('./pages/clinique/Chirurgies'))
 const Ordonnances     = lazy(() => import('./pages/clinique/Ordonnances'))
 const Calculateur     = lazy(() => import('./pages/clinique/Calculateur'))
 const Consentements   = lazy(() => import('./pages/clinique/Consentements'))
+const Vaccinations    = lazy(() => import('./pages/clinique/Vaccinations'))
 
 // Pages - Agenda
 const Agenda           = lazy(() => import('./pages/agenda/Agenda'))
@@ -490,6 +491,7 @@ useEffect(() => {
     {id:'taches',          label:'Tâches équipe',         icon:'✅', cat:'Clinique'},
     {id:'calculateur',     label:'Calculateur doses',     icon:'⚖️', cat:'Clinique'},
     {id:'consentements',   label:'Consentements',         icon:'✍️', cat:'Clinique'},
+    {id:'vaccinations',    label:'Vaccinations',          icon:'💉', cat:'Clinique'},
     {id:'clients',         label:'Clients',               icon:'👥', cat:'Commercial'},
     {id:'fournisseurs',    label:'Fournisseurs',          icon:'🏭', cat:'Commercial',admin:true},
     {id:'factures',        label:'Factures',              icon:'📄', cat:'Commercial',admin:true},
@@ -1047,6 +1049,7 @@ useEffect(() => {
               {view==='taches'&&<Taches {...sp}/>}
               {view==='calculateur'&&<Calculateur {...sp}/>}
               {view==='consentements'&&<Consentements {...sp}/>}
+              {view==='vaccinations'&&<Vaccinations {...sp}/>}
               {view==='clients'&&<Clients {...sp}/>}
               {view==='fournisseurs'&&(isAdmin?<Fournisseurs {...sp}/>:<Interdit/>)}
               {view==='factures'&&(isAdmin?<Factures {...sp}/>:<Interdit/>)}

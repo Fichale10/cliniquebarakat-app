@@ -8,7 +8,7 @@ import {
   PawPrint, Stethoscope, FolderOpen, FileText, Scissors, Bed,
   Calendar, ListChecks, Calculator, FileSignature, Users, Factory,
   Receipt, FileSpreadsheet, Coins, Pill, Package, ClipboardList,
-  Wallet, TrendingUp, History,
+  Wallet, TrendingUp, History, ShieldPlus,
 } from 'lucide-react'
 
 /** Icône par identifiant de page (NAV_ALL) */
@@ -36,6 +36,7 @@ export const NAV_ICONS = {
   taches:          ListChecks,
   calculateur:     Calculator,
   consentements:   FileSignature,
+  vaccinations:    ShieldPlus,
   clients:         Users,
   fournisseurs:    Factory,
   factures:        Receipt,

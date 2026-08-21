@@ -1,0 +1,368 @@
+import { useState, useEffect, useMemo } from 'react'
+import { Syringe, AlertTriangle, CalendarClock, CheckCircle2, Trash2, MessageCircle, RotateCw, ShieldPlus, Printer } from 'lucide-react'
+import { EmptyState, Badge, PrintBtn } from '../../components/ui'
+import { dbFetch, dbInsert, dbDelete, newId } from '../../lib/db'
+
+// ── Protocoles vaccinaux par espèce (validité par défaut en mois) ──
+const PROTOCOLES = {
+  'Chien':        [{v:'Rage',m:12},{v:'Carré – Hépatite – Parvo – Lepto (CHPL)',m:12},{v:'Parvovirose',m:12},{v:'Toux du chenil',m:12}],
+  'Chat':         [{v:'Rage',m:12},{v:'Typhus – Coryza (TC)',m:12},{v:'Leucose féline',m:12}],
+  'Bovin':        [{v:'PPCB (péripneumonie contagieuse)',m:12},{v:'Charbon symptomatique',m:12},{v:'Charbon bactéridien',m:12},{v:'Pasteurellose bovine',m:12},{v:'Fièvre aphteuse',m:6},{v:'Dermatose nodulaire',m:12}],
+  'Ovin / Caprin':[{v:'PPR (peste des petits ruminants)',m:12},{v:'Clavelée / Variole caprine',m:12},{v:'Pasteurellose',m:12},{v:'Charbon symptomatique',m:12}],
+  'Volaille':     [{v:'Newcastle (La Sota / I-2)',m:6},{v:'Gumboro',m:6},{v:'Bronchite infectieuse',m:6},{v:'Variole aviaire',m:12},{v:'Typhose aviaire',m:12}],
+  'Équin / Asin': [{v:'Tétanos',m:12},{v:'Rage',m:12}],
+  'Camelin':      [{v:'Pasteurellose',m:12},{v:'Variole cameline',m:12}],
+  'Autre':        [],
+}
+const ESPECES = Object.keys(PROTOCOLES)
+const VOIES = ['Sous-cutanée','Intramusculaire','Intraveineuse','Orale (eau de boisson)','Oculaire / nasale','Autre']
+
+const addMonths = (dateStr, months) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setMonth(d.getMonth() + (parseInt(months) || 0))
+  return d.toISOString().split('T')[0]
+}
+const joursAvant = (dateStr) => {
+  if (!dateStr) return null
+  return Math.round((new Date(dateStr + 'T00:00:00') - new Date(new Date().toISOString().split('T')[0] + 'T00:00:00')) / 86400000)
+}
+const fmtDate = (d) => d ? d.split('-').reverse().join('/') : '—'
+
+const statutVacc = (v) => {
+  const j = joursAvant(v.rappel)
+  if (j === null) return { label: 'Sans rappel', color: 'slate', j }
+  if (j < 0)   return { label: 'En retard',     color: 'red',   j }
+  if (j <= 30) return { label: `Rappel ${j}j`,  color: 'yellow',j }
+  return { label: 'À jour', color: 'green', j }
+}
+
+function Vaccinations({ patients = [], equipe = [], clinique, user, sb }) {
+  const today = () => new Date().toISOString().split('T')[0]
+  const [vaccs, setVaccs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [q, setQ] = useState('')
+  const [fEspece, setFEspece] = useState('')
+  const [fStatut, setFStatut] = useState('')
+  const [cert, setCert] = useState(null)
+  const [confirmDel, setConfirmDel] = useState(null)
+
+  const EMPTY = { date: today(), espece: 'Chien', patient: '', nombre: 1, proprio: '', tel: '',
+    vaccin: '', autreVaccin: '', lot: '', dose: '', voie: 'Sous-cutanée',
+    veterinaire: user?.name || '', validite: 12, rappel: addMonths(today(), 12), notes: '' }
+  const [form, setForm] = useState(EMPTY)
+  const f = k => e => setForm({ ...form, [k]: e.target.value })
+
+  useEffect(() => { (async () => {
+    try { setVaccs((await dbFetch(sb, 'vaccinations', { force: true })) || []) }
+    catch (e) { console.warn('[vaccinations]', e?.message || e) }
+    finally { setLoading(false) }
+  })() }, [])
+
+  // Espèce → réinitialise le vaccin ; Vaccin → validité par défaut ; Date/Validité → rappel auto
+  const changeEspece = e => {
+    const espece = e.target.value
+    setForm(prev => ({ ...prev, espece, vaccin: '', autreVaccin: '' }))
+  }
+  const changeVaccin = e => {
+    const vaccin = e.target.value
+    const proto = (PROTOCOLES[form.espece] || []).find(p => p.v === vaccin)
+    const validite = proto ? proto.m : form.validite
+    setForm(prev => ({ ...prev, vaccin, validite, rappel: addMonths(prev.date, validite) }))
+  }
+  const changeDate = e => {
+    const date = e.target.value
+    setForm(prev => ({ ...prev, date, rappel: addMonths(date, prev.validite) }))
+  }
+  const changeValidite = e => {
+    const validite = e.target.value
+    setForm(prev => ({ ...prev, validite, rappel: addMonths(prev.date, validite) }))
+  }
+
+  const enregistrer = async () => {
+    const vaccinFinal = form.vaccin === '__autre' || form.espece === 'Autre' ? form.autreVaccin : form.vaccin
+    if (!form.patient || !vaccinFinal) { alert('Patient / troupeau et vaccin requis.'); return }
+    setSaving(true)
+    try {
+      const row = {
+        id: newId(), date: form.date, espece: form.espece, patient: form.patient,
+        nombre: parseInt(form.nombre) || 1, proprio: form.proprio, tel: form.tel,
+        vaccin: vaccinFinal, lot: form.lot, dose: form.dose, voie: form.voie,
+        veterinaire: form.veterinaire, validite_mois: parseInt(form.validite) || 12,
+        rappel: form.rappel || null, notes: form.notes, created_by: user?.name || '',
+      }
+      const saved = await dbInsert(sb, 'vaccinations', row)
+      setVaccs([saved, ...vaccs])
+      setForm(EMPTY); setShowForm(false); setCert(saved)
+    } catch (e) { alert('Erreur : ' + (e?.message || e)) }
+    finally { setSaving(false) }
+  }
+
+  const revacciner = async (v) => {
+    if (!confirm(`Revacciner ${v.patient} (${v.vaccin}) aujourd'hui ?\nUn nouveau certificat sera créé avec le prochain rappel.`)) return
+    try {
+      const row = { ...v, id: newId(), date: today(), rappel: addMonths(today(), v.validite_mois || 12), created_by: user?.name || '' }
+      delete row.created_at
+      const saved = await dbInsert(sb, 'vaccinations', row)
+      setVaccs([saved, ...vaccs]); setCert(saved)
+    } catch (e) { alert('Erreur : ' + (e?.message || e)) }
+  }
+
+  const supprimer = async (id) => {
+    try { await dbDelete(sb, 'vaccinations', id); setVaccs(vaccs.filter(x => x.id !== id)); if (cert?.id === id) setCert(null) }
+    catch (e) { alert('Erreur : ' + (e?.message || e)) }
+    finally { setConfirmDel(null) }
+  }
+
+  const envoyerRappelWA = (v) => {
+    const msg = encodeURIComponent(
+      `Bonjour ${v.proprio || ''},\n\nRappel de vaccination pour ${v.patient} (${v.espece}) :\n💉 ${v.vaccin}\n📅 Rappel prévu le ${fmtDate(v.rappel)}\n\nMerci de prendre rendez-vous.\nLa Barakat – Clinique Vétérinaire 🐄`)
+    const tel = (v.tel || '').replace(/[^0-9+]/g, '')
+    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank')
+  }
+
+  // ── Filtres & stats ──
+  const filtered = useMemo(() => vaccs.filter(v => {
+    if (fEspece && v.espece !== fEspece) return false
+    if (fStatut) { const s = statutVacc(v); if (fStatut === 'retard' && s.j >= 0) return false; if (fStatut === 'proche' && (s.j === null || s.j < 0 || s.j > 30)) return false; if (fStatut === 'ajour' && (s.j === null || s.j <= 30)) return false }
+    if (q) { const t = q.toLowerCase(); return [v.patient, v.proprio, v.vaccin, v.espece].some(x => (x || '').toLowerCase().includes(t)) }
+    return true
+  }), [vaccs, q, fEspece, fStatut])
+
+  const enRetard = vaccs.filter(v => { const j = joursAvant(v.rappel); return j !== null && j < 0 })
+  const proches  = vaccs.filter(v => { const j = joursAvant(v.rappel); return j !== null && j >= 0 && j <= 30 })
+
+  const KPIS = [
+    { l: 'Vaccinations',   v: vaccs.length,    icon: Syringe,       color: '#0d9488' },
+    { l: 'À jour',         v: vaccs.length - enRetard.length - proches.length, icon: CheckCircle2, color: '#16a34a' },
+    { l: 'Rappels < 30j',  v: proches.length,  icon: CalendarClock, color: '#d97706' },
+    { l: 'En retard',      v: enRetard.length, icon: AlertTriangle, color: '#dc2626' },
+  ]
+
+  // Historique du même animal / troupeau pour le certificat
+  const certLignes = cert ? vaccs.filter(v => v.patient === cert.patient && v.espece === cert.espece && (v.proprio || '') === (cert.proprio || '')).sort((a, b) => (b.date || '').localeCompare(a.date || '')) : []
+
+  const inp = { width: '100%', border: '1.5px solid #e2e8f0', borderRadius: '9px', padding: '8px', fontSize: '13px', outline: 'none', background: 'white' }
+  const lbl = { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: '5px' }
+
+  return <div className="app-page space-y-5">
+
+    {/* KPI */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {KPIS.map((k, i) => <div key={i} className="stat-tile" style={{ borderRadius: 14, padding: '14px 16px', background: 'white', border: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 9, background: k.color + '18', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><k.icon size={15} color={k.color} strokeWidth={2.3} /></span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.04em' }}>{k.l}</span>
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: k.color, fontFamily: "'Space Mono',monospace" }}>{k.v}</div>
+      </div>)}
+    </div>
+
+    {/* Alerte rappels */}
+    {(enRetard.length > 0 || proches.length > 0) && <div style={{ background: '#fffbeb', border: '2px solid #fde68a', borderRadius: 14, padding: '14px 18px' }}>
+      <div style={{ fontWeight: 800, color: '#d97706', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <CalendarClock size={16} strokeWidth={2.4} /> {enRetard.length + proches.length} rappel(s) à traiter
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {[...enRetard, ...proches].slice(0, 8).map(v => { const s = statutVacc(v); return (
+          <div key={v.id} style={{ background: 'white', borderRadius: 9, padding: '8px 12px', border: `1px solid ${s.j < 0 ? '#fecaca' : '#fde68a'}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontWeight: 700 }}>{v.patient}</span>
+            <span style={{ color: '#64748b' }}>{v.vaccin}</span>
+            <span style={{ color: s.j < 0 ? '#dc2626' : '#d97706', fontWeight: 700 }}>{s.j < 0 ? `${-s.j}j de retard` : s.j === 0 ? "Aujourd'hui" : `dans ${s.j}j`}</span>
+            {v.tel && <button onClick={() => envoyerRappelWA(v)} title="Rappel WhatsApp"
+              style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, padding: '3px 7px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+              <MessageCircle size={13} color="#16a34a" strokeWidth={2.4} /></button>}
+          </div>) })}
+      </div>
+    </div>}
+
+    <div className="app-card">
+      <div className="p-5 border-b flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2"><ShieldPlus size={20} color="#0d9488" strokeWidth={2.3} /> Vaccinations</h2>
+          <p className="text-sm text-slate-500">{vaccs.length} vaccination(s) enregistrée(s) · rappels périodiques automatiques</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)}
+          style={{ padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: showForm ? '#ef4444' : 'linear-gradient(135deg,#166534,#1d4ed8)', color: 'white', border: 'none' }}>
+          {showForm ? '✕ Annuler' : '+ Nouvelle vaccination'}
+        </button>
+      </div>
+
+      {/* Formulaire */}
+      {showForm && <div style={{ padding: 20, background: '#f0fdfa', borderBottom: '1px solid #99f6e4' }}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <div><label style={lbl}>Date</label><input type="date" value={form.date} onChange={changeDate} style={inp} /></div>
+          <div><label style={lbl}>Espèce *</label>
+            <select value={form.espece} onChange={changeEspece} style={inp}>{ESPECES.map(e => <option key={e}>{e}</option>)}</select></div>
+          <div><label style={lbl}>Animal / Troupeau *</label>
+            <input value={form.patient} onChange={f('patient')} list="vacc-patients" placeholder="Nom ou identification…" style={inp} />
+            <datalist id="vacc-patients">{patients.map(p => <option key={p.id} value={p.nom}>{p.espece}{p.proprio ? ` · ${p.proprio}` : ''}</option>)}</datalist></div>
+          <div><label style={lbl}>Nombre d'animaux</label><input type="number" min="1" value={form.nombre} onChange={f('nombre')} style={inp} /></div>
+          <div><label style={lbl}>Propriétaire</label><input value={form.proprio} onChange={f('proprio')} placeholder="Nom et prénom" style={inp} /></div>
+          <div><label style={lbl}>Téléphone</label><input value={form.tel} onChange={f('tel')} placeholder="+227…" style={inp} /></div>
+          <div className="col-span-2"><label style={lbl}>Vaccin *</label>
+            {form.espece === 'Autre'
+              ? <input value={form.autreVaccin} onChange={f('autreVaccin')} placeholder="Nom du vaccin…" style={inp} />
+              : <select value={form.vaccin} onChange={changeVaccin} style={inp}>
+                  <option value="">— Choisir —</option>
+                  {(PROTOCOLES[form.espece] || []).map(p => <option key={p.v} value={p.v}>{p.v} (validité {p.m} mois)</option>)}
+                  <option value="__autre">Autre vaccin…</option>
+                </select>}
+            {form.vaccin === '__autre' && form.espece !== 'Autre' && <input value={form.autreVaccin} onChange={f('autreVaccin')} placeholder="Nom du vaccin…" style={{ ...inp, marginTop: 6 }} />}
+          </div>
+          <div><label style={lbl}>N° de lot</label><input value={form.lot} onChange={f('lot')} placeholder="Lot du vaccin" style={inp} /></div>
+          <div><label style={lbl}>Dose</label><input value={form.dose} onChange={f('dose')} placeholder="ex: 1 ml / animal" style={inp} /></div>
+          <div><label style={lbl}>Voie</label><select value={form.voie} onChange={f('voie')} style={inp}>{VOIES.map(v => <option key={v}>{v}</option>)}</select></div>
+          <div><label style={lbl}>Vétérinaire</label>
+            {equipe.length ? <select value={form.veterinaire} onChange={f('veterinaire')} style={inp}>
+              <option value="">—</option>
+              {equipe.map((m, i) => <option key={i} value={m.nom || m.name || m}>{m.nom || m.name || m}</option>)}
+              {user?.name && !equipe.some(m => (m.nom || m.name || m) === user.name) && <option value={user.name}>{user.name}</option>}
+            </select> : <input value={form.veterinaire} onChange={f('veterinaire')} style={inp} />}
+          </div>
+          <div><label style={lbl}>Validité (mois)</label><input type="number" min="1" value={form.validite} onChange={changeValidite} style={inp} /></div>
+          <div><label style={lbl}>Prochain rappel</label><input type="date" value={form.rappel} onChange={f('rappel')} style={inp} />
+            <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>Calculé automatiquement, modifiable</p></div>
+          <div className="col-span-2"><label style={lbl}>Notes</label><input value={form.notes} onChange={f('notes')} placeholder="Observations…" style={inp} /></div>
+        </div>
+        <button onClick={enregistrer} disabled={saving}
+          style={{ padding: '10px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#166534,#1d4ed8)', color: 'white', border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: saving ? .6 : 1 }}>
+          {saving ? 'Enregistrement…' : '✓ Enregistrer et générer le certificat'}
+        </button>
+      </div>}
+
+      {/* Filtres */}
+      <div className="p-4 border-b flex flex-wrap items-center gap-2">
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher animal, propriétaire, vaccin…"
+          style={{ flex: 1, minWidth: 200, border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '8px 12px', fontSize: 13, outline: 'none' }} />
+        <select value={fEspece} onChange={e => setFEspece(e.target.value)} style={{ border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '8px', fontSize: 13, outline: 'none', background: 'white' }}>
+          <option value="">Toutes espèces</option>{ESPECES.map(e => <option key={e}>{e}</option>)}
+        </select>
+        <select value={fStatut} onChange={e => setFStatut(e.target.value)} style={{ border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '8px', fontSize: 13, outline: 'none', background: 'white' }}>
+          <option value="">Tous statuts</option>
+          <option value="ajour">À jour</option>
+          <option value="proche">Rappel &lt; 30j</option>
+          <option value="retard">En retard</option>
+        </select>
+      </div>
+
+      {/* Liste */}
+      <div className="p-4">
+        {!loading && !filtered.length && <EmptyState icon={ShieldPlus} title="Aucune vaccination" subtitle="Enregistrez une vaccination pour générer le certificat et suivre les rappels." />}
+        <div className="space-y-2">
+          {filtered.map(v => { const s = statutVacc(v); return (
+            <div key={v.id} className="rounded-xl border border-slate-200 hover:bg-slate-50 transition-all" style={{ padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, fontSize: 14 }}>{v.patient}</span>
+                    <Badge color="slate">{v.espece}</Badge>
+                    {(v.nombre || 1) > 1 && <Badge color="blue">{v.nombre} animaux</Badge>}
+                    <Badge color={s.color}>{s.label}</Badge>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
+                    {v.vaccin} · vacciné le {fmtDate(v.date)} · rappel {fmtDate(v.rappel)}{v.proprio ? ` · ${v.proprio}` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => setCert(cert?.id === v.id ? null : v)} title="Certificat"
+                    style={{ padding: '6px 10px', borderRadius: 8, background: cert?.id === v.id ? '#0d9488' : '#f0fdfa', color: cert?.id === v.id ? 'white' : '#0d9488', border: '1px solid #99f6e4', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <Printer size={13} strokeWidth={2.4} /> Certificat</button>
+                  <button onClick={() => revacciner(v)} title="Revacciner aujourd'hui"
+                    style={{ padding: '6px 10px', borderRadius: 8, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                    <RotateCw size={13} strokeWidth={2.4} /></button>
+                  {v.tel && <button onClick={() => envoyerRappelWA(v)} title="Rappel WhatsApp"
+                    style={{ padding: '6px 10px', borderRadius: 8, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                    <MessageCircle size={13} strokeWidth={2.4} /></button>}
+                  {confirmDel === v.id
+                    ? <button onClick={() => supprimer(v.id)} style={{ padding: '6px 10px', borderRadius: 8, background: '#dc2626', color: 'white', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Confirmer ?</button>
+                    : <button onClick={() => setConfirmDel(v.id)} title="Supprimer"
+                        style={{ padding: '6px 10px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                        <Trash2 size={13} strokeWidth={2.4} /></button>}
+                </div>
+              </div>
+            </div>) })}
+        </div>
+      </div>
+    </div>
+
+    {/* ── Certificat imprimable ── */}
+    {cert && <div className="app-card p-5">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4 no-print">
+        <h3 className="font-bold text-base flex items-center gap-2"><Printer size={17} color="#0d9488" strokeWidth={2.3} /> Certificat de vaccination — {cert.patient}</h3>
+        <PrintBtn zoneId="vaccin-print" label="Imprimer le certificat" />
+      </div>
+
+      <div id="vaccin-print" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '28px 32px', maxWidth: 800, margin: '0 auto', fontFamily: 'Georgia, serif', color: '#1e293b' }}>
+        {/* En-tête */}
+        <div style={{ textAlign: 'center', borderBottom: '3px double #14532d', paddingBottom: 14, marginBottom: 18 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#14532d' }}>🐄 {clinique?.nom || 'La Barakat'} — Pharmacie & Clinique Vétérinaire</div>
+          {(clinique?.adresse || clinique?.tel) && <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>{[clinique?.adresse, clinique?.tel && `Tél : ${clinique.tel}`].filter(Boolean).join(' · ')}</div>}
+          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '.14em', marginTop: 12, textTransform: 'uppercase' }}>Certificat de vaccination</div>
+          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>N° {String(cert.id).slice(0, 8).toUpperCase()} · Établi le {fmtDate(cert.date)}</div>
+        </div>
+
+        {/* Identification */}
+        <table style={{ width: '100%', fontSize: 13, marginBottom: 16, borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '5px 0', width: '50%' }}><b>Espèce :</b> {cert.espece}</td>
+              <td style={{ padding: '5px 0' }}><b>Animal / Troupeau :</b> {cert.patient}{(cert.nombre || 1) > 1 ? ` (${cert.nombre} animaux)` : ''}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '5px 0' }}><b>Propriétaire :</b> {cert.proprio || '—'}</td>
+              <td style={{ padding: '5px 0' }}><b>Téléphone :</b> {cert.tel || '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Vaccinations */}
+        <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse', marginBottom: 18 }}>
+          <thead>
+            <tr style={{ background: '#f0fdf4' }}>
+              {['Date', 'Vaccin', 'N° lot', 'Dose / Voie', 'Validité', 'Prochain rappel'].map(h =>
+                <th key={h} style={{ border: '1px solid #cbd5e1', padding: '7px 9px', textAlign: 'left', color: '#14532d' }}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {certLignes.map(l => <tr key={l.id} style={{ background: l.id === cert.id ? '#fefce8' : 'white' }}>
+              <td style={{ border: '1px solid #cbd5e1', padding: '6px 9px' }}>{fmtDate(l.date)}</td>
+              <td style={{ border: '1px solid #cbd5e1', padding: '6px 9px', fontWeight: 700 }}>{l.vaccin}</td>
+              <td style={{ border: '1px solid #cbd5e1', padding: '6px 9px' }}>{l.lot || '—'}</td>
+              <td style={{ border: '1px solid #cbd5e1', padding: '6px 9px' }}>{[l.dose, l.voie].filter(Boolean).join(' · ') || '—'}</td>
+              <td style={{ border: '1px solid #cbd5e1', padding: '6px 9px' }}>{l.validite_mois} mois</td>
+              <td style={{ border: '1px solid #cbd5e1', padding: '6px 9px', fontWeight: 700 }}>{fmtDate(l.rappel)}</td>
+            </tr>)}
+          </tbody>
+        </table>
+
+        {cert.notes && <p style={{ fontSize: 12, marginBottom: 16 }}><b>Observations :</b> {cert.notes}</p>}
+
+        <p style={{ fontSize: 11.5, color: '#475569', fontStyle: 'italic', marginBottom: 26 }}>
+          Je soussigné(e), certifie avoir procédé à la vaccination de l'animal (ou du lot d'animaux) identifié ci-dessus,
+          conformément aux règles de l'art et avec les vaccins mentionnés. Ce certificat est valable jusqu'à la date du prochain rappel.
+        </p>
+
+        {/* Signatures */}
+        <table style={{ width: '100%', fontSize: 12.5 }}>
+          <tbody>
+            <tr>
+              <td style={{ width: '50%', verticalAlign: 'top' }}>
+                <b>Le Vétérinaire</b><br />{cert.veterinaire || '________________'}<br /><br /><br />
+                <span style={{ color: '#94a3b8' }}>Signature et cachet</span>
+              </td>
+              <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right' }}>
+                Fait le {fmtDate(cert.date)}<br /><br /><br /><br />
+                <span style={{ color: '#94a3b8' }}>Le Propriétaire</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>}
+  </div>
+}
+
+export default Vaccinations
