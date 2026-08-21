@@ -1,5 +1,7 @@
-import { Bell, AlertTriangle, Calendar, Send, FlaskConical, Clock, Pencil, CheckCircle2 } from 'lucide-react'
+import { Bell, AlertTriangle, Calendar, Send, FlaskConical, Clock, Pencil, CheckCircle2, ShieldPlus } from 'lucide-react'
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { dbFetch } from '../../lib/db'
+import { sb } from '../../lib/globals'
 
 function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
   const [pushEnabled, setPushEnabled]=useState(false);
@@ -15,6 +17,16 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
   const alertesStock=meds.filter(m=>(m.seuil||0)>0&&m.stock<=m.seuil);
   // RDV du jour (depuis le state Supabase)
   const rdvsAujourdhui = rdvsProp.filter(r => r.date === today() && r.statut !== 'Annulé' && r.statut !== 'Terminé');
+  // Rappels de vaccination (échus ou < 30 jours)
+  const [rappelsVacc,setRappelsVacc]=useState([]);
+  useEffect(()=>{(async()=>{
+    try{
+      const rows=(await dbFetch(sb,'vaccinations'))||[];
+      const t0=new Date(today()+'T00:00:00');
+      setRappelsVacc(rows.map(v=>({...v,_j:v.rappel?Math.round((new Date(v.rappel+'T00:00:00')-t0)/86400000):null}))
+        .filter(v=>v._j!==null&&v._j<=30).sort((a,b)=>a._j-b._j));
+    }catch(e){}
+  })()},[]);
 
   const demanderPermission=async()=>{
     if(!('Notification' in window)){
@@ -130,6 +142,21 @@ function GestionNotifications({meds, rdvs: rdvsProp = [], user}){
               {pushEnabled&&<button onClick={()=>envoyerTest('📅 RDV du jour — La Barakat',`${rdvsAujourdhui.length} RDV aujourd'hui. Premier : ${rdvsAujourdhui[0]?.heure} — ${rdvsAujourdhui[0]?.patient}`)}
                 style={{width:'100%',marginTop:'8px',padding:'8px',borderRadius:'8px',background:'#2563eb',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
                 <Send size={13} strokeWidth={2.4} /> Envoyer rappel RDV
+              </button>}
+            </div>}
+      </div>
+      <div className="app-card p-4 md:col-span-2">
+        <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2"><ShieldPlus size={15} color="#2563eb" strokeWidth={2.4} /> Rappels de vaccination ({rappelsVacc.length})</h3>
+        {rappelsVacc.length===0
+          ? <p className="text-sm text-slate-400 text-center py-4">Aucun rappel de vaccination sous 30 jours</p>
+          : <div className="space-y-2">
+              {rappelsVacc.slice(0,6).map(v=><div key={v.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:'9px',background:v._j<0?'#fef2f2':'#eff6ff',border:`1px solid ${v._j<0?'#fecaca':'#bfdbfe'}`}}>
+                <span style={{fontSize:'13px',fontWeight:600,color:v._j<0?'#991b1b':'#1e40af'}}>{v.patient} · {v.vaccin}</span>
+                <span style={{fontSize:'12px',fontWeight:700,color:v._j<0?'#dc2626':'#2563eb',fontFamily:"'Space Mono',monospace"}}>{v._j<0?`${-v._j}j de retard`:v._j===0?"Aujourd'hui":`dans ${v._j}j`}</span>
+              </div>)}
+              {pushEnabled&&<button onClick={()=>envoyerTest('💉 Rappels vaccination — La Barakat',`${rappelsVacc.length} rappel(s) à traiter. Prochain : ${rappelsVacc[0]?.patient} — ${rappelsVacc[0]?.vaccin}`)}
+                style={{width:'100%',marginTop:'8px',padding:'8px',borderRadius:'8px',background:'#2563eb',color:'white',border:'none',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+                <Send size={13} strokeWidth={2.4} /> Envoyer rappel vaccinations
               </button>}
             </div>}
       </div>

@@ -1,9 +1,22 @@
-import { useMemo, useState } from 'react'
-import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine, Clock, Phone, CalendarCheck, CheckCircle2 } from 'lucide-react'
+import { useMemo, useState, useEffect } from 'react'
+import { PawPrint, Calendar, AlertTriangle, Coins, Stethoscope, FileText, ShoppingCart, Pill, TrendingUp, Receipt, Scale, Zap, Syringe, Factory, TrendingDown, Banknote, Smartphone, Landmark, PenLine, Clock, Phone, CalendarCheck, CheckCircle2, ShieldPlus } from 'lucide-react'
 import { joursAvantRupture, venteEncaisse, venteMarge } from '../lib/ventes'
 import { exportCSV } from '../lib/utils'
+import { dbFetch } from '../lib/db'
 
-function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], depsHist = [], rdvs, user, clinique, tva, otrMode }) {
+function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], versements = [], depsHist = [], rdvs, user, clinique, tva, otrMode, sb }) {
+  // Rappels de vaccination (échus ou < 30 jours)
+  const [rappelsVacc, setRappelsVacc] = useState([])
+  useEffect(() => { (async () => {
+    try {
+      const rows = (await dbFetch(sb, 'vaccinations')) || []
+      const t0 = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00')
+      setRappelsVacc(rows
+        .map(v => ({ ...v, _j: v.rappel ? Math.round((new Date(v.rappel + 'T00:00:00') - t0) / 86400000) : null }))
+        .filter(v => v._j !== null && v._j <= 30)
+        .sort((a, b) => a._j - b._j))
+    } catch (e) { /* table pas encore créée : silencieux */ }
+  })() }, [])
   const fmtF  = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0)) + ' F'
   const fmtK  = (v) => v >= 1_000_000 ? `${(v/1_000_000).toFixed(1)}M F` : v >= 1000 ? `${Math.round(v/1000)}k F` : fmtF(v)
   const mask  = (v) => otrMode ? '••••• F' : fmtF(v)
@@ -400,6 +413,30 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
       </div>
 
       {/* ══ ALERTES ══════════════════════════════════════════════ */}
+      {rappelsVacc.length > 0 && (
+        <div className="dash-alert-panel" style={{ borderColor:'#bfdbfe' }}>
+          <div className="dash-alert-head">
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ width:28,height:28,borderRadius:'50%',background:'#2563eb',display:'inline-flex',alignItems:'center',justifyContent:'center',color:'white' }}><ShieldPlus size={15} strokeWidth={2.4} /></span>
+              <span style={{ fontWeight:800,fontSize:15,color:'#1e3a8a' }}>Rappels de vaccination</span>
+              <span style={{ fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:999,background:'#2563eb',color:'white' }}>{rappelsVacc.length}</span>
+            </div>
+            <button type="button" className="dash-link" style={{ color:'#2563eb' }} onClick={() => setView('vaccinations')}>Gérer les vaccinations →</button>
+          </div>
+          {rappelsVacc.slice(0, 5).map(v => (
+            <div key={v.id} className="dash-alert-row">
+              <span style={{ fontWeight:600,fontSize:13 }}>{v.patient} <span style={{ color:'#94a3b8',fontWeight:400 }}>· {v.vaccin}</span></span>
+              <span style={{ textAlign:'center',fontSize:13,color:'#2563eb' }}>{(v.rappel||'').split('-').reverse().join('/')}</span>
+              <div style={{ textAlign:'center' }}>
+                <span style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:999,
+                  background: v._j < 0 ? '#fef2f2' : '#eff6ff', color: v._j < 0 ? '#dc2626' : '#2563eb', border:`1px solid ${v._j < 0 ? '#fecaca' : '#bfdbfe'}` }}>
+                  <CalendarCheck size={11} strokeWidth={2.6} /> {v._j < 0 ? `${-v._j}j de retard` : v._j === 0 ? "Aujourd'hui" : `dans ${v._j}j`}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {(alertesStock.length > 0 || peremProches.length > 0 || rupturesProchaines.length > 0) && (
         <div className="dash-alert-panel">
           <div className="dash-alert-head">
