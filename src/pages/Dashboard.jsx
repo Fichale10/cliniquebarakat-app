@@ -190,8 +190,15 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
 
   // ── Top médicaments ──────────────────────────────────────────
   const topMeds = useMemo(() => {
+    // 30 derniers jours, hors ventes annulées et cessions internes ; qte × mult (gros)
+    const depuis = new Date(); depuis.setDate(depuis.getDate() - 30)
+    const depuisStr = depuis.toISOString().split('T')[0]
     const counts = {}
-    for (const v of (ventesHist||[])) for (const l of (v.lignes||[])) if (l.med) counts[l.med]=(counts[l.med]||0)+(Number(l.qte)||1)
+    for (const v of (ventesHist||[])) {
+      if (v.statut === 'Annulé' || v.type === 'cession') continue
+      if ((v.date||'') < depuisStr) continue
+      for (const l of (v.lignes||[])) if (l.med) counts[l.med] = (counts[l.med]||0) + (Number(l.qte)||1) * (Number(l.mult)||1)
+    }
     return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5)
   }, [ventesHist])
   const maxTopMed = topMeds.length ? topMeds[0][1] : 1
@@ -883,7 +890,7 @@ function Dashboard({ patients, meds, setView, ventesHist, achatsHist = [], verse
           <div className="dash-card-head">
             <div className="dash-card-title">
               <span className="dash-icon-wrap" style={{ background:'linear-gradient(135deg,#7c3aed,#ec4899)' }}><Pill size={16} color="white" /></span>
-              Top médicaments vendus
+              Top médicaments vendus <span style={{ fontSize:11, fontWeight:600, color:'var(--app-muted)' }}>· 30 derniers jours</span>
             </div>
             <button type="button" className="dash-link" onClick={() => setView('medicaments')}>Stock →</button>
           </div>
