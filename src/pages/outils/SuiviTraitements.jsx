@@ -41,8 +41,13 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     finally{setLoading(false);}
   })()},[]);
 
+  // Lignes de médicaments d'un traitement : t.lignes (jsonb) si présent, sinon champs hérités
+  const tLignes=t=>{
+    try{const l=typeof t.lignes==='string'?JSON.parse(t.lignes):t.lignes;if(Array.isArray(l)&&l.length)return l;}catch(e){}
+    return t.medicament?[{med:t.medicament,qte:parseFloat(t.qte)||1,pu:parseFloat(t.pu)||0,pa:parseFloat(t.pa)||0}]:[];
+  };
   const totalForm=(parseFloat(form.qte)||0)*(parseFloat(form.pu)||0);
-  const tTotal=t=>(parseFloat(t.qte)||0)*(parseFloat(t.pu)||0);
+  const tTotal=t=>tLignes(t).reduce((s,l)=>s+(parseFloat(l.qte)||0)*(parseFloat(l.pu)||0),0);
   const totalAFacturer=traitements.filter(t=>t.actif&&!t.vente_id).reduce((s,t)=>s+tTotal(t),0);
 
   const selectMedicament=(e)=>{
@@ -53,21 +58,53 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   // Médicament actuellement sélectionné (pour l'unité : ml, flacon, comprimé…)
   const selMed=meds.find(x=>x.nom===form.medicament);
 
+  // ── Plusieurs médicaments par traitement ──
+  const [medLignes,setMedLignes]=useState([]);   // [{med,qte,pu,pa,unite}]
+  const ajouterLigne=()=>{
+    if(!form.medicament)return;
+    const m=meds.find(x=>x.nom===form.medicament);
+    const ligne={med:form.medicament,qte:parseFloat(form.qte)||1,pu:parseFloat(form.pu)||0,
+      pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,unite:m?.unite||''};
+    setMedLignes([...medLignes,ligne]);
+    setForm(prev=>({...prev,medicament:'',qte:1,pu:''}));
+  };
+  const retirerLigne=i=>setMedLignes(medLignes.filter((_,j)=>j!==i));
+  const totalLignes=medLignes.reduce((s,l)=>s+l.qte*l.pu,0)+totalForm;
+
+  // Insertion tolérante : si la migration traitements_lignes.sql n'est pas encore
+  // exécutée côté Supabase, on réessaie sans la colonne lignes.
+  const insertTrait=async(row)=>{
+    try{return await dbInsert(sb,'traitements',row);}
+    catch(e){
+      const msg=String(e?.message||e);
+      if(/lignes/i.test(msg)&&/schema|column/i.test(msg)){const{lignes,...sans}=row;return await dbInsert(sb,'traitements',sans);}
+      throw e;
+    }
+  };
+
   const addTraitement=async()=>{
-    if(!form.patient||!form.medicament){alert('Patient et médicament requis.');return;}
+    // La saisie en cours compte comme une ligne (pas besoin de cliquer +)
+    const lignes=[...medLignes];
+    if(form.medicament){
+      const m=meds.find(x=>x.nom===form.medicament);
+      lignes.push({med:form.medicament,qte:parseFloat(form.qte)||1,pu:parseFloat(form.pu)||0,
+        pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,unite:m?.unite||''});
+    }
+    if(!form.patient||!lignes.length){alert('Patient et au moins un médicament requis.');return;}
     setSaving(true);
     try{
-      const m=meds.find(x=>x.nom===form.medicament);
       const row={
-        id:newId(),patient:form.patient,medicament:form.medicament,
+        id:newId(),patient:form.patient,
+        medicament:lignes.map(l=>l.med).join(' + '),
         posologie:form.posologie,frequence:form.frequence,
         debut:form.debut||null,fin:form.fin||null,notes:form.notes,
-        actif:true,qte:parseFloat(form.qte)||1,pu:parseFloat(form.pu)||0,
-        pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,
+        actif:true,
+        qte:lignes[0].qte,pu:lignes[0].pu,pa:lignes[0].pa, // compat anciens écrans
+        lignes,
       };
-      const saved=await dbInsert(sb,'traitements',row);
+      const saved=await insertTrait(row);
       setTraitements([saved,...traitements]);
-      setForm(EMPTY);setShowForm(false);
+      setMedLignes([]);setForm(EMPTY);setShowForm(false);
     }catch(e){alert('Erreur : '+(e?.message||e));}
     finally{setSaving(false);}
   };
@@ -89,11 +126,10 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   // ── Facturation liée (anti double-facturation via vente_id) ──
   const creerVente=async(t,paye)=>{
     if(t.vente_id)return;
+    const lignesT=tLignes(t);
     const totalHT=tTotal(t);
     if(totalHT<=0)return alert('Renseignez quantité et prix avant de facturer.');
     const p=patients.find(x=>x.nom===t.patient);
-    const m=meds.find(x=>x.nom===t.medicament);
-    const pa=parseFloat(t.pa)||parseFloat(m?.prixAchat??m?.prix_achat)||0;
     const tvaAmt=computeTvaAmt(totalHT,tva);
     const ttc=totalHT+tvaAmt;
     if(!confirm(paye
@@ -102,9 +138,9 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     try{
       const row=venteToDbRow({
         id:newId(),date:today(),client:p?.proprio||t.patient,
-        lignes:[{med:t.medicament,cond:'Traitement',qte:parseFloat(t.qte)||1,pu:parseFloat(t.pu)||0,pa,mult:1}],
+        lignes:lignesT.map(l=>({med:l.med,cond:'Traitement',qte:parseFloat(l.qte)||1,pu:parseFloat(l.pu)||0,pa:parseFloat(l.pa)||0,mult:1})),
         total:totalHT,statut:paye?'Payé':'En attente',mode:paye?'Espèces':'–',
-        note:`Traitement ${t.patient} — ${t.medicament}`.slice(0,200),
+        note:`Traitement ${t.patient} — ${lignesT.map(l=>l.med).join(', ')}`.slice(0,200),
         tva_amt:tvaAmt,montant_paye:paye?ttc:0,
         caissier:user?.name||'',type:'clinique',
       });
@@ -112,15 +148,21 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
       if(setVentesHist)setVentesHist([saved,...(ventesHist||[])].slice(0,500));
       await dbUpdate(sb,'traitements',t.id,{vente_id:saved.id});
       setTraitements(traitements.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
-      if(paye&&m?.id&&setMeds){
-        const q=parseFloat(t.qte)||0;
-        // Priorité au stock clinique, complément sur le stock pharmacie
-        const clin=Math.min(q,m.stock_clinique||0);
-        const pharm=Math.max(0,q-clin);
-        if(sb)await dbAdjustStock(sb,m.id,-pharm,-clin).catch(e=>console.warn('[stock]',e));
-        setMeds(meds.map(x=>x.id===m.id?{...x,
-          stock:Math.max(0,(x.stock||0)-pharm),
-          stock_clinique:Math.max(0,(x.stock_clinique||0)-clin)}:x));
+      if(paye&&setMeds){
+        // Décompte du stock pour CHAQUE médicament : clinique d'abord, pharmacie en complément
+        let nextMeds=[...meds];
+        for(const l of lignesT){
+          const m=nextMeds.find(x=>x.nom===l.med);
+          if(!m?.id)continue;
+          const q=parseFloat(l.qte)||0;
+          const clin=Math.min(q,m.stock_clinique||0);
+          const pharm=Math.max(0,q-clin);
+          if(sb)await dbAdjustStock(sb,m.id,-pharm,-clin).catch(e=>console.warn('[stock]',e));
+          nextMeds=nextMeds.map(x=>x.id===m.id?{...x,
+            stock:Math.max(0,(x.stock||0)-pharm),
+            stock_clinique:Math.max(0,(x.stock_clinique||0)-clin)}:x);
+        }
+        setMeds(nextMeds);
       }
     }catch(e){alert('Erreur facturation : '+(e?.message||e));}
   };
@@ -207,6 +249,12 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             </datalist>
             {selMed&&<p style={{fontSize:'11px',color:'#16a34a',marginTop:'4px'}}>Stock — clinique : {selMed.stock_clinique||0} · pharmacie : {selMed.stock||0}{selMed.unite?` (${selMed.unite})`:''}</p>}
             {!meds.some(m=>((m.stock_clinique||0)+(m.stock||0))>0)&&<p style={{fontSize:'11px',color:'#d97706',marginTop:'4px'}}>Aucun produit en stock — ajoutez des médicaments depuis la page Médicaments.</p>}
+            {medLignes.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginTop:'8px'}}>
+              {medLignes.map((l,i)=><span key={i} style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'4px 10px',borderRadius:'999px',background:'#ccfbf1',border:'1px solid #99f6e4',fontSize:'12px',fontWeight:700,color:'#0f766e'}}>
+                {l.med} <span style={{fontWeight:400}}>· {l.qte}{l.unite?` ${l.unite}`:''} × {fmtF(l.pu)} = {fmtF(l.qte*l.pu)}</span>
+                <button type="button" onClick={()=>retirerLigne(i)} style={{background:'none',border:'none',color:'#0f766e',cursor:'pointer',fontWeight:900,fontSize:'13px',lineHeight:1,padding:0}}>×</button>
+              </span>)}
+            </div>}
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Posologie</label>
@@ -244,10 +292,15 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             <input type="number" min="0" value={form.pu} onChange={f('pu')} placeholder="0 = non facturable"
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
-          <div style={{display:'flex',alignItems:'flex-end'}}>
-            <div style={{width:'100%',background:'white',border:'1.5px solid #bbf7d0',borderRadius:'9px',padding:'8px 12px',display:'flex',justifyContent:'space-between',fontSize:'13px'}}>
+          <div style={{display:'flex',alignItems:'flex-end',gap:'8px'}}>
+            <button onClick={ajouterLigne} disabled={!form.medicament}
+              title="Ajouter ce médicament au traitement et en saisir un autre"
+              style={{padding:'9px 14px',borderRadius:'9px',background:form.medicament?'#0d9488':'#e2e8f0',color:form.medicament?'white':'#94a3b8',border:'none',fontWeight:700,fontSize:'13px',cursor:form.medicament?'pointer':'default',whiteSpace:'nowrap'}}>
+              + Ajouter un autre
+            </button>
+            <div style={{flex:1,background:'white',border:'1.5px solid #bbf7d0',borderRadius:'9px',padding:'8px 12px',display:'flex',justifyContent:'space-between',fontSize:'13px'}}>
               <span style={{fontWeight:700,color:'#64748b'}}>Total</span>
-              <span style={{fontWeight:900,color:'#16a34a',fontFamily:'monospace'}}>{fmtF(totalForm)}</span>
+              <span style={{fontWeight:900,color:'#16a34a',fontFamily:'monospace'}}>{fmtF(totalLignes)}</span>
             </div>
           </div>
           <div className="md:col-span-3">
@@ -293,7 +346,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
                   {t.posologie&&<span>📋 {t.posologie}</span>}
                   <span>🔁 {t.frequence}</span>
                   <span>📅 {t.debut}{t.fin?` → ${t.fin}`:''}</span>
-                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{t.qte}{(()=>{const m=meds.find(x=>x.nom===t.medicament);return m?.unite?` ${m.unite}`:''})()} × {fmtF(t.pu)} = {fmtF(tTotal(t))}</span>}
+                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{tLignes(t).map(l=>{const m=meds.find(x=>x.nom===l.med);return `${l.qte}${(l.unite||m?.unite)?` ${l.unite||m?.unite}`:''} × ${fmtF(l.pu)}`}).join(' + ')} = {fmtF(tTotal(t))}</span>}
                 </div>
                 {t.notes&&<div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px',fontStyle:'italic'}}>Note — {t.notes}</div>}
               </div>
