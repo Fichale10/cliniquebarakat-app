@@ -103,8 +103,13 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
         lignes,
       };
       const saved=await insertTrait(row);
-      setTraitements([saved,...traitements]);
+      setTraitements(prev=>[saved,...prev]);
       setMedLignes([]);setForm(EMPTY);setShowForm(false);
+      // Proposition d'encaissement immédiat pour ne pas oublier la recette
+      const total=lignes.reduce((s,l)=>s+l.qte*l.pu,0);
+      if(total>0&&confirm(`Traitement enregistré (${fmtF(total)}).\nEncaisser maintenant ? La vente apparaîtra en Caisse et dans les recettes Clinique.\n\n(Annuler = facturer plus tard via le bouton Encaisser)`)){
+        await creerVente(saved,true,true);
+      }
     }catch(e){alert('Erreur : '+(e?.message||e));}
     finally{setSaving(false);}
   };
@@ -124,7 +129,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   };
 
   // ── Facturation liée (anti double-facturation via vente_id) ──
-  const creerVente=async(t,paye)=>{
+  const creerVente=async(t,paye,skipConfirm=false)=>{
     if(t.vente_id)return;
     const lignesT=tLignes(t);
     const totalHT=tTotal(t);
@@ -132,7 +137,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     const p=patients.find(x=>x.nom===t.patient);
     const tvaAmt=computeTvaAmt(totalHT,tva);
     const ttc=totalHT+tvaAmt;
-    if(!confirm(paye
+    if(!skipConfirm&&!confirm(paye
       ?`Encaisser ${fmtF(ttc)} (Espèces) pour ${t.patient} ?\nLa vente apparaîtra en Caisse et Finances, le stock sera décompté.`
       :`Facturer ${fmtF(ttc)} à crédit pour ${t.patient} ?\nLa vente apparaîtra dans les Créances.`))return;
     try{
@@ -147,7 +152,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
       const saved=await dbInsert(sb,'ventes',row);
       if(setVentesHist)setVentesHist([saved,...(ventesHist||[])].slice(0,500));
       await dbUpdate(sb,'traitements',t.id,{vente_id:saved.id});
-      setTraitements(traitements.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
+      setTraitements(prev=>prev.map(x=>x.id===t.id?{...x,vente_id:saved.id}:x));
       if(paye&&setMeds){
         // Décompte du stock pour CHAQUE médicament : clinique d'abord, pharmacie en complément
         let nextMeds=[...meds];
