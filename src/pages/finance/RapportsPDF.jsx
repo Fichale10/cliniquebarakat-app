@@ -14,12 +14,14 @@ function RapportsPDF({ventesHist,depsHist,meds,patients,clinique,otrMode}){
   const totalDeps=depsMois.reduce((s,d)=>s+(d.montant||0),0);
   const resultat=totalVentes-totalDeps;
 
-  // Top médicaments vendus
+  // Top médicaments vendus (hors ventes annulées, qte × mult pour le gros)
   const topMeds={};
-  ventesMois.forEach(v=>(v.lignes||[]).forEach(l=>{
+  ventesMois.filter(v=>v.statut!=='Annulé').forEach(v=>(v.lignes||[]).forEach(l=>{
+    if(!l.med)return;
     if(!topMeds[l.med])topMeds[l.med]={nom:l.med,qte:0,ca:0};
-    topMeds[l.med].qte+=(l.qte||0);
-    topMeds[l.med].ca+=(l.qte||0)*(l.pu||0);
+    const q=(parseFloat(l.qte)||0)*(parseFloat(l.mult)||1);
+    topMeds[l.med].qte+=q;
+    topMeds[l.med].ca+=(parseFloat(l.qte)||0)*(parseFloat(l.pu)||0);
   }));
   const topMedsList=Object.values(topMeds).sort((a,b)=>b.ca-a.ca).slice(0,8);
 
