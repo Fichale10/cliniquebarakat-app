@@ -68,7 +68,7 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
       <div style={{ width:'100%', maxWidth:'400px', padding:'0 20px' }}>
 
         {/* Horloge */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'5px', marginBottom:'18px', background:'rgba(0,0,0,0.4)', borderRadius:'999px', padding:'8px 18px', border:'1px solid rgba(255,255,255,0.1)', width:'fit-content', margin:'0 auto 18px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'5px', marginBottom:'18px', background:'rgba(0,0,0,0.32)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderRadius:'999px', padding:'8px 18px', border:'1px solid rgba(255,255,255,0.14)', width:'fit-content', margin:'0 auto 18px' }}>
           <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'22px', fontWeight:700, color:'#4ade80', letterSpacing:'2px' }}>{hStr}</span>
           <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'22px', fontWeight:700, color:'#4ade80' }}>:</span>
           <span style={{ fontFamily:"'Space Mono',monospace", fontSize:'18px', color:'rgba(74,222,128,0.5)' }}>{sStr}</span>
@@ -89,8 +89,8 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
           <p style={{ color:'rgba(134,239,172,0.9)', fontSize:'13px', fontWeight:500, margin:0 }}>Pharmacie & Clinique Vétérinaire</p>
         </div>
 
-        {/* Card */}
-        <div style={{ background:'rgba(10,20,35,0.72)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'22px', boxShadow:'0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
+        {/* Card — verre dépoli léger pour laisser respirer la photo */}
+        <div style={{ background:'linear-gradient(165deg, rgba(12,24,38,0.55) 0%, rgba(8,20,14,0.48) 100%)', backdropFilter:'blur(22px) saturate(150%)', WebkitBackdropFilter:'blur(22px) saturate(150%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:'24px', boxShadow:'0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
           <div style={{ padding:'22px 22px 6px' }}>
             <h2 style={{ textAlign:'center', color:'rgba(255,255,255,0.9)', fontWeight:700, fontSize:'15px', margin:'0 0 4px' }}>Connexion à votre espace</h2>
             <p style={{ textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:'12px', margin:'0 0 16px', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
@@ -206,7 +206,7 @@ function Register({ onBack, onRegister }) {
           <h1 className="login-shine" style={{ fontSize:'22px', fontWeight:900, letterSpacing:'.1em', display:'block', marginBottom:'2px' }}>LA BARAKAT</h1>
         </div>
 
-        <div style={{ background:'rgba(10,20,35,0.85)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'22px', boxShadow:'0 8px 40px rgba(0,0,0,0.5)', padding:'22px' }}>
+        <div style={{ background:'linear-gradient(165deg, rgba(12,24,38,0.55) 0%, rgba(8,20,14,0.48) 100%)', backdropFilter:'blur(22px) saturate(150%)', WebkitBackdropFilter:'blur(22px) saturate(150%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:'24px', boxShadow:'0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)', padding:'22px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'18px' }}>
             <button onClick={onBack} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'8px', color:'white', padding:'6px 10px', cursor:'pointer', fontSize:'14px' }}>←</button>
             <h2 style={{ color:'white', fontWeight:700, fontSize:'16px', margin:0 }}>Demande d'accès</h2>
@@ -311,7 +311,7 @@ function ForgotPassword({ onBack, onForgot }) {
           <h1 className="login-shine" style={{ fontSize:'22px', fontWeight:900, letterSpacing:'.1em', display:'block' }}>LA BARAKAT</h1>
         </div>
 
-        <div style={{ background:'rgba(10,20,35,0.85)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'22px', padding:'22px', boxShadow:'0 8px 40px rgba(0,0,0,0.5)' }}>
+        <div style={{ background:'linear-gradient(165deg, rgba(12,24,38,0.55) 0%, rgba(8,20,14,0.48) 100%)', backdropFilter:'blur(22px) saturate(150%)', WebkitBackdropFilter:'blur(22px) saturate(150%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:'24px', padding:'22px', boxShadow:'0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'18px' }}>
             <button onClick={onBack} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'8px', color:'white', padding:'6px 10px', cursor:'pointer', fontSize:'14px' }}>←</button>
             <h2 style={{ color:'white', fontWeight:700, fontSize:'16px', margin:0 }}>Mot de passe oublié</h2>
