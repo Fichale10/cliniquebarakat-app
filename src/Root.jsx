@@ -90,7 +90,7 @@ function Login({ loading, onLogin, onRegister, onForgot }) {
         </div>
 
         {/* Card — verre dépoli léger pour laisser respirer la photo */}
-        <div style={{ background:'linear-gradient(165deg, rgba(12,24,38,0.55) 0%, rgba(8,20,14,0.48) 100%)', backdropFilter:'blur(22px) saturate(150%)', WebkitBackdropFilter:'blur(22px) saturate(150%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:'24px', boxShadow:'0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+        <div className="login-glass">
           <div style={{ padding:'22px 22px 6px' }}>
             <h2 style={{ textAlign:'center', color:'rgba(255,255,255,0.9)', fontWeight:700, fontSize:'15px', margin:'0 0 4px' }}>Connexion à votre espace</h2>
             <p style={{ textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:'12px', margin:'0 0 16px', display:'flex', alignItems:'center', justifyContent:'center', gap:'5px' }}>
@@ -206,7 +206,7 @@ function Register({ onBack, onRegister }) {
           <h1 className="login-shine" style={{ fontSize:'22px', fontWeight:900, letterSpacing:'.1em', display:'block', marginBottom:'2px' }}>LA BARAKAT</h1>
         </div>
 
-        <div style={{ background:'linear-gradient(165deg, rgba(12,24,38,0.55) 0%, rgba(8,20,14,0.48) 100%)', backdropFilter:'blur(22px) saturate(150%)', WebkitBackdropFilter:'blur(22px) saturate(150%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:'24px', boxShadow:'0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)', padding:'22px' }}>
+        <div className="login-glass" style={{ padding:'22px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'18px' }}>
             <button onClick={onBack} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'8px', color:'white', padding:'6px 10px', cursor:'pointer', fontSize:'14px' }}>←</button>
             <h2 style={{ color:'white', fontWeight:700, fontSize:'16px', margin:0 }}>Demande d'accès</h2>
@@ -311,7 +311,7 @@ function ForgotPassword({ onBack, onForgot }) {
           <h1 className="login-shine" style={{ fontSize:'22px', fontWeight:900, letterSpacing:'.1em', display:'block' }}>LA BARAKAT</h1>
         </div>
 
-        <div style={{ background:'linear-gradient(165deg, rgba(12,24,38,0.55) 0%, rgba(8,20,14,0.48) 100%)', backdropFilter:'blur(22px) saturate(150%)', WebkitBackdropFilter:'blur(22px) saturate(150%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:'24px', padding:'22px', boxShadow:'0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+        <div className="login-glass" style={{ padding:'22px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'18px' }}>
             <button onClick={onBack} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'8px', color:'white', padding:'6px 10px', cursor:'pointer', fontSize:'14px' }}>←</button>
             <h2 style={{ color:'white', fontWeight:700, fontSize:'16px', margin:0 }}>Mot de passe oublié</h2>

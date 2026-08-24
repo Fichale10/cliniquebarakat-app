@@ -895,6 +895,19 @@ body.dark-mode .four-card--slate .four-card__tag { background: #2a2d3a; color: #
       background: linear-gradient(160deg,rgba(3,12,7,0.30) 0%,rgba(5,15,32,0.36) 55%,rgba(3,12,7,0.30) 100%);
       z-index: 0;
       pointer-events: none;
+    }
+    /* ── Carte de connexion en verre dépoli ── */
+    .login-glass {
+      background: linear-gradient(165deg, rgba(12,24,38,0.38) 0%, rgba(8,20,14,0.32) 100%);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.14);
+    }
+    /* Navigateurs sans backdrop-filter : fond plus opaque pour rester lisible */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .login-glass { background: linear-gradient(165deg, rgba(10,20,35,0.88) 0%, rgba(8,20,14,0.85) 100%); }
     }  
 /* ══════════════════════════════════════════════════════════
    UI POLISH — enhanced visuals across cards, tiles, inputs
@@ -1688,7 +1701,7 @@ body.dark-mode .border-t { border-top-color:    rgba(38,44,60,0.6) !important; }
 
 /* -- MODE SOMBRE : Dashboard (bandeau, recettes, pastilles) ------
    Les cartes Recettes et le bandeau utilisent des fonds clairs en
-   inline � ces overrides (!important) les adaptent au th�me sombre. */
+   inline � ces overrides (!important) les adaptent au th�me sombre. */
 body.dark-mode .dash-hero {
   background: linear-gradient(135deg, rgba(13,148,136,0.14), rgba(37,99,235,0.10) 50%, rgba(124,58,237,0.12)) !important;
   border-color: rgba(13,148,136,0.28) !important;
