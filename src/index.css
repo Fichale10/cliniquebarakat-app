@@ -898,9 +898,9 @@ body.dark-mode .four-card--slate .four-card__tag { background: #2a2d3a; color: #
     }
     /* ── Carte de connexion en verre dépoli ── */
     .login-glass {
-      background: linear-gradient(165deg, rgba(12,24,38,0.38) 0%, rgba(8,20,14,0.32) 100%);
-      backdrop-filter: blur(24px) saturate(160%);
-      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      background: linear-gradient(165deg, rgba(10,22,36,0.52) 0%, rgba(7,18,13,0.46) 100%);
+      backdrop-filter: blur(26px) saturate(160%);
+      -webkit-backdrop-filter: blur(26px) saturate(160%);
       border: 1px solid rgba(255,255,255,0.20);
       border-radius: 24px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.14);
