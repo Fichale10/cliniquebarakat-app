@@ -11,7 +11,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [showForm,setShowForm]=useState(false);
-  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true,maladie:'',certitude:'Suspicion'};
+  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true,maladie:'',certitude:'Suspicion',uniteAdmin:'',stockQte:1};
   const [form,setForm]=useState(EMPTY);
   const [filter,setFilter]=useState('actifs');
   const f=k=>e=>setForm({...form,[k]:e.target.value});
@@ -53,20 +53,29 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   const selectMedicament=(e)=>{
     const nom=e.target.value;
     const m=meds.find(x=>x.nom===nom);
-    setForm(prev=>({...prev,medicament:nom,pu:m?String(m.prixVente??m.prix_vente??''):prev.pu}));
+    setForm(prev=>({...prev,medicament:nom,pu:m?String(m.prixVente??m.prix_vente??''):prev.pu,uniteAdmin:m?.unite||'',stockQte:1}));
   };
   // Médicament actuellement sélectionné (pour l'unité : ml, flacon, comprimé…)
   const selMed=meds.find(x=>x.nom===form.medicament);
+  // Unité d'administration (facturation) ≠ unité de stock possible (ex: facturé au ml, stocké en flacons)
+  const uniteFiche=selMed?.unite||'';
+  const uniteAdmin=form.uniteAdmin||uniteFiche;
+  const uniteDiff=!!(uniteFiche&&uniteAdmin&&uniteAdmin!==uniteFiche);
+  const UNITES_ADMIN=[...new Set([uniteFiche,'ml','comprimé','dose','sachet','unité'].filter(Boolean))];
 
   // ── Plusieurs médicaments par traitement ──
   const [medLignes,setMedLignes]=useState([]);   // [{med,qte,pu,pa,unite}]
   const ajouterLigne=()=>{
     if(!form.medicament)return;
     const m=meds.find(x=>x.nom===form.medicament);
+    const uF=m?.unite||'';
+    const uA=form.uniteAdmin||uF;
+    const diff=!!(uF&&uA&&uA!==uF);
     const ligne={med:form.medicament,qte:parseFloat(form.qte)||1,pu:parseFloat(form.pu)||0,
-      pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,unite:m?.unite||''};
+      pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,unite:uA,
+      stockQte:diff?(parseFloat(form.stockQte)||1):(parseFloat(form.qte)||1)};
     setMedLignes([...medLignes,ligne]);
-    setForm(prev=>({...prev,medicament:'',qte:1,pu:''}));
+    setForm(prev=>({...prev,medicament:'',qte:1,pu:'',uniteAdmin:'',stockQte:1}));
   };
   const retirerLigne=i=>setMedLignes(medLignes.filter((_,j)=>j!==i));
   const totalLignes=medLignes.reduce((s,l)=>s+l.qte*l.pu,0)+totalForm;
@@ -87,8 +96,12 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     const lignes=[...medLignes];
     if(form.medicament){
       const m=meds.find(x=>x.nom===form.medicament);
+      const uF=m?.unite||'';
+      const uA=form.uniteAdmin||uF;
+      const diff=!!(uF&&uA&&uA!==uF);
       lignes.push({med:form.medicament,qte:parseFloat(form.qte)||1,pu:parseFloat(form.pu)||0,
-        pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,unite:m?.unite||''});
+        pa:parseFloat(m?.prixAchat??m?.prix_achat)||0,unite:uA,
+        stockQte:diff?(parseFloat(form.stockQte)||1):(parseFloat(form.qte)||1)});
     }
     if(!form.patient||!lignes.length){alert('Patient et au moins un médicament requis.');return;}
     setSaving(true);
@@ -160,7 +173,8 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
         for(const l of lignesT){
           const m=nextMeds.find(x=>x.nom===l.med);
           if(!m?.id)continue;
-          const q=parseFloat(l.qte)||0;
+          // Décompte en unité de STOCK : stockQte si l'administration est dans une autre unité (ml → flacons)
+          const q=parseFloat(l.stockQte??l.qte)||0;
           const clin=Math.min(q,m.stock_clinique||0);
           const pharm=Math.max(0,q-clin);
           if(sb)await dbAdjustStock(sb,m.id,-pharm,-clin).catch(e=>console.warn('[stock]',e));
@@ -299,18 +313,29 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
           <div>
-            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité {selMed?.unite?`(${selMed.unite})`:''}</label>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité administrée</label>
             <div style={{display:'flex',alignItems:'center',border:'1.5px solid #e2e8f0',borderRadius:'9px',background:'white',overflow:'hidden'}}>
               <input type="number" min="0" step="any" value={form.qte} onChange={f('qte')}
                 style={{flex:1,minWidth:0,border:'none',padding:'8px',fontSize:'13px',outline:'none',background:'transparent'}}/>
-              <span style={{padding:'0 10px',fontSize:'12px',fontWeight:700,color:'#0d9488',background:'#f0fdfa',alignSelf:'stretch',display:'flex',alignItems:'center',borderLeft:'1.5px solid #e2e8f0',whiteSpace:'nowrap'}}>{selMed?.unite||'unité(s)'}</span>
+              <select value={uniteAdmin} onChange={e=>setForm(prev=>({...prev,uniteAdmin:e.target.value}))}
+                style={{padding:'0 8px',fontSize:'12px',fontWeight:700,color:'#0d9488',background:'#f0fdfa',alignSelf:'stretch',border:'none',borderLeft:'1.5px solid #e2e8f0',outline:'none',cursor:'pointer'}}>
+                {UNITES_ADMIN.map(u=><option key={u} value={u}>{u}</option>)}
+                {!UNITES_ADMIN.length&&<option value="">unité(s)</option>}
+              </select>
             </div>
-            <p style={{fontSize:'10px',color:'#94a3b8',marginTop:'3px'}}>Décimales acceptées (ex : 2.5 {selMed?.unite||'ml'})</p>
+            <p style={{fontSize:'10px',color:'#94a3b8',marginTop:'3px'}}>Décimales acceptées (ex : 2.5 ml) — l'unité est modifiable</p>
+            {uniteDiff&&<div style={{marginTop:'6px'}}>
+              <label style={{fontSize:'10px',fontWeight:700,color:'#d97706',display:'block',marginBottom:'3px'}}>Stock à décompter ({uniteFiche})</label>
+              <input type="number" min="0" step="any" value={form.stockQte} onChange={f('stockQte')}
+                style={{width:'100%',border:'1.5px solid #fde68a',borderRadius:'8px',padding:'6px 8px',fontSize:'13px',outline:'none',background:'#fffbeb'}}/>
+              <p style={{fontSize:'10px',color:'#d97706',marginTop:'2px'}}>Ex : 5 ml prélevés sur 1 flacon → saisir 1</p>
+            </div>}
           </div>
           <div>
-            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Prix unitaire (F{selMed?.unite?` / ${selMed.unite}`:''})</label>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Prix unitaire (F{uniteAdmin?` / ${uniteAdmin}`:''})</label>
             <input type="number" min="0" value={form.pu} onChange={f('pu')} placeholder="0 = non facturable"
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+            {uniteDiff&&<p style={{fontSize:'10px',color:'#d97706',marginTop:'3px'}}>Prix du {uniteAdmin}, pas du {uniteFiche} — ajustez si besoin</p>}
           </div>
           <div style={{display:'flex',alignItems:'flex-end',gap:'8px'}}>
             <button onClick={ajouterLigne} disabled={!form.medicament}
