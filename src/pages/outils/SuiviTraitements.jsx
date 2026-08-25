@@ -11,7 +11,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [showForm,setShowForm]=useState(false);
-  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true};
+  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true,maladie:'',certitude:'Suspicion'};
   const [form,setForm]=useState(EMPTY);
   const [filter,setFilter]=useState('actifs');
   const f=k=>e=>setForm({...form,[k]:e.target.value});
@@ -77,7 +77,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     try{return await dbInsert(sb,'traitements',row);}
     catch(e){
       const msg=String(e?.message||e);
-      if(/lignes/i.test(msg)&&/schema|column/i.test(msg)){const{lignes,...sans}=row;return await dbInsert(sb,'traitements',sans);}
+      if(/lignes|maladie|certitude/i.test(msg)&&/schema|column/i.test(msg)){const{lignes,maladie,certitude,...sans}=row;return await dbInsert(sb,'traitements',sans);}
       throw e;
     }
   };
@@ -101,6 +101,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
         actif:true,
         qte:lignes[0].qte,pu:lignes[0].pu,pa:lignes[0].pa, // compat anciens écrans
         lignes,
+        maladie:form.maladie.trim(),certitude:form.certitude,
       };
       const saved=await insertTrait(row);
       setTraitements(prev=>[saved,...prev]);
@@ -246,6 +247,20 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             </datalist>
           </div>
           <div>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Maladie / Affection</label>
+            <div style={{display:'flex',gap:'6px'}}>
+              <input value={form.maladie} onChange={f('maladie')} list="trait-maladies" placeholder="ex: PPCB, Parvovirose…"
+                style={{flex:1,minWidth:0,border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+              <select value={form.certitude} onChange={f('certitude')}
+                style={{border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white',flexShrink:0}}>
+                <option>Suspicion</option><option>Confirmée</option><option>Suivi</option>
+              </select>
+            </div>
+            <datalist id="trait-maladies">
+              {['PPCB','PPR','Pasteurellose','Charbon symptomatique','Charbon bactéridien','Fièvre aphteuse','Dermatose nodulaire','Parvovirose','Maladie de Carré','Coccidiose','Newcastle','Gumboro','Trypanosomiase','Babésiose','Gale','Verminose / Parasitose interne','Mammite','Brucellose','Plaie / Abcès','Diététique / Carence'].map(m=><option key={m} value={m}/>)}
+            </datalist>
+          </div>
+          <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Médicament *</label>
             <input value={form.medicament} onChange={selectMedicament} list="trait-meds" placeholder="Tapez pour rechercher…"
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
@@ -342,6 +357,12 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
                     {t.actif?'Actif':'Terminé'}
                   </span>
                   {t.vente_id&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',background:'#f0fdf4',border:'1px solid #bbf7d0',color:'#16a34a'}}>✓ Facturé</span>}
+                  {t.maladie&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',
+                    background:t.certitude==='Confirmée'?'#fef2f2':t.certitude==='Suivi'?'#eff6ff':'#fffbeb',
+                    border:`1px solid ${t.certitude==='Confirmée'?'#fecaca':t.certitude==='Suivi'?'#bfdbfe':'#fde68a'}`,
+                    color:t.certitude==='Confirmée'?'#dc2626':t.certitude==='Suivi'?'#2563eb':'#d97706'}}>
+                    {t.certitude||'Suspicion'} · {t.maladie}
+                  </span>}
                   {bientot&&<span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'999px',background:'#fef3c7',color:'#d97706'}}>
                     ⏰ {jRestants===0?'Termine aujourd\'hui':jRestants+'j restants'}
                   </span>}
