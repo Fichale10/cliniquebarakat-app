@@ -192,7 +192,9 @@ function Caisse({ meds, setMeds, clients, ventesHist, setVentesHist, otrMode, tv
       const vente = sb ? await dbInsert(sb, 'ventes', row) : row
       setVentesHist([vente, ...(ventesHist || [])].slice(0, 500))
 
-      if (statut === 'Payé') {
+      if (statut === 'Payé' || achatInterne) {
+        // Un achat interne est un transfert pharmacie → clinique : le stock bouge
+        // immédiatement, même à crédit (le produit change physiquement de rayon).
         setMeds(await applyVenteStock(sb, meds, lignesValides, -1, achatInterne ? 'cession' : 'detail'))
       }
 

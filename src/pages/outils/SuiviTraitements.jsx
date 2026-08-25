@@ -11,7 +11,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [showForm,setShowForm]=useState(false);
-  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true,maladie:'',certitude:'Suspicion',uniteAdmin:'',stockQte:1};
+  const EMPTY={patient:'',medicament:'',posologie:'',frequence:'1x/jour',debut:today(),fin:'',notes:'',qte:1,pu:'',actif:true,maladie:'',certitude:'Suspicion',uniteAdmin:'',stockQte:1,jours:1};
   const [form,setForm]=useState(EMPTY);
   const [filter,setFilter]=useState('actifs');
   const f=k=>e=>setForm({...form,[k]:e.target.value});
@@ -47,7 +47,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     return t.medicament?[{med:t.medicament,qte:parseFloat(t.qte)||1,pu:parseFloat(t.pu)||0,pa:parseFloat(t.pa)||0}]:[];
   };
   const totalForm=(parseFloat(form.qte)||0)*(parseFloat(form.pu)||0);
-  const tTotal=t=>tLignes(t).reduce((s,l)=>s+(parseFloat(l.qte)||0)*(parseFloat(l.pu)||0),0);
+  const tTotal=t=>tLignes(t).reduce((s,l)=>s+(parseFloat(l.qte)||0)*(parseFloat(l.pu)||0),0)*(parseInt(t.jours)||1);
   const totalAFacturer=traitements.filter(t=>t.actif&&!t.vente_id).reduce((s,t)=>s+tTotal(t),0);
 
   const selectMedicament=(e)=>{
@@ -78,7 +78,16 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     setForm(prev=>({...prev,medicament:'',qte:1,pu:'',uniteAdmin:'',stockQte:1}));
   };
   const retirerLigne=i=>setMedLignes(medLignes.filter((_,j)=>j!==i));
-  const totalLignes=medLignes.reduce((s,l)=>s+l.qte*l.pu,0)+totalForm;
+  // Durée du traitement en jours (début → fin inclus), recalculée quand les dates changent
+  const calcJours=(debut,fin)=>{
+    if(!debut||!fin)return 1;
+    const j=Math.round((new Date(fin)-new Date(debut))/86400000)+1;
+    return Math.max(1,j);
+  };
+  const setDebut=e=>{const debut=e.target.value;setForm(prev=>({...prev,debut,jours:calcJours(debut,prev.fin)}));};
+  const setFin=e=>{const fin=e.target.value;setForm(prev=>({...prev,fin,jours:calcJours(prev.debut,fin)}));};
+  const joursNum=Math.max(1,parseInt(form.jours)||1);
+  const totalLignes=(medLignes.reduce((s,l)=>s+l.qte*l.pu,0)+totalForm)*joursNum;
 
   // Insertion tolérante : si la migration traitements_lignes.sql n'est pas encore
   // exécutée côté Supabase, on réessaie sans la colonne lignes.
@@ -86,7 +95,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
     try{return await dbInsert(sb,'traitements',row);}
     catch(e){
       const msg=String(e?.message||e);
-      if(/lignes|maladie|certitude/i.test(msg)&&/schema|column/i.test(msg)){const{lignes,maladie,certitude,...sans}=row;return await dbInsert(sb,'traitements',sans);}
+      if(/lignes|maladie|certitude|jours/i.test(msg)&&/schema|column/i.test(msg)){const{lignes,maladie,certitude,jours,...sans}=row;return await dbInsert(sb,'traitements',sans);}
       throw e;
     }
   };
@@ -115,6 +124,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
         qte:lignes[0].qte,pu:lignes[0].pu,pa:lignes[0].pa, // compat anciens écrans
         lignes,
         maladie:form.maladie.trim(),certitude:form.certitude,
+        jours:joursNum,
       };
       const saved=await insertTrait(row);
       setTraitements(prev=>[saved,...prev]);
@@ -155,9 +165,10 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
       ?`Encaisser ${fmtF(ttc)} (Espèces) pour ${t.patient} ?\nLa vente apparaîtra en Caisse et Finances, le stock sera décompté.`
       :`Facturer ${fmtF(ttc)} à crédit pour ${t.patient} ?\nLa vente apparaîtra dans les Créances.`))return;
     try{
+      const jours=parseInt(t.jours)||1;
       const row=venteToDbRow({
         id:newId(),date:today(),client:p?.proprio||t.patient,
-        lignes:lignesT.map(l=>({med:l.med,cond:'Traitement',qte:parseFloat(l.qte)||1,pu:parseFloat(l.pu)||0,pa:parseFloat(l.pa)||0,mult:1})),
+        lignes:lignesT.map(l=>({med:l.med,cond:`Traitement ${jours}j`,qte:(parseFloat(l.qte)||1)*jours,pu:parseFloat(l.pu)||0,pa:parseFloat(l.pa)||0,mult:1})),
         total:totalHT,statut:paye?'Payé':'En attente',mode:paye?'Espèces':'–',
         note:`Traitement ${t.patient} — ${lignesT.map(l=>l.med).join(', ')}`.slice(0,200),
         tva_amt:tvaAmt,montant_paye:paye?ttc:0,
@@ -173,8 +184,10 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
         for(const l of lignesT){
           const m=nextMeds.find(x=>x.nom===l.med);
           if(!m?.id)continue;
-          // Décompte en unité de STOCK : stockQte si l'administration est dans une autre unité (ml → flacons)
-          const q=parseFloat(l.stockQte??l.qte)||0;
+          // Décompte en unité de STOCK : stockQte (saisi pour toute la durée) si l'unité
+          // d'administration diffère de celle de la fiche ; sinon dose/jour × jours.
+          const uniteDiffLigne=!!(m.unite&&l.unite&&l.unite!==m.unite);
+          const q=uniteDiffLigne?(parseFloat(l.stockQte)||0):(parseFloat(l.qte)||0)*jours;
           const clin=Math.min(q,m.stock_clinique||0);
           const pharm=Math.max(0,q-clin);
           if(sb)await dbAdjustStock(sb,m.id,-pharm,-clin).catch(e=>console.warn('[stock]',e));
@@ -304,16 +317,22 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Date début</label>
-            <input type="date" value={form.debut} onChange={f('debut')}
+            <input type="date" value={form.debut} onChange={setDebut}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
           <div>
             <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Date fin</label>
-            <input type="date" value={form.fin} onChange={f('fin')}
+            <input type="date" value={form.fin} onChange={setFin}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
           </div>
           <div>
-            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité administrée</label>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Durée (jours)</label>
+            <input type="number" min="1" value={form.jours} onChange={f('jours')}
+              style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:'9px',padding:'8px',fontSize:'13px',outline:'none',background:'white'}}/>
+            <p style={{fontSize:'10px',color:'#94a3b8',marginTop:'3px'}}>Calculée des dates (début → fin inclus), modifiable</p>
+          </div>
+          <div>
+            <label style={{fontSize:'11px',fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.05em',display:'block',marginBottom:'5px'}}>Quantité administrée <span style={{textTransform:'none',fontWeight:600,color:'#0d9488'}}>par jour</span></label>
             <div style={{display:'flex',alignItems:'center',border:'1.5px solid #e2e8f0',borderRadius:'9px',background:'white',overflow:'hidden'}}>
               <input type="number" min="0" step="any" value={form.qte} onChange={f('qte')}
                 style={{flex:1,minWidth:0,border:'none',padding:'8px',fontSize:'13px',outline:'none',background:'transparent'}}/>
@@ -325,7 +344,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
             </div>
             <p style={{fontSize:'10px',color:'#94a3b8',marginTop:'3px'}}>Décimales acceptées (ex : 2.5 ml) — l'unité est modifiable</p>
             {uniteDiff&&<div style={{marginTop:'6px'}}>
-              <label style={{fontSize:'10px',fontWeight:700,color:'#d97706',display:'block',marginBottom:'3px'}}>Stock à décompter ({uniteFiche})</label>
+              <label style={{fontSize:'10px',fontWeight:700,color:'#d97706',display:'block',marginBottom:'3px'}}>Stock à décompter ({uniteFiche}) — pour toute la durée</label>
               <input type="number" min="0" step="any" value={form.stockQte} onChange={f('stockQte')}
                 style={{width:'100%',border:'1.5px solid #fde68a',borderRadius:'8px',padding:'6px 8px',fontSize:'13px',outline:'none',background:'#fffbeb'}}/>
               <p style={{fontSize:'10px',color:'#d97706',marginTop:'2px'}}>Ex : 5 ml prélevés sur 1 flacon → saisir 1</p>
@@ -343,9 +362,9 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
               style={{padding:'9px 14px',borderRadius:'9px',background:form.medicament?'#0d9488':'#e2e8f0',color:form.medicament?'white':'#94a3b8',border:'none',fontWeight:700,fontSize:'13px',cursor:form.medicament?'pointer':'default',whiteSpace:'nowrap'}}>
               + Ajouter un autre
             </button>
-            <div style={{flex:1,background:'white',border:'1.5px solid #bbf7d0',borderRadius:'9px',padding:'8px 12px',display:'flex',justifyContent:'space-between',fontSize:'13px'}}>
-              <span style={{fontWeight:700,color:'#64748b'}}>Total</span>
-              <span style={{fontWeight:900,color:'#16a34a',fontFamily:'monospace'}}>{fmtF(totalLignes)}</span>
+            <div style={{flex:1,background:'white',border:'1.5px solid #bbf7d0',borderRadius:'9px',padding:'8px 12px',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'13px',flexWrap:'wrap',gap:'4px'}}>
+              <span style={{fontWeight:700,color:'#64748b'}}>Total{joursNum>1?` (× ${joursNum} j)`:''}</span>
+              <span style={{fontWeight:900,color:'#16a34a',fontFamily:'monospace'}}>{joursNum>1?`${fmtF(totalLignes/joursNum)}/j → `:''}{fmtF(totalLignes)}</span>
             </div>
           </div>
           <div className="md:col-span-3">
@@ -397,7 +416,7 @@ function SuiviTraitements({patients, meds, setMeds, user, sb, tva, ventesHist, s
                   {t.posologie&&<span>📋 {t.posologie}</span>}
                   <span>🔁 {t.frequence}</span>
                   <span>📅 {t.debut}{t.fin?` → ${t.fin}`:''}</span>
-                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{tLignes(t).map(l=>{const m=meds.find(x=>x.nom===l.med);return `${l.qte}${(l.unite||m?.unite)?` ${l.unite||m?.unite}`:''} × ${fmtF(l.pu)}`}).join(' + ')} = {fmtF(tTotal(t))}</span>}
+                  {tTotal(t)>0&&<span style={{fontWeight:700,color:'#16a34a'}}>{tLignes(t).map(l=>{const m=meds.find(x=>x.nom===l.med);return `${l.qte}${(l.unite||m?.unite)?` ${l.unite||m?.unite}`:''}/j × ${fmtF(l.pu)}`}).join(' + ')}{(parseInt(t.jours)||1)>1?` × ${t.jours} j`:''} = {fmtF(tTotal(t))}</span>}
                 </div>
                 {t.notes&&<div style={{fontSize:'12px',color:'#94a3b8',marginTop:'4px',fontStyle:'italic'}}>Note — {t.notes}</div>}
               </div>
