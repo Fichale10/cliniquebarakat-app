@@ -116,18 +116,21 @@ const prepareInsertRow = (table, row) => {
   const r = { ...row, id: row.id || newId(), created_at: row.created_at || new Date().toISOString() }
   if (table === 'ventes') {
     // Import dynamique évité — mapper inline pour ne pas casser le bundle
+    // Montants arrondis : le F CFA n'a pas de décimales et les colonnes DB sont
+    // entières (évite « invalid input syntax for type integer: 1999.95 »)
+    const rond = (v) => Math.round(parseFloat(v) || 0)
     const payload = {
       id: r.id,
       date: r.date,
       client: r.client ?? '',
       lignes: r.lignes ?? [],
-      total: r.total ?? 0,
+      total: rond(r.total),
       statut: r.statut ?? 'Payé',
       mode: r.mode ?? 'Espèces',
       note: r.note ?? '',
-      tva_amt: r.tva_amt ?? r.tvaAmt ?? 0,
-      montant_paye: r.montant_paye ?? r.montantPaye ?? 0,
-      remise: r.remise ?? 0,
+      tva_amt: rond(r.tva_amt ?? r.tvaAmt),
+      montant_paye: rond(r.montant_paye ?? r.montantPaye),
+      remise: rond(r.remise),
       caissier: r.caissier ?? '',
       type: r.type ?? 'detail',
       created_at: r.created_at,
