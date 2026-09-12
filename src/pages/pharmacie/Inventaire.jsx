@@ -1,6 +1,7 @@
 import { ClipboardList, Trash2, BarChart3, Archive, RefreshCw, Pill, Calendar } from 'lucide-react'
 import { useState, useMemo, useEffect, Fragment } from 'react'
 import { fmtF } from '../../lib/utils'
+import { dbAdjustStock } from '../../lib/db'
 import { Btn, Badge, PrintBtn, EmptyState } from '../../components/ui'
 
 const todayStr = () => new Date().toISOString().split('T')[0]
@@ -43,11 +44,19 @@ function TabEtat({ meds, setMeds, sb, dbUpdate }) {
   const doAdj = async (med) => {
     const q = parseInt(adjQty)
     if (isNaN(q) || q < 0) return alert('Entrez une quantité valide (≥ 0)')
-    const newStock = previewStock(med)
     setAdjSaving(true)
     try {
-      await dbUpdate(sb, 'medicaments', med.id, { stock: newStock })
-      setMeds(meds.map(m => m.id === med.id ? { ...m, stock: newStock } : m))
+      if (adjMode === 'definir') {
+        // Définir = correction d'inventaire : valeur absolue voulue
+        await dbUpdate(sb, 'medicaments', med.id, { stock: Math.max(0, q) })
+        setMeds(meds.map(m => m.id === med.id ? { ...m, stock: Math.max(0, q) } : m))
+      } else {
+        // Ajouter / Retirer = delta ATOMIQUE côté serveur (pas d'écrasement
+        // si un autre poste a vendu entre-temps — même RPC que les ventes)
+        const delta = adjMode === 'retirer' ? -q : q
+        await dbAdjustStock(sb, med.id, delta, 0)
+        setMeds(meds.map(m => m.id === med.id ? { ...m, stock: Math.max(0, stockNum(m) + delta) } : m))
+      }
       setAdjId(null); setAdjQty('')
     } catch (e) {
       alert('Erreur : ' + (e?.message || e))
