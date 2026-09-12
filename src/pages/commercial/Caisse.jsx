@@ -1112,12 +1112,15 @@ ${c.note?`<p style="font-size:12px;background:#fffbeb;padding:8px 10px;border-ra
                     {/* Header cliquable */}
                     <button type="button" onClick={() => setExpandedVId(isExp ? null : v.id)}
                       style={{ width:'100%', background:'none', border:'none', cursor:'pointer', textAlign:'left', padding:'13px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                      {/* Date */}
+                      {/* Date + heure d'enregistrement */}
                       <div style={{ flexShrink:0, textAlign:'center', width:42 }}>
                         <div style={{ fontSize:17, fontWeight:900, color:'#0f172a', lineHeight:1 }}>{(v.date||'').split('-')[2]||'—'}</div>
                         <div style={{ fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' }}>
                           {v.date ? new Date(v.date+'T00:00:00').toLocaleDateString('fr-FR',{month:'short'}) : ''}
                         </div>
+                        {v.created_at && <div style={{ fontSize:10, fontWeight:700, color:'#0d9488', fontFamily:"'Space Mono',monospace", marginTop:2 }}>
+                          {new Date(v.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+                        </div>}
                       </div>
                       <div style={{ width:1, height:34, background:'#f1f5f9', flexShrink:0 }} />
                       {/* Infos */}
